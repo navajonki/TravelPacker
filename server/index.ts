@@ -1,6 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
 
 const app = express();
 app.use(express.json());
@@ -36,7 +39,29 @@ app.use((req, res, next) => {
   next();
 });
 
+async function runMigrations() {
+  try {
+    log("Running database migrations...", "migrations");
+    // Create postgres connection for migrations
+    const migrationClient = postgres(process.env.DATABASE_URL || "", { max: 1 });
+    const db = drizzle(migrationClient);
+    
+    await migrate(db, { migrationsFolder: "migrations" });
+    log("Database migrations completed successfully", "migrations");
+    
+    // Close the migration client
+    await migrationClient.end();
+  } catch (error) {
+    log(`Error running migrations: ${error}`, "migrations");
+    console.error("Error running migrations:", error);
+    // Continue execution even if migrations fail
+  }
+}
+
 (async () => {
+  // Run migrations before starting the server
+  await runMigrations();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
