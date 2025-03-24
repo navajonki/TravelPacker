@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { 
+  insertUserSchema,
   insertPackingListSchema, 
   insertBagSchema, 
   insertTravelerSchema, 
@@ -13,6 +14,36 @@ import {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = app.route('/api');
+
+  // User routes
+  app.post("/api/users", async (req, res) => {
+    try {
+      const data = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(data);
+      return res.status(201).json({ id: user.id, username: user.username });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+
+  app.get("/api/users/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid id parameter" });
+    }
+    
+    const user = await storage.getUser(id);
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    return res.json({ id: user.id, username: user.username });
+  });
 
   // PackingLists routes
   app.get("/api/packing-lists", async (req, res) => {
