@@ -672,6 +672,9 @@ export class DatabaseStorage implements IStorage {
   }
 
   async bulkUpdateItems(ids: number[], data: Partial<InsertItem>): Promise<number> {
+    console.log("bulkUpdateItems called with ids:", ids);
+    console.log("and data:", data);
+    
     // Convert dueDate string to Date if provided
     let updateData: any = { ...data };
     if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
@@ -680,17 +683,33 @@ export class DatabaseStorage implements IStorage {
     
     // Ensure ids are all valid numbers
     const validIds = ids.filter(id => typeof id === 'number' && !isNaN(id));
+    console.log("Filtered valid ids:", validIds);
     
     if (validIds.length === 0) {
+      console.log("No valid ids, returning 0");
       return 0;
     }
     
-    const result = await db.update(items)
-      .set(updateData)
-      .where(inArray(items.id, validIds))
-      .returning();
-    
-    return result.length;
+    try {
+      // Use a different approach with SQL OR conditions instead of inArray
+      let updatedCount = 0;
+      
+      // Update items one by one instead of using inArray
+      for (const id of validIds) {
+        const result = await db.update(items)
+          .set(updateData)
+          .where(eq(items.id, id))
+          .returning();
+        
+        updatedCount += result.length;
+      }
+      
+      console.log("Updated count:", updatedCount);
+      return updatedCount;
+    } catch (error) {
+      console.error("Error in bulkUpdateItems:", error);
+      throw error;
+    }
   }
 
   async bulkUpdateItemsByCategory(categoryId: number, data: Partial<InsertItem>): Promise<number> {

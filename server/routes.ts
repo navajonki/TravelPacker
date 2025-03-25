@@ -506,28 +506,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/items/bulk-update", async (req, res) => {
     try {
+      console.log("Received bulk update request with body:", JSON.stringify(req.body));
+      
       const { ids, data } = req.body;
       
-      if (!Array.isArray(ids) || ids.length === 0) {
-        return res.status(400).json({ message: "Invalid or empty ids array" });
+      // Validate IDs array
+      if (!Array.isArray(ids)) {
+        return res.status(400).json({ message: "Invalid ids: not an array" });
       }
       
-      const parsedData = insertItemSchema.partial().parse(data);
+      if (ids.length === 0) {
+        return res.status(400).json({ message: "Empty ids array" });
+      }
       
-      if (parsedData.dueDate) {
-        const dueDateObj = new Date(parsedData.dueDate);
-        if (isNaN(dueDateObj.getTime())) {
-          return res.status(400).json({ message: "Invalid dueDate format" });
+      // Ensure all IDs are valid numbers
+      const validIds = ids.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
+                          .filter(id => typeof id === 'number' && !isNaN(id));
+      
+      console.log("Valid IDs after filtering:", validIds);
+      
+      if (validIds.length === 0) {
+        return res.status(400).json({ message: "No valid IDs in the provided array" });
+      }
+      
+      try {
+        const parsedData = insertItemSchema.partial().parse(data);
+        
+        if (parsedData.dueDate) {
+          const dueDateObj = new Date(parsedData.dueDate);
+          if (isNaN(dueDateObj.getTime())) {
+            return res.status(400).json({ message: "Invalid dueDate format" });
+          }
         }
+        
+        const updatedCount = await storage.bulkUpdateItems(validIds, parsedData);
+        console.log("Updated count:", updatedCount);
+        return res.json({ updatedCount });
+      } catch (parseError) {
+        console.error("Error parsing data:", parseError);
+        if (parseError instanceof z.ZodError) {
+          return res.status(400).json({ message: "Invalid data format", errors: parseError.errors });
+        }
+        throw parseError;
       }
-      
-      const updatedCount = await storage.bulkUpdateItems(ids, parsedData);
-      return res.json({ updatedCount });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid data", errors: error.errors });
-      }
-      throw error;
+      console.error("Unexpected error in bulk update:", error);
+      return res.status(500).json({ message: "Internal server error" });
     }
   });
 
