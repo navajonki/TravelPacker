@@ -24,10 +24,10 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-2">
             <Link href="/">
-              <a className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 cursor-pointer">
                 <Luggage className="text-primary h-6 w-6" />
                 <h1 className="text-xl font-semibold text-gray-900">TravelPack</h1>
-              </a>
+              </div>
             </Link>
           </div>
           

@@ -4,6 +4,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogDescription,
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,9 @@ export default function CreateListModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Create New Packing List</DialogTitle>
+          <DialogDescription>
+            Fill in the details to create a new packing list.
+          </DialogDescription>
           <Button 
             variant="ghost" 
             size="icon" 
