@@ -508,25 +508,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Received bulk update request with body:", JSON.stringify(req.body));
       
+      if (!req.body) {
+        return res.status(400).json({ 
+          message: "Invalid request: No request body", 
+          debug: { receivedBody: req.body }
+        });
+      }
+      
       const { ids, data } = req.body;
       
       // Validate IDs array
+      if (!ids) {
+        return res.status(400).json({ 
+          message: "Invalid id parameter", 
+          debug: { 
+            receivedBody: req.body, 
+            ids: ids,
+            type: typeof ids
+          }
+        });
+      }
+      
       if (!Array.isArray(ids)) {
-        return res.status(400).json({ message: "Invalid ids: not an array" });
+        return res.status(400).json({ 
+          message: "Invalid ids: not an array", 
+          debug: { 
+            receivedBody: req.body, 
+            ids: ids,
+            type: typeof ids
+          }
+        });
       }
       
       if (ids.length === 0) {
-        return res.status(400).json({ message: "Empty ids array" });
+        return res.status(400).json({ 
+          message: "Empty ids array", 
+          debug: { 
+            receivedBody: req.body
+          }
+        });
       }
       
       // Ensure all IDs are valid numbers
-      const validIds = ids.map(id => typeof id === 'string' ? parseInt(id, 10) : id)
-                          .filter(id => typeof id === 'number' && !isNaN(id));
+      const validIds = ids.map(id => {
+        console.log(`Processing ID: ${id}, type: ${typeof id}`);
+        return typeof id === 'string' ? parseInt(id, 10) : id;
+      }).filter(id => {
+        const isValid = typeof id === 'number' && !isNaN(id);
+        console.log(`ID: ${id}, isValid: ${isValid}`);
+        return isValid;
+      });
       
       console.log("Valid IDs after filtering:", validIds);
       
       if (validIds.length === 0) {
-        return res.status(400).json({ message: "No valid IDs in the provided array" });
+        return res.status(400).json({ 
+          message: "No valid IDs in the provided array", 
+          debug: { 
+            originalIds: ids,
+            afterTypeConversion: ids.map(id => typeof id === 'string' ? parseInt(id, 10) : id),
+            validIds: validIds
+          }
+        });
+      }
+      
+      if (!data) {
+        return res.status(400).json({ 
+          message: "Invalid data parameter", 
+          debug: { 
+            receivedBody: req.body,
+            data: data
+          }
+        });
       }
       
       try {
@@ -535,7 +588,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (parsedData.dueDate) {
           const dueDateObj = new Date(parsedData.dueDate);
           if (isNaN(dueDateObj.getTime())) {
-            return res.status(400).json({ message: "Invalid dueDate format" });
+            return res.status(400).json({ 
+              message: "Invalid dueDate format", 
+              debug: { 
+                dueDate: parsedData.dueDate
+              }
+            });
           }
         }
         
@@ -545,13 +603,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (parseError) {
         console.error("Error parsing data:", parseError);
         if (parseError instanceof z.ZodError) {
-          return res.status(400).json({ message: "Invalid data format", errors: parseError.errors });
+          return res.status(400).json({ 
+            message: "Invalid data format", 
+            errors: parseError.errors,
+            debug: { 
+              data: data
+            }
+          });
         }
         throw parseError;
       }
     } catch (error) {
       console.error("Unexpected error in bulk update:", error);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ 
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      });
     }
   });
 

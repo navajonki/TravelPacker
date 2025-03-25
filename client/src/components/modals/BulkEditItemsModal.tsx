@@ -67,28 +67,61 @@ export default function BulkEditItemsModal({
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: FormValues) => {
-      // Filter out undefined values
+      console.log("Bulk edit - Selected item IDs:", selectedItemIds);
+      
+      // Filter out undefined values from form data
       const filteredData = Object.fromEntries(
         Object.entries(data).filter(([_, v]) => v !== undefined)
       );
+      console.log("Bulk edit - Form data after filtering:", filteredData);
 
       // Ensure all IDs are valid numbers
-      const validItemIds = selectedItemIds.map(id => 
-        typeof id === 'string' ? parseInt(id, 10) : id
-      ).filter(id => !isNaN(id));
+      const validItemIds = selectedItemIds
+        .filter(id => id !== null && id !== undefined)
+        .map(id => {
+          console.log(`Processing ID: ${id}, type: ${typeof id}`);
+          return typeof id === 'string' ? parseInt(id, 10) : id;
+        })
+        .filter(id => {
+          const isValid = typeof id === 'number' && !isNaN(id);
+          console.log(`ID after conversion: ${id}, isValid: ${isValid}`);
+          return isValid;
+        });
+      
+      console.log("Bulk edit - Valid item IDs:", validItemIds);
+      
+      if (validItemIds.length === 0) {
+        throw new Error("No valid item IDs selected");
+      }
+      
+      if (Object.keys(filteredData).length === 0) {
+        throw new Error("No fields selected for update");
+      }
       
       // Bulk update via API
-      const response = await apiRequest(
-        "PATCH",
-        `/api/items/bulk-update`, 
-        {
+      try {
+        const payload = {
           ids: validItemIds,
           data: filteredData
-        }
-      );
-      return response;
+        };
+        console.log("Bulk edit - API request payload:", payload);
+        
+        const response = await apiRequest(
+          "PATCH",
+          `/api/items/bulk-update`, 
+          payload
+        );
+        
+        console.log("Bulk edit - API response:", response);
+        return response;
+      } catch (error) {
+        console.error("Bulk edit - API error:", error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Bulk edit - Success response:", data);
+      
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
@@ -101,10 +134,21 @@ export default function BulkEditItemsModal({
       });
       onClose();
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Bulk edit - Error details:", error);
+      
+      let errorMessage = "Failed to update items";
+      
+      if (error?.response?.data?.debug) {
+        errorMessage += `: ${error.response.data.message}`;
+        console.error("Server debug info:", error.response.data.debug);
+      } else if (error?.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to update items",
+        description: errorMessage,
         variant: "destructive",
       });
     }
