@@ -404,37 +404,48 @@ export default function PackingList() {
                   <>
                     {categories?.map((category: any) => (
                       <div key={category.id}>
-                        <div className="bg-white rounded-lg shadow">
-                          <div className="p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <h3 className="font-medium">{category.name}</h3>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <span className="text-sm text-gray-500">{category.packedItems}/{category.totalItems}</span>
+                        {isMultiEditMode ? (
+                          <div className="bg-white rounded-lg shadow">
+                            <div className="p-4 border-b border-gray-200">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <h3 className="font-medium">{category.name}</h3>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-sm text-gray-500">{category.packedItems}/{category.totalItems}</span>
+                                </div>
                               </div>
                             </div>
+                            
+                            <div className="divide-y divide-gray-100">
+                              {category.items.map((item: any) => (
+                                <SelectableItemRow
+                                  key={item.id}
+                                  item={item}
+                                  packingListId={packingListId}
+                                  isMultiEditMode={isMultiEditMode}
+                                  isSelected={selectedItemIds.includes(item.id)}
+                                  onSelectChange={(itemId, isSelected) => {
+                                    if (isSelected) {
+                                      setSelectedItemIds([...selectedItemIds, itemId]);
+                                    } else {
+                                      setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
                           </div>
-                          
-                          <div className="divide-y divide-gray-100">
-                            {category.items.map((item: any) => (
-                              <SelectableItemRow
-                                key={item.id}
-                                item={item}
-                                packingListId={packingListId}
-                                isMultiEditMode={isMultiEditMode}
-                                isSelected={selectedItemIds.includes(item.id)}
-                                onSelectChange={(itemId, isSelected) => {
-                                  if (isSelected) {
-                                    setSelectedItemIds([...selectedItemIds, itemId]);
-                                  } else {
-                                    setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                        ) : (
+                          <CategoryCard 
+                            category={category}
+                            onEditCategory={() => {}}
+                            onDeleteCategory={handleDeleteCategory}
+                            onAddItem={() => {
+                              setAdvancedAddOpen(true);
+                            }}
+                          />
+                        )}
                       </div>
                     ))}
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
@@ -445,37 +456,48 @@ export default function PackingList() {
                   <>
                     {bags?.map((bag: any) => (
                       <div key={bag.id}>
-                        <div className="bg-white rounded-lg shadow">
-                          <div className="p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <h3 className="font-medium">{bag.name}</h3>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <span className="text-sm text-gray-500">{bag.packedItems}/{bag.totalItems}</span>
+                        {isMultiEditMode ? (
+                          <div className="bg-white rounded-lg shadow">
+                            <div className="p-4 border-b border-gray-200">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <h3 className="font-medium">{bag.name}</h3>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-sm text-gray-500">{bag.packedItems}/{bag.totalItems}</span>
+                                </div>
                               </div>
                             </div>
+                            
+                            <div className="divide-y divide-gray-100">
+                              {bag.items.map((item: any) => (
+                                <SelectableItemRow
+                                  key={item.id}
+                                  item={item}
+                                  packingListId={packingListId}
+                                  isMultiEditMode={isMultiEditMode}
+                                  isSelected={selectedItemIds.includes(item.id)}
+                                  onSelectChange={(itemId, isSelected) => {
+                                    if (isSelected) {
+                                      setSelectedItemIds([...selectedItemIds, itemId]);
+                                    } else {
+                                      setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
                           </div>
-                          
-                          <div className="divide-y divide-gray-100">
-                            {bag.items.map((item: any) => (
-                              <SelectableItemRow
-                                key={item.id}
-                                item={item}
-                                packingListId={packingListId}
-                                isMultiEditMode={isMultiEditMode}
-                                isSelected={selectedItemIds.includes(item.id)}
-                                onSelectChange={(itemId, isSelected) => {
-                                  if (isSelected) {
-                                    setSelectedItemIds([...selectedItemIds, itemId]);
-                                  } else {
-                                    setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                        ) : (
+                          <BagCard 
+                            bag={bag}
+                            onEditBag={() => {}}
+                            onDeleteBag={handleDeleteBag}
+                            onAddItem={() => {
+                              setAdvancedAddOpen(true);
+                            }}
+                          />
+                        )}
                       </div>
                     ))}
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
@@ -486,37 +508,48 @@ export default function PackingList() {
                   <>
                     {travelers?.map((traveler: any) => (
                       <div key={traveler.id}>
-                        <div className="bg-white rounded-lg shadow">
-                          <div className="p-4 border-b border-gray-200">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <h3 className="font-medium">{traveler.name}</h3>
-                              </div>
-                              <div className="flex items-center space-x-1">
-                                <span className="text-sm text-gray-500">{traveler.packedItems}/{traveler.totalItems}</span>
+                        {isMultiEditMode ? (
+                          <div className="bg-white rounded-lg shadow">
+                            <div className="p-4 border-b border-gray-200">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                  <h3 className="font-medium">{traveler.name}</h3>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-sm text-gray-500">{traveler.packedItems}/{traveler.totalItems}</span>
+                                </div>
                               </div>
                             </div>
+                            
+                            <div className="divide-y divide-gray-100">
+                              {traveler.items.map((item: any) => (
+                                <SelectableItemRow
+                                  key={item.id}
+                                  item={item}
+                                  packingListId={packingListId}
+                                  isMultiEditMode={isMultiEditMode}
+                                  isSelected={selectedItemIds.includes(item.id)}
+                                  onSelectChange={(itemId, isSelected) => {
+                                    if (isSelected) {
+                                      setSelectedItemIds([...selectedItemIds, itemId]);
+                                    } else {
+                                      setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+                                    }
+                                  }}
+                                />
+                              ))}
+                            </div>
                           </div>
-                          
-                          <div className="divide-y divide-gray-100">
-                            {traveler.items.map((item: any) => (
-                              <SelectableItemRow
-                                key={item.id}
-                                item={item}
-                                packingListId={packingListId}
-                                isMultiEditMode={isMultiEditMode}
-                                isSelected={selectedItemIds.includes(item.id)}
-                                onSelectChange={(itemId, isSelected) => {
-                                  if (isSelected) {
-                                    setSelectedItemIds([...selectedItemIds, itemId]);
-                                  } else {
-                                    setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
-                                  }
-                                }}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                        ) : (
+                          <TravelerCard 
+                            traveler={traveler}
+                            onEditTraveler={() => {}}
+                            onDeleteTraveler={handleDeleteTraveler}
+                            onAddItem={() => {
+                              setAdvancedAddOpen(true);
+                            }}
+                          />
+                        )}
                       </div>
                     ))}
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
@@ -559,6 +592,16 @@ export default function PackingList() {
         open={addTravelerOpen}
         onClose={() => setAddTravelerOpen(false)}
         onAddTraveler={handleAddTraveler}
+      />
+      
+      <BulkEditItemsModal
+        open={bulkEditModalOpen}
+        onClose={() => {
+          setBulkEditModalOpen(false);
+          // Don't exit multi-edit mode when closing
+        }}
+        selectedItemIds={selectedItemIds}
+        packingListId={packingListId}
       />
     </div>
   );

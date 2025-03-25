@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { CheckCircle2, Circle } from 'lucide-react';
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { Button } from "@/components/ui/button";
+import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface SelectableItemRowProps {
   item: {
@@ -16,77 +15,69 @@ interface SelectableItemRowProps {
     categoryId: number;
   };
   packingListId: number;
-  isMultiEditMode: boolean; 
+  isMultiEditMode: boolean;
   isSelected: boolean;
   onSelectChange: (itemId: number, isSelected: boolean) => void;
 }
 
 export default function SelectableItemRow({ 
   item, 
-  packingListId, 
-  isMultiEditMode, 
-  isSelected, 
-  onSelectChange 
+  packingListId,
+  isMultiEditMode,
+  isSelected,
+  onSelectChange
 }: SelectableItemRowProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const togglePackedMutation = useMutation({
-    mutationFn: async (packed: boolean) => {
-      return await apiRequest('PATCH', `/api/items/${item.id}`, { packed });
+
+  // Mutation for toggling the packed status
+  const { mutate: togglePacked } = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest(`/api/items/${item.id}`, "PATCH", {
+        packed: !item.packed
+      });
+      return response;
     },
     onSuccess: () => {
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update item status",
+        variant: "destructive",
+      });
     }
   });
-  
-  const handleTogglePacked = () => {
-    togglePackedMutation.mutate(!item.packed);
-  };
-  
+
   return (
-    <div 
-      className="py-2 px-2 hover:bg-gray-50 flex items-center justify-between"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="flex items-center flex-1 min-w-0">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-6 w-6 mr-2 rounded-full p-0"
-          onClick={handleTogglePacked}
-        >
-          {item.packed ? (
-            <CheckCircle2 className="h-5 w-5 text-green-500" />
-          ) : (
-            <Circle className="h-5 w-5 text-gray-300" />
-          )}
-        </Button>
-        <div className="flex-1 min-w-0">
-          <div className={`truncate text-sm ${item.packed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+    <div className="flex items-center justify-between p-3 hover:bg-gray-50">
+      <div className="flex items-center gap-3">
+        {isMultiEditMode ? (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={(checked) => {
+              onSelectChange(item.id, checked === true);
+            }}
+            className="border-blue-500"
+          />
+        ) : (
+          <Checkbox
+            checked={item.packed}
+            onCheckedChange={() => togglePacked()}
+          />
+        )}
+        <div className="flex flex-col">
+          <span className={item.packed ? "line-through text-gray-500" : ""}>
             {item.name}
-          </div>
+          </span>
           {item.quantity > 1 && (
-            <div className="text-xs text-gray-500">
-              Qty: {item.quantity}
-            </div>
+            <span className="text-xs text-gray-500">
+              Quantity: {item.quantity}
+            </span>
           )}
         </div>
       </div>
-      
-      {/* Selection checkbox for multi-edit mode */}
-      {isMultiEditMode && (
-        <Checkbox 
-          checked={isSelected}
-          onCheckedChange={(checked) => onSelectChange(item.id, checked === true)}
-          className="ml-2 h-4 w-4"
-        />
-      )}
     </div>
   );
 }
