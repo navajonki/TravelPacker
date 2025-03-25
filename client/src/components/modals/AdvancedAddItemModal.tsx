@@ -194,7 +194,7 @@ export default function AdvancedAddItemModal({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {travelers?.map((traveler: any) => (
+                      {Array.isArray(travelers) && travelers.map((traveler: any) => (
                         <SelectItem key={traveler.id} value={traveler.id.toString()}>
                           {traveler.name}
                         </SelectItem>
