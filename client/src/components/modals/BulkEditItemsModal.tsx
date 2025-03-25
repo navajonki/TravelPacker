@@ -72,7 +72,7 @@ export default function BulkEditItemsModal({
         `/api/items/bulk-update`, 
         {
           ids: selectedItemIds,
-          ...filteredData
+          data: filteredData
         }
       );
       return response;
