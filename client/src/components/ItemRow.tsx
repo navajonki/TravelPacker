@@ -23,23 +23,23 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
   const [hovering, setHovering] = useState(false);
   const queryClient = useQueryClient();
   
-  const { data: bags } = useQuery({
+  const { data: bags = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
   });
   
-  const { data: travelers } = useQuery({
+  const { data: travelers = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
   });
   
   const getBagName = () => {
-    if (!item.bagId || !bags) return null;
-    const bag = bags.find((b: any) => b.id === item.bagId);
+    if (!item.bagId || !bags.length) return null;
+    const bag = bags.find((b) => b.id === item.bagId);
     return bag?.name;
   };
   
   const getTravelerName = () => {
-    if (!item.travelerId || !travelers) return null;
-    const traveler = travelers.find((t: any) => t.id === item.travelerId);
+    if (!item.travelerId || !travelers.length) return null;
+    const traveler = travelers.find((t) => t.id === item.travelerId);
     return traveler?.name;
   };
   
@@ -50,7 +50,19 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
       });
     },
     onSuccess: () => {
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+
+      // If item is assigned to a bag, invalidate bags query
+      if (item.bagId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      }
+      
+      // If item is assigned to a traveler, invalidate travelers query
+      if (item.travelerId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      }
     }
   });
   
@@ -59,7 +71,19 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
       await apiRequest('DELETE', `/api/items/${item.id}`);
     },
     onSuccess: () => {
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+
+      // If item is assigned to a bag, invalidate bags query
+      if (item.bagId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      }
+      
+      // If item is assigned to a traveler, invalidate travelers query
+      if (item.travelerId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      }
     }
   });
 
@@ -67,7 +91,7 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
   const travelerName = getTravelerName();
 
   return (
-    <li 
+    <div 
       className="group p-2 hover:bg-gray-50 rounded-md" 
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
@@ -92,7 +116,11 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
                 </Badge>
               )}
               {bagName && travelerName && <span className="mx-1">•</span>}
-              {travelerName && <span>{travelerName}</span>}
+              {travelerName && (
+                <Badge variant="outline" className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border-emerald-200">
+                  {travelerName}
+                </Badge>
+              )}
             </div>
           )}
         </div>
@@ -112,6 +140,6 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
           </div>
         )}
       </div>
-    </li>
+    </div>
   );
 }
