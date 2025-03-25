@@ -67,10 +67,14 @@ export default function BulkEditItemsModal({
       );
 
       // Bulk update via API
-      const response = await apiRequest(`/api/items/bulk-update`, "PATCH", {
-        ids: selectedItemIds,
-        ...filteredData
-      });
+      const response = await apiRequest(
+        "PATCH",
+        `/api/items/bulk-update`, 
+        {
+          ids: selectedItemIds,
+          ...filteredData
+        }
+      );
       return response;
     },
     onSuccess: () => {

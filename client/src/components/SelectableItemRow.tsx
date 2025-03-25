@@ -33,9 +33,11 @@ export default function SelectableItemRow({
   // Mutation for toggling the packed status
   const { mutate: togglePacked } = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest(`/api/items/${item.id}`, "PATCH", {
-        packed: !item.packed
-      });
+      const response = await apiRequest(
+        "PATCH", 
+        `/api/items/${item.id}`, 
+        { packed: !item.packed }
+      );
       return response;
     },
     onSuccess: () => {
