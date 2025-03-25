@@ -13,14 +13,17 @@ import BagCard from "@/components/BagCard";
 import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
+import SelectableItemRow from "@/components/SelectableItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
 import AddCategoryModal from "@/components/modals/AddCategoryModal";
 import AddBagModal from "@/components/modals/AddBagModal";
 import AddTravelerModal from "@/components/modals/AddTravelerModal";
 import CreateListModal from "@/components/modals/CreateListModal";
+import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Loader2, CheckCircle } from "lucide-react";
 
 export default function PackingList() {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +37,11 @@ export default function PackingList() {
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
+  
+  // Multi-select edit mode states
+  const [isMultiEditMode, setIsMultiEditMode] = useState(false);
+  const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
+  const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
   
   // Define interfaces for type safety
   interface PackingListData {
@@ -330,11 +338,46 @@ export default function PackingList() {
             />
           ) : null}
           
-          <QuickAddForm 
-            packingListId={packingListId}
-            onAddItem={handleAddItem}
-            onOpenAdvancedAdd={() => setAdvancedAddOpen(true)}
-          />
+          <div className="bg-white border-b border-gray-200 px-4 py-2">
+            <div className="flex items-center justify-between">
+              <QuickAddForm 
+                packingListId={packingListId}
+                onAddItem={handleAddItem}
+                onOpenAdvancedAdd={() => setAdvancedAddOpen(true)}
+              />
+              <div className="flex items-center ml-2">
+                {isMultiEditMode ? (
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setIsMultiEditMode(false);
+                        setSelectedItemIds([]);
+                      }}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => setBulkEditModalOpen(true)}
+                      disabled={selectedItemIds.length === 0}
+                    >
+                      Edit Selected ({selectedItemIds.length})
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsMultiEditMode(true)}
+                  >
+                    Edit Multiple
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
           
           <div className="flex-1 overflow-y-auto bg-background p-4">
             {isLoading ? (
@@ -360,15 +403,39 @@ export default function PackingList() {
                 {viewMode === 'category' && (
                   <>
                     {categories?.map((category: any) => (
-                      <CategoryCard 
-                        key={category.id}
-                        category={category}
-                        onEditCategory={() => {}}
-                        onDeleteCategory={handleDeleteCategory}
-                        onAddItem={() => {
-                          setAdvancedAddOpen(true);
-                        }}
-                      />
+                      <div key={category.id}>
+                        <div className="bg-white rounded-lg shadow">
+                          <div className="p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <h3 className="font-medium">{category.name}</h3>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-sm text-gray-500">{category.packedItems}/{category.totalItems}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-100">
+                            {category.items.map((item: any) => (
+                              <SelectableItemRow
+                                key={item.id}
+                                item={item}
+                                packingListId={packingListId}
+                                isMultiEditMode={isMultiEditMode}
+                                isSelected={selectedItemIds.includes(item.id)}
+                                onSelectChange={(itemId, isSelected) => {
+                                  if (isSelected) {
+                                    setSelectedItemIds([...selectedItemIds, itemId]);
+                                  } else {
+                                    setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
                   </>
@@ -377,15 +444,39 @@ export default function PackingList() {
                 {viewMode === 'bag' && (
                   <>
                     {bags?.map((bag: any) => (
-                      <BagCard 
-                        key={bag.id}
-                        bag={bag}
-                        onEditBag={() => {}}
-                        onDeleteBag={handleDeleteBag}
-                        onAddItem={() => {
-                          setAdvancedAddOpen(true);
-                        }}
-                      />
+                      <div key={bag.id}>
+                        <div className="bg-white rounded-lg shadow">
+                          <div className="p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <h3 className="font-medium">{bag.name}</h3>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-sm text-gray-500">{bag.packedItems}/{bag.totalItems}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-100">
+                            {bag.items.map((item: any) => (
+                              <SelectableItemRow
+                                key={item.id}
+                                item={item}
+                                packingListId={packingListId}
+                                isMultiEditMode={isMultiEditMode}
+                                isSelected={selectedItemIds.includes(item.id)}
+                                onSelectChange={(itemId, isSelected) => {
+                                  if (isSelected) {
+                                    setSelectedItemIds([...selectedItemIds, itemId]);
+                                  } else {
+                                    setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
                   </>
@@ -394,15 +485,39 @@ export default function PackingList() {
                 {viewMode === 'traveler' && (
                   <>
                     {travelers?.map((traveler: any) => (
-                      <TravelerCard 
-                        key={traveler.id}
-                        traveler={traveler}
-                        onEditTraveler={() => {}}
-                        onDeleteTraveler={handleDeleteTraveler}
-                        onAddItem={() => {
-                          setAdvancedAddOpen(true);
-                        }}
-                      />
+                      <div key={traveler.id}>
+                        <div className="bg-white rounded-lg shadow">
+                          <div className="p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <h3 className="font-medium">{traveler.name}</h3>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-sm text-gray-500">{traveler.packedItems}/{traveler.totalItems}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="divide-y divide-gray-100">
+                            {traveler.items.map((item: any) => (
+                              <SelectableItemRow
+                                key={item.id}
+                                item={item}
+                                packingListId={packingListId}
+                                isMultiEditMode={isMultiEditMode}
+                                isSelected={selectedItemIds.includes(item.id)}
+                                onSelectChange={(itemId, isSelected) => {
+                                  if (isSelected) {
+                                    setSelectedItemIds([...selectedItemIds, itemId]);
+                                  } else {
+                                    setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
+                                  }
+                                }}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>
