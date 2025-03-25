@@ -149,14 +149,36 @@ export default function TravelerCard({
               >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-gray-500 hover:text-red-500"
-                onClick={handleDeleteClick}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBulkAction("pack")}>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    <span>Pack All Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction("unpack")}>
+                    <Square className="h-4 w-4 mr-2" />
+                    <span>Unpack All Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction("packRemaining")}>
+                    <ListChecks className="h-4 w-4 mr-2" />
+                    <span>Pack Remaining Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:text-red-600"
+                    onClick={handleDeleteClick}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    <span>Delete Traveler</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           
