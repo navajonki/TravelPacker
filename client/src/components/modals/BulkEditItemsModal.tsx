@@ -72,12 +72,17 @@ export default function BulkEditItemsModal({
         Object.entries(data).filter(([_, v]) => v !== undefined)
       );
 
+      // Ensure all IDs are valid numbers
+      const validItemIds = selectedItemIds.map(id => 
+        typeof id === 'string' ? parseInt(id, 10) : id
+      ).filter(id => !isNaN(id));
+      
       // Bulk update via API
       const response = await apiRequest(
         "PATCH",
         `/api/items/bulk-update`, 
         {
-          ids: selectedItemIds,
+          ids: validItemIds,
           data: filteredData
         }
       );

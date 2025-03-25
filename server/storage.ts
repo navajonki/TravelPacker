@@ -678,15 +678,26 @@ export class DatabaseStorage implements IStorage {
       updateData.dueDate = new Date(data.dueDate);
     }
     
+    // Ensure ids are all valid numbers
+    const validIds = ids.filter(id => typeof id === 'number' && !isNaN(id));
+    
+    if (validIds.length === 0) {
+      return 0;
+    }
+    
     const result = await db.update(items)
       .set(updateData)
-      .where(inArray(items.id, ids))
+      .where(inArray(items.id, validIds))
       .returning();
     
     return result.length;
   }
 
   async bulkUpdateItemsByCategory(categoryId: number, data: Partial<InsertItem>): Promise<number> {
+    if (isNaN(categoryId)) {
+      return 0;
+    }
+    
     // Convert dueDate string to Date if provided
     let updateData: any = { ...data };
     if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
@@ -702,6 +713,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async bulkUpdateItemsByBag(bagId: number, data: Partial<InsertItem>): Promise<number> {
+    if (isNaN(bagId)) {
+      return 0;
+    }
+    
     // Convert dueDate string to Date if provided
     let updateData: any = { ...data };
     if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
@@ -717,6 +732,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async bulkUpdateItemsByTraveler(travelerId: number, data: Partial<InsertItem>): Promise<number> {
+    if (isNaN(travelerId)) {
+      return 0;
+    }
+    
     // Convert dueDate string to Date if provided
     let updateData: any = { ...data };
     if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
