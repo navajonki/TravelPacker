@@ -98,9 +98,21 @@ export default function PackingList() {
     mutationFn: async (item: any) => {
       return await apiRequest('POST', '/api/items', item);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      
+      // If item was assigned to a bag, invalidate bags query
+      if (variables.bagId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      }
+      
+      // If item was assigned to a traveler, invalidate travelers query
+      if (variables.travelerId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      }
+      
       toast({
         title: "Success",
         description: "Item added successfully",

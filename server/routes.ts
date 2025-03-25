@@ -176,7 +176,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const bags = await storage.getBags(listId);
-    return res.json(bags);
+    
+    // Get all items for this packing list
+    const allItems = await storage.getAllItemsByPackingList(listId);
+    
+    // For each bag, find its items and calculate progress
+    const bagsWithItemsAndProgress = bags.map(bag => {
+      const bagItems = allItems.filter(item => item.bagId === bag.id);
+      const totalItems = bagItems.length;
+      const packedItems = bagItems.filter(item => item.packed).length;
+      
+      return {
+        ...bag,
+        items: bagItems,
+        totalItems,
+        packedItems,
+        progress: totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0
+      };
+    });
+    
+    return res.json(bagsWithItemsAndProgress);
   });
 
   app.post("/api/bags", async (req, res) => {
@@ -242,7 +261,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     const travelers = await storage.getTravelers(listId);
-    return res.json(travelers);
+    
+    // Get all items for this packing list
+    const allItems = await storage.getAllItemsByPackingList(listId);
+    
+    // For each traveler, find its items and calculate progress
+    const travelersWithItemsAndProgress = travelers.map(traveler => {
+      const travelerItems = allItems.filter(item => item.travelerId === traveler.id);
+      const totalItems = travelerItems.length;
+      const packedItems = travelerItems.filter(item => item.packed).length;
+      
+      return {
+        ...traveler,
+        items: travelerItems,
+        totalItems,
+        packedItems,
+        progress: totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0
+      };
+    });
+    
+    return res.json(travelersWithItemsAndProgress);
   });
 
   app.post("/api/travelers", async (req, res) => {
