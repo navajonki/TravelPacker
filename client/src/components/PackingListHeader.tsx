@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface PackingListHeaderProps {
   packingList: {
+    id: number;
     name: string;
     dateRange?: string;
     itemCount: number;
@@ -18,6 +19,7 @@ interface PackingListHeaderProps {
   };
   viewMode: 'category' | 'bag' | 'traveler';
   onChangeViewMode: (mode: 'category' | 'bag' | 'traveler') => void;
+  onExport?: () => void;
 }
 
 export default function PackingListHeader({ 

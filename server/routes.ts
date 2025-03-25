@@ -504,6 +504,78 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(204).end();
   });
 
+  // CSV Export endpoint
+  app.get("/api/packing-lists/:id/export", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid packing list ID" });
+      }
+      
+      // Get the packing list
+      const packingList = await storage.getPackingList(id);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Get all items for the packing list
+      const items = await storage.getAllItemsByPackingList(id);
+      
+      // Get all categories, bags, and travelers to include their names in the export
+      const categories = await storage.getCategories(id);
+      const bags = await storage.getBags(id);
+      const travelers = await storage.getTravelers(id);
+      
+      // Create lookup maps for category, bag, and traveler names
+      const categoryMap = new Map(categories.map(c => [c.id, c.name]));
+      const bagMap = new Map(bags.map(b => [b.id, b.name]));
+      const travelerMap = new Map(travelers.map(t => [t.id, t.name]));
+      
+      // CSV header row
+      let csv = "Name,Category,Quantity,Packed,Essential,Bag,Traveler,Due Date\n";
+      
+      // Add each item as a row in the CSV
+      for (const item of items) {
+        const categoryName = categoryMap.get(item.categoryId) || '';
+        const bagName = item.bagId ? bagMap.get(item.bagId) || '' : '';
+        const travelerName = item.travelerId ? travelerMap.get(item.travelerId) || '' : '';
+        
+        // Format the date (if exists)
+        const dueDate = item.dueDate ? new Date(item.dueDate).toLocaleDateString() : '';
+        
+        // Escape any commas in text fields
+        const escapeCsv = (text: any) => {
+          if (text === null || text === undefined) return '';
+          const str = String(text);
+          return str.includes(',') ? `"${str}"` : str;
+        };
+        
+        // Construct the CSV row
+        csv += [
+          escapeCsv(item.name),
+          escapeCsv(categoryName),
+          item.quantity || 1,
+          item.packed ? 'Yes' : 'No',
+          item.isEssential ? 'Yes' : 'No',
+          escapeCsv(bagName),
+          escapeCsv(travelerName),
+          dueDate
+        ].join(',') + '\n';
+      }
+      
+      // Set the appropriate headers for a CSV file download
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${packingList.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_packing_list.csv"`);
+      
+      // Send the CSV data
+      return res.send(csv);
+    } catch (error) {
+      console.error("Error exporting packing list:", error);
+      return res.status(500).json({ message: "Failed to export packing list" });
+    }
+  });
+
   // Removing the problematic /api/items/bulk-update endpoint and creating a new one
   
   // New endpoint for multi-item updates
