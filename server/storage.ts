@@ -466,7 +466,288 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { PgStorage } from "./pgStorage";
+import { db } from "./db";
+import { eq, and, inArray } from "drizzle-orm";
 
-// Use PgStorage instead of MemStorage
-export const storage = new PgStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  // PackingList methods
+  async getPackingLists(userId: number): Promise<PackingList[]> {
+    return await db.select().from(packingLists).where(eq(packingLists.userId, userId));
+  }
+
+  async getPackingList(id: number): Promise<PackingList | undefined> {
+    const [packingList] = await db.select().from(packingLists).where(eq(packingLists.id, id));
+    return packingList || undefined;
+  }
+
+  async createPackingList(insertPackingList: InsertPackingList): Promise<PackingList> {
+    const [packingList] = await db
+      .insert(packingLists)
+      .values(insertPackingList)
+      .returning();
+    return packingList;
+  }
+
+  async updatePackingList(id: number, data: Partial<InsertPackingList>): Promise<PackingList | undefined> {
+    const [updatedPackingList] = await db
+      .update(packingLists)
+      .set(data)
+      .where(eq(packingLists.id, id))
+      .returning();
+    return updatedPackingList || undefined;
+  }
+
+  async deletePackingList(id: number): Promise<void> {
+    await db.delete(packingLists).where(eq(packingLists.id, id));
+  }
+
+  // Bag methods
+  async getBags(packingListId: number): Promise<Bag[]> {
+    return await db.select().from(bags).where(eq(bags.packingListId, packingListId));
+  }
+
+  async getBag(id: number): Promise<Bag | undefined> {
+    const [bag] = await db.select().from(bags).where(eq(bags.id, id));
+    return bag || undefined;
+  }
+
+  async createBag(insertBag: InsertBag): Promise<Bag> {
+    const [bag] = await db
+      .insert(bags)
+      .values(insertBag)
+      .returning();
+    return bag;
+  }
+
+  async updateBag(id: number, data: Partial<InsertBag>): Promise<Bag | undefined> {
+    const [updatedBag] = await db
+      .update(bags)
+      .set(data)
+      .where(eq(bags.id, id))
+      .returning();
+    return updatedBag || undefined;
+  }
+
+  async deleteBag(id: number): Promise<void> {
+    await db.delete(bags).where(eq(bags.id, id));
+  }
+
+  // Traveler methods
+  async getTravelers(packingListId: number): Promise<Traveler[]> {
+    return await db.select().from(travelers).where(eq(travelers.packingListId, packingListId));
+  }
+
+  async getTraveler(id: number): Promise<Traveler | undefined> {
+    const [traveler] = await db.select().from(travelers).where(eq(travelers.id, id));
+    return traveler || undefined;
+  }
+
+  async createTraveler(insertTraveler: InsertTraveler): Promise<Traveler> {
+    const [traveler] = await db
+      .insert(travelers)
+      .values(insertTraveler)
+      .returning();
+    return traveler;
+  }
+
+  async updateTraveler(id: number, data: Partial<InsertTraveler>): Promise<Traveler | undefined> {
+    const [updatedTraveler] = await db
+      .update(travelers)
+      .set(data)
+      .where(eq(travelers.id, id))
+      .returning();
+    return updatedTraveler || undefined;
+  }
+
+  async deleteTraveler(id: number): Promise<void> {
+    await db.delete(travelers).where(eq(travelers.id, id));
+  }
+
+  // Category methods
+  async getCategories(packingListId: number): Promise<Category[]> {
+    return await db
+      .select()
+      .from(categories)
+      .where(eq(categories.packingListId, packingListId))
+      .orderBy(categories.position);
+  }
+
+  async getCategory(id: number): Promise<Category | undefined> {
+    const [category] = await db.select().from(categories).where(eq(categories.id, id));
+    return category || undefined;
+  }
+
+  async createCategory(insertCategory: InsertCategory): Promise<Category> {
+    const [category] = await db
+      .insert(categories)
+      .values(insertCategory)
+      .returning();
+    return category;
+  }
+
+  async updateCategory(id: number, data: Partial<InsertCategory>): Promise<Category | undefined> {
+    const [updatedCategory] = await db
+      .update(categories)
+      .set(data)
+      .where(eq(categories.id, id))
+      .returning();
+    return updatedCategory || undefined;
+  }
+
+  async deleteCategory(id: number): Promise<void> {
+    await db.delete(categories).where(eq(categories.id, id));
+  }
+
+  // Item methods
+  async getItems(categoryId: number): Promise<Item[]> {
+    return await db.select().from(items).where(eq(items.categoryId, categoryId));
+  }
+
+  async getAllItemsByPackingList(packingListId: number): Promise<Item[]> {
+    const categoryList = await db
+      .select()
+      .from(categories)
+      .where(eq(categories.packingListId, packingListId));
+    
+    const categoryIds = categoryList.map(category => category.id);
+    if (categoryIds.length === 0) return [];
+    
+    return await db.select().from(items).where(inArray(items.categoryId, categoryIds));
+  }
+
+  async getItem(id: number): Promise<Item | undefined> {
+    const [item] = await db.select().from(items).where(eq(items.id, id));
+    return item || undefined;
+  }
+
+  async createItem(insertItem: InsertItem): Promise<Item> {
+    // Convert dueDate string to Date if provided
+    let itemData = { ...insertItem };
+    if (typeof insertItem.dueDate === 'string' && insertItem.dueDate.trim() !== '') {
+      itemData.dueDate = new Date(insertItem.dueDate);
+    }
+    
+    const [item] = await db
+      .insert(items)
+      .values(itemData)
+      .returning();
+    return item;
+  }
+
+  async updateItem(id: number, data: Partial<InsertItem>): Promise<Item | undefined> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const [updatedItem] = await db
+      .update(items)
+      .set(updateData)
+      .where(eq(items.id, id))
+      .returning();
+    return updatedItem || undefined;
+  }
+
+  async deleteItem(id: number): Promise<void> {
+    await db.delete(items).where(eq(items.id, id));
+  }
+
+  async bulkUpdateItems(ids: number[], data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(inArray(items.id, ids))
+      .returning();
+    
+    return result.length;
+  }
+
+  async bulkUpdateItemsByCategory(categoryId: number, data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(eq(items.categoryId, categoryId))
+      .returning();
+    
+    return result.length;
+  }
+
+  async bulkUpdateItemsByBag(bagId: number, data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(eq(items.bagId, bagId))
+      .returning();
+    
+    return result.length;
+  }
+
+  async bulkUpdateItemsByTraveler(travelerId: number, data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(eq(items.travelerId, travelerId))
+      .returning();
+    
+    return result.length;
+  }
+
+  // Template methods
+  async getTemplates(): Promise<Template[]> {
+    return await db.select().from(templates);
+  }
+
+  async getTemplate(id: number): Promise<Template | undefined> {
+    const [template] = await db.select().from(templates).where(eq(templates.id, id));
+    return template || undefined;
+  }
+
+  async createTemplate(insertTemplate: InsertTemplate): Promise<Template> {
+    const [template] = await db
+      .insert(templates)
+      .values(insertTemplate)
+      .returning();
+    return template;
+  }
+}
+
+export const storage = new DatabaseStorage();
