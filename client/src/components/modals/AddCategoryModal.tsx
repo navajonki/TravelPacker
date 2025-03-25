@@ -4,6 +4,7 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle,
+  DialogDescription,
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,9 @@ export default function AddCategoryModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Category</DialogTitle>
+          <DialogDescription>
+            Create a new category to organize your packing items.
+          </DialogDescription>
           <Button 
             variant="ghost" 
             size="icon" 

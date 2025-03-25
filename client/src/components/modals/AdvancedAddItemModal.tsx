@@ -43,6 +43,9 @@ const formSchema = z.object({
   dueDate: z.string().optional()
 });
 
+// Type for form data
+type FormValues = z.infer<typeof formSchema>;
+
 export default function AdvancedAddItemModal({
   open,
   onClose,
@@ -51,22 +54,22 @@ export default function AdvancedAddItemModal({
 }: AdvancedAddItemModalProps) {
   const [showReminderOptions, setShowReminderOptions] = useState(false);
   
-  const { data: categories } = useQuery({
+  const { data: categories = [] } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/categories`],
     enabled: open
   });
   
-  const { data: bags } = useQuery({
+  const { data: bags = [] } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
     enabled: open
   });
   
-  const { data: travelers } = useQuery({
+  const { data: travelers = [] } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
     enabled: open
   });
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
@@ -80,7 +83,7 @@ export default function AdvancedAddItemModal({
     }
   });
   
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     await onAddItem({
       name: data.name,
       categoryId: parseInt(data.categoryId),
@@ -100,6 +103,9 @@ export default function AdvancedAddItemModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add Item Details</DialogTitle>
+          <DialogDescription>
+            Enter details about the item you want to add to your packing list.
+          </DialogDescription>
           <Button 
             variant="ghost" 
             size="icon" 
