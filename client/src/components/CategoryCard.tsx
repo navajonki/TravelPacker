@@ -111,6 +111,22 @@ export default function CategoryCard({
                     <Pencil className="h-4 w-4 mr-2" />
                     <span>Edit Category</span>
                   </DropdownMenuItem>
+                  {/* Bulk action options */}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBulkAction("pack")}>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    <span>Pack All Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction("unpack")}>
+                    <Square className="h-4 w-4 mr-2" />
+                    <span>Unpack All Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction("packRemaining")}>
+                    <ListChecks className="h-4 w-4 mr-2" />
+                    <span>Pack Remaining Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     className="text-red-600 focus:text-red-600"
                     onClick={handleDeleteClick}

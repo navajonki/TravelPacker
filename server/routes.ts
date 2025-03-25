@@ -531,6 +531,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Bulk update routes by category, bag, traveler
+  app.patch("/api/categories/:categoryId/bulk-update-items", async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.categoryId);
+      
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid categoryId parameter" });
+      }
+      
+      const category = await storage.getCategory(categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      const parsedData = insertItemSchema.partial().parse(req.body);
+      
+      if (parsedData.dueDate) {
+        const dueDateObj = new Date(parsedData.dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          return res.status(400).json({ message: "Invalid dueDate format" });
+        }
+      }
+      
+      const updatedCount = await storage.bulkUpdateItemsByCategory(categoryId, parsedData);
+      return res.json({ updatedCount });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+
+  app.patch("/api/bags/:bagId/bulk-update-items", async (req, res) => {
+    try {
+      const bagId = parseInt(req.params.bagId);
+      
+      if (isNaN(bagId)) {
+        return res.status(400).json({ message: "Invalid bagId parameter" });
+      }
+      
+      const bag = await storage.getBag(bagId);
+      if (!bag) {
+        return res.status(404).json({ message: "Bag not found" });
+      }
+      
+      const parsedData = insertItemSchema.partial().parse(req.body);
+      
+      if (parsedData.dueDate) {
+        const dueDateObj = new Date(parsedData.dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          return res.status(400).json({ message: "Invalid dueDate format" });
+        }
+      }
+      
+      const updatedCount = await storage.bulkUpdateItemsByBag(bagId, parsedData);
+      return res.json({ updatedCount });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+
+  app.patch("/api/travelers/:travelerId/bulk-update-items", async (req, res) => {
+    try {
+      const travelerId = parseInt(req.params.travelerId);
+      
+      if (isNaN(travelerId)) {
+        return res.status(400).json({ message: "Invalid travelerId parameter" });
+      }
+      
+      const traveler = await storage.getTraveler(travelerId);
+      if (!traveler) {
+        return res.status(404).json({ message: "Traveler not found" });
+      }
+      
+      const parsedData = insertItemSchema.partial().parse(req.body);
+      
+      if (parsedData.dueDate) {
+        const dueDateObj = new Date(parsedData.dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          return res.status(400).json({ message: "Invalid dueDate format" });
+        }
+      }
+      
+      const updatedCount = await storage.bulkUpdateItemsByTraveler(travelerId, parsedData);
+      return res.json({ updatedCount });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+
   // Templates routes
   app.get("/api/templates", async (req, res) => {
     const templates = await storage.getTemplates();

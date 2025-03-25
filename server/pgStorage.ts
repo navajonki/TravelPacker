@@ -234,6 +234,51 @@ export class PgStorage implements IStorage {
     
     return result.length;
   }
+  
+  async bulkUpdateItemsByCategory(categoryId: number, data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(eq(items.categoryId, categoryId))
+      .returning();
+    
+    return result.length;
+  }
+  
+  async bulkUpdateItemsByBag(bagId: number, data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(eq(items.bagId, bagId))
+      .returning();
+    
+    return result.length;
+  }
+  
+  async bulkUpdateItemsByTraveler(travelerId: number, data: Partial<InsertItem>): Promise<number> {
+    // Convert dueDate string to Date if provided
+    let updateData: any = { ...data };
+    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
+      updateData.dueDate = new Date(data.dueDate);
+    }
+    
+    const result = await db.update(items)
+      .set(updateData)
+      .where(eq(items.travelerId, travelerId))
+      .returning();
+    
+    return result.length;
+  }
 
   // Template methods
   async getTemplates(): Promise<Template[]> {

@@ -50,6 +50,9 @@ export interface IStorage {
   updateItem(id: number, data: Partial<InsertItem>): Promise<Item | undefined>;
   deleteItem(id: number): Promise<void>;
   bulkUpdateItems(ids: number[], data: Partial<InsertItem>): Promise<number>;
+  bulkUpdateItemsByCategory(categoryId: number, data: Partial<InsertItem>): Promise<number>;
+  bulkUpdateItemsByBag(bagId: number, data: Partial<InsertItem>): Promise<number>;
+  bulkUpdateItemsByTraveler(travelerId: number, data: Partial<InsertItem>): Promise<number>;
 
   // Template methods
   getTemplates(): Promise<Template[]>;
@@ -419,6 +422,30 @@ export class MemStorage implements IStorage {
     }
     
     return updatedCount;
+  }
+  
+  async bulkUpdateItemsByCategory(categoryId: number, data: Partial<InsertItem>): Promise<number> {
+    const itemIds = Array.from(this.items.values())
+      .filter(item => item.categoryId === categoryId)
+      .map(item => item.id);
+      
+    return this.bulkUpdateItems(itemIds, data);
+  }
+  
+  async bulkUpdateItemsByBag(bagId: number, data: Partial<InsertItem>): Promise<number> {
+    const itemIds = Array.from(this.items.values())
+      .filter(item => item.bagId === bagId)
+      .map(item => item.id);
+      
+    return this.bulkUpdateItems(itemIds, data);
+  }
+  
+  async bulkUpdateItemsByTraveler(travelerId: number, data: Partial<InsertItem>): Promise<number> {
+    const itemIds = Array.from(this.items.values())
+      .filter(item => item.travelerId === travelerId)
+      .map(item => item.id);
+      
+    return this.bulkUpdateItems(itemIds, data);
   }
 
   // Template methods
