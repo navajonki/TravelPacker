@@ -45,20 +45,18 @@ export default function Sidebar({ onCreateNewList }: SidebarProps) {
           ) : (
             packingLists?.map((list: any) => (
               <li key={list.id}>
-                <Link href={`/list/${list.id}`}>
-                  <a className={`flex items-center px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 rounded-lg mx-2 my-1 group ${location === `/list/${list.id}` ? 'bg-gray-100' : ''}`}>
-                    <Luggage className="mr-3 h-5 w-5 text-primary" />
-                    <span>{list.name}</span>
-                    <div 
-                      className={`ml-auto px-1.5 py-0.5 text-xs rounded-full text-white ${
-                        list.progress >= 75 ? 'bg-green-500' : 
-                        list.progress >= 25 ? 'bg-amber-500' : 
-                        'bg-gray-300 text-gray-700'
-                      }`}
-                    >
-                      {list.progress}%
-                    </div>
-                  </a>
+                <Link href={`/list/${list.id}`} className={`flex items-center px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 rounded-lg mx-2 my-1 group ${location === `/list/${list.id}` ? 'bg-gray-100' : ''}`}>
+                  <Luggage className="mr-3 h-5 w-5 text-primary" />
+                  <span>{list.name}</span>
+                  <div 
+                    className={`ml-auto px-1.5 py-0.5 text-xs rounded-full text-white ${
+                      list.progress >= 75 ? 'bg-green-500' : 
+                      list.progress >= 25 ? 'bg-amber-500' : 
+                      'bg-gray-300 text-gray-700'
+                    }`}
+                  >
+                    {list.progress}%
+                  </div>
                 </Link>
               </li>
             ))
