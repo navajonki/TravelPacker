@@ -256,6 +256,26 @@ export default function PackingList() {
     await addTravelerMutation.mutate(name);
   };
   
+  // Function to export packing list as CSV
+  const handleExportList = () => {
+    // Display loading toast
+    toast({
+      title: "Exporting Data",
+      description: "Preparing your CSV download...",
+    });
+    
+    // Create the export URL and trigger the download
+    window.location.href = `/api/packing-lists/${packingListId}/export`;
+    
+    // Show success toast after a brief delay
+    setTimeout(() => {
+      toast({
+        title: "Export Complete",
+        description: "Your packing list has been exported as CSV",
+      });
+    }, 1000);
+  };
+  
   const handleCreateNewList = async (data: { name: string, theme: string, dateRange?: string }) => {
     await createPackingListMutation.mutate({
       ...data,
@@ -337,6 +357,7 @@ export default function PackingList() {
           ) : packingList ? (
             <PackingListHeader 
               packingList={{
+                id: packingList.id,
                 name: packingList.name,
                 dateRange: packingList.dateRange,
                 itemCount: packingList.itemCount,
@@ -344,6 +365,7 @@ export default function PackingList() {
               }}
               viewMode={viewMode}
               onChangeViewMode={setViewMode}
+              onExport={handleExportList}
             />
           ) : null}
           

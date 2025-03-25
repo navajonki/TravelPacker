@@ -25,7 +25,8 @@ interface PackingListHeaderProps {
 export default function PackingListHeader({ 
   packingList, 
   viewMode,
-  onChangeViewMode 
+  onChangeViewMode,
+  onExport
 }: PackingListHeaderProps) {
   return (
     <div className="bg-white p-4 border-b border-gray-200">
@@ -47,7 +48,12 @@ export default function PackingListHeader({
               <span>Share</span>
             </Button>
             
-            <Button variant="outline" size="sm" className="flex items-center">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center"
+              onClick={onExport}
+            >
               <Download className="h-4 w-4 mr-1" />
               <span>Export</span>
             </Button>
@@ -64,7 +70,7 @@ export default function PackingListHeader({
                 <Share2 className="h-4 w-4 mr-2" />
                 <span>Share</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="md:hidden">
+              <DropdownMenuItem className="md:hidden" onSelect={onExport}>
                 <Download className="h-4 w-4 mr-2" />
                 <span>Export</span>
               </DropdownMenuItem>
