@@ -1,5 +1,4 @@
-import { Plus } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Plus } from 'lucide-react';
 
 interface AddCategoryCardProps {
   onClick: () => void;
@@ -7,14 +6,17 @@ interface AddCategoryCardProps {
 
 export default function AddCategoryCard({ onClick }: AddCategoryCardProps) {
   return (
-    <Card 
-      className="bg-white rounded-lg border border-dashed border-gray-300 flex items-center justify-center h-48 cursor-pointer hover:border-primary transition-colors"
+    <div 
       onClick={onClick}
+      className="bg-white rounded-lg shadow border-2 border-dashed border-gray-200 flex flex-col items-center justify-center p-6 cursor-pointer hover:border-primary transition-colors"
     >
-      <div className="flex flex-col items-center justify-center p-6 text-gray-500 hover:text-primary transition-colors">
-        <Plus className="h-10 w-10" />
-        <span className="mt-2 text-sm font-medium">Add New Category</span>
+      <div className="flex flex-col items-center text-gray-500 hover:text-primary">
+        <Plus className="h-12 w-12 mb-3" />
+        <h3 className="text-lg font-medium">Add New Category</h3>
+        <p className="text-sm text-center mt-2">
+          Create a new category to organize your items
+        </p>
       </div>
-    </Card>
+    </div>
   );
 }

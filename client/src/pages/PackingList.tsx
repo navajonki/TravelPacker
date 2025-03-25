@@ -31,21 +31,66 @@ export default function PackingList() {
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [addBagOpen, setAddBagOpen] = useState(false);
+  const [addTravelerOpen, setAddTravelerOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
   
-  const { data: packingList, isLoading: isLoadingList } = useQuery({
+  // Define interfaces for type safety
+  interface PackingListData {
+    id: number;
+    name: string;
+    theme: string;
+    dateRange?: string;
+    userId: number;
+    createdAt: string;
+    itemCount: number;
+    progress: number;
+  }
+  
+  interface CategoryData {
+    id: number;
+    name: string;
+    packingListId: number;
+    position: number;
+    createdAt: string;
+    items: any[];
+    totalItems: number;
+    packedItems: number;
+  }
+  
+  interface BagData {
+    id: number;
+    name: string;
+    packingListId: number;
+    createdAt: string;
+    items: any[];
+    totalItems: number;
+    packedItems: number;
+  }
+  
+  interface TravelerData {
+    id: number;
+    name: string;
+    packingListId: number;
+    createdAt: string;
+    items: any[];
+    totalItems: number;
+    packedItems: number;
+  }
+  
+  const { data: packingList, isLoading: isLoadingList } = useQuery<PackingListData>({
     queryKey: [`/api/packing-lists/${packingListId}`],
   });
   
-  const { data: categories, isLoading: isLoadingCategories } = useQuery({
+  const { data: categories, isLoading: isLoadingCategories } = useQuery<CategoryData[]>({
     queryKey: [`/api/packing-lists/${packingListId}/categories`],
   });
   
-  const { data: bags, isLoading: isLoadingBags } = useQuery({
+  const { data: bags, isLoading: isLoadingBags } = useQuery<BagData[]>({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
   });
   
-  const { data: travelers, isLoading: isLoadingTravelers } = useQuery({
+  const { data: travelers, isLoading: isLoadingTravelers } = useQuery<TravelerData[]>({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
   });
   
@@ -124,8 +169,62 @@ export default function PackingList() {
     await addItemMutation.mutate(item);
   };
   
+  const addBagMutation = useMutation({
+    mutationFn: async (name: string) => {
+      return await apiRequest('POST', '/api/bags', {
+        name,
+        packingListId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      toast({
+        title: "Success",
+        description: "Bag added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add bag",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const addTravelerMutation = useMutation({
+    mutationFn: async (name: string) => {
+      return await apiRequest('POST', '/api/travelers', {
+        name,
+        packingListId
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      toast({
+        title: "Success",
+        description: "Traveler added successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to add traveler",
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleAddCategory = async (name: string) => {
     await addCategoryMutation.mutate(name);
+  };
+
+  const handleAddBag = async (name: string) => {
+    await addBagMutation.mutate(name);
+  };
+
+  const handleAddTraveler = async (name: string) => {
+    await addTravelerMutation.mutate(name);
   };
   
   const handleCreateNewList = async (data: { name: string, theme: string, dateRange?: string }) => {
@@ -152,6 +251,40 @@ export default function PackingList() {
     }
   };
 
+  const handleDeleteBag = async (bagId: number) => {
+    try {
+      await apiRequest('DELETE', `/api/bags/${bagId}`);
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      toast({
+        title: "Success",
+        description: "Bag deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete bag",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteTraveler = async (travelerId: number) => {
+    try {
+      await apiRequest('DELETE', `/api/travelers/${travelerId}`);
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      toast({
+        title: "Success",
+        description: "Traveler deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete traveler",
+        variant: "destructive",
+      });
+    }
+  };
+
   const isLoading = isLoadingList || isLoadingCategories || isLoadingBags || isLoadingTravelers;
 
   return (
@@ -172,13 +305,18 @@ export default function PackingList() {
                 <Skeleton className="h-4 w-24" />
               </div>
             </div>
-          ) : (
+          ) : packingList ? (
             <PackingListHeader 
-              packingList={packingList}
+              packingList={{
+                name: packingList.name,
+                dateRange: packingList.dateRange,
+                itemCount: packingList.itemCount,
+                progress: packingList.progress
+              }}
               viewMode={viewMode}
               onChangeViewMode={setViewMode}
             />
-          )}
+          ) : null}
           
           <QuickAddForm 
             packingListId={packingListId}
@@ -187,7 +325,7 @@ export default function PackingList() {
           />
           
           <div className="flex-1 overflow-y-auto bg-background p-4">
-            {isLoadingCategories ? (
+            {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="bg-white rounded-lg shadow">
@@ -207,19 +345,56 @@ export default function PackingList() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categories?.map((category: any) => (
-                  <CategoryCard 
-                    key={category.id}
-                    category={category}
-                    onEditCategory={() => {}}
-                    onDeleteCategory={handleDeleteCategory}
-                    onAddItem={() => {
-                      setAdvancedAddOpen(true);
-                    }}
-                  />
-                ))}
-                
-                <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
+                {viewMode === 'category' && (
+                  <>
+                    {categories?.map((category: any) => (
+                      <CategoryCard 
+                        key={category.id}
+                        category={category}
+                        onEditCategory={() => {}}
+                        onDeleteCategory={handleDeleteCategory}
+                        onAddItem={() => {
+                          setAdvancedAddOpen(true);
+                        }}
+                      />
+                    ))}
+                    <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
+                  </>
+                )}
+
+                {viewMode === 'bag' && (
+                  <>
+                    {bags?.map((bag: any) => (
+                      <BagCard 
+                        key={bag.id}
+                        bag={bag}
+                        onEditBag={() => {}}
+                        onDeleteBag={handleDeleteBag}
+                        onAddItem={() => {
+                          setAdvancedAddOpen(true);
+                        }}
+                      />
+                    ))}
+                    <AddBagCard onClick={() => setAddBagOpen(true)} />
+                  </>
+                )}
+
+                {viewMode === 'traveler' && (
+                  <>
+                    {travelers?.map((traveler: any) => (
+                      <TravelerCard 
+                        key={traveler.id}
+                        traveler={traveler}
+                        onEditTraveler={() => {}}
+                        onDeleteTraveler={handleDeleteTraveler}
+                        onAddItem={() => {
+                          setAdvancedAddOpen(true);
+                        }}
+                      />
+                    ))}
+                    <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -245,6 +420,18 @@ export default function PackingList() {
         open={createListOpen}
         onClose={() => setCreateListOpen(false)}
         onCreateList={handleCreateNewList}
+      />
+
+      <AddBagModal
+        open={addBagOpen}
+        onClose={() => setAddBagOpen(false)}
+        onAddBag={handleAddBag}
+      />
+
+      <AddTravelerModal
+        open={addTravelerOpen}
+        onClose={() => setAddTravelerOpen(false)}
+        onAddTraveler={handleAddTraveler}
       />
     </div>
   );
