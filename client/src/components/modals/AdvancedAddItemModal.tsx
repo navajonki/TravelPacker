@@ -37,7 +37,7 @@ const formSchema = z.object({
   categoryId: z.string().min(1, "Category is required"),
   bagId: z.string().optional(),
   travelerId: z.string().optional(),
-  quantity: z.string().transform(val => parseInt(val) || 1),
+  quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
   isEssential: z.boolean().default(false),
   setReminder: z.boolean().default(false),
   dueDate: z.string().optional()
@@ -54,17 +54,17 @@ export default function AdvancedAddItemModal({
 }: AdvancedAddItemModalProps) {
   const [showReminderOptions, setShowReminderOptions] = useState(false);
   
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/categories`],
     enabled: open
   });
   
-  const { data: bags = [] } = useQuery({
+  const { data: bags = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
     enabled: open
   });
   
-  const { data: travelers = [] } = useQuery({
+  const { data: travelers = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
     enabled: open
   });
@@ -74,9 +74,9 @@ export default function AdvancedAddItemModal({
     defaultValues: {
       name: "",
       categoryId: "",
-      bagId: "",
-      travelerId: "",
-      quantity: "1",
+      bagId: "none",
+      travelerId: "none",
+      quantity: 1,
       isEssential: false,
       setReminder: false,
       dueDate: ""
@@ -87,8 +87,8 @@ export default function AdvancedAddItemModal({
     await onAddItem({
       name: data.name,
       categoryId: parseInt(data.categoryId),
-      bagId: data.bagId ? parseInt(data.bagId) : undefined,
-      travelerId: data.travelerId ? parseInt(data.travelerId) : undefined,
+      bagId: data.bagId && data.bagId !== "none" ? parseInt(data.bagId) : undefined,
+      travelerId: data.travelerId && data.travelerId !== "none" ? parseInt(data.travelerId) : undefined,
       quantity: data.quantity,
       isEssential: data.isEssential,
       dueDate: data.setReminder && data.dueDate ? data.dueDate : undefined
@@ -144,7 +144,7 @@ export default function AdvancedAddItemModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories?.map((category: any) => (
+                      {Array.isArray(categories) && categories.map((category: any) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name}
                         </SelectItem>
@@ -168,8 +168,8 @@ export default function AdvancedAddItemModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
-                      {bags?.map((bag: any) => (
+                      <SelectItem value="none">None</SelectItem>
+                      {Array.isArray(bags) && bags.map((bag: any) => (
                         <SelectItem key={bag.id} value={bag.id.toString()}>
                           {bag.name}
                         </SelectItem>
@@ -193,7 +193,7 @@ export default function AdvancedAddItemModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {travelers?.map((traveler: any) => (
                         <SelectItem key={traveler.id} value={traveler.id.toString()}>
                           {traveler.name}
