@@ -9,8 +9,14 @@ import PackingListHeader from "@/components/PackingListHeader";
 import QuickAddForm from "@/components/QuickAddForm";
 import CategoryCard from "@/components/CategoryCard";
 import AddCategoryCard from "@/components/AddCategoryCard";
+import BagCard from "@/components/BagCard";
+import AddBagCard from "@/components/AddBagCard";
+import TravelerCard from "@/components/TravelerCard";
+import AddTravelerCard from "@/components/AddTravelerCard";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
 import AddCategoryModal from "@/components/modals/AddCategoryModal";
+import AddBagModal from "@/components/modals/AddBagModal";
+import AddTravelerModal from "@/components/modals/AddTravelerModal";
 import CreateListModal from "@/components/modals/CreateListModal";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +39,14 @@ export default function PackingList() {
   
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/categories`],
+  });
+  
+  const { data: bags, isLoading: isLoadingBags } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/bags`],
+  });
+  
+  const { data: travelers, isLoading: isLoadingTravelers } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/travelers`],
   });
   
   const addItemMutation = useMutation({
@@ -138,7 +152,7 @@ export default function PackingList() {
     }
   };
 
-  const isLoading = isLoadingList || isLoadingCategories;
+  const isLoading = isLoadingList || isLoadingCategories || isLoadingBags || isLoadingTravelers;
 
   return (
     <div className="flex flex-col h-screen">
