@@ -1,8 +1,19 @@
 import { useState } from 'react';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import ItemRow from './ItemRow';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +47,9 @@ export default function TravelerCard({
 }: TravelerCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const percentComplete = traveler.totalItems > 0 
     ? Math.round((traveler.packedItems / traveler.totalItems) * 100) 
@@ -48,6 +62,71 @@ export default function TravelerCard({
   const handleConfirmDelete = () => {
     onDeleteTraveler(traveler.id);
     setShowDeleteDialog(false);
+  };
+  
+  const bulkActionMutation = useMutation({
+    mutationFn: async (action: string) => {
+      let data = {};
+      
+      if (action === "pack") {
+        data = { packed: true };
+      } else if (action === "unpack") {
+        data = { packed: false };
+      } else if (action === "packRemaining") {
+        // This is handled differently - we only want to affect unpacked items
+        const remainingItems = traveler.items
+          .filter(item => !item.packed)
+          .map(item => item.id);
+          
+        if (remainingItems.length === 0) {
+          throw new Error("No remaining items to pack");
+        }
+        
+        return await apiRequest('PATCH', '/api/items/bulk-update', { 
+          ids: remainingItems, 
+          data: { packed: true } 
+        });
+      }
+      
+      return await apiRequest('PATCH', `/api/travelers/${traveler.id}/bulk-update-items`, data);
+    },
+    onSuccess: (_, action) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}/travelers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}`] });
+      
+      let successMessage = "";
+      if (action === "pack") {
+        successMessage = `All items for ${traveler.name} marked as packed`;
+      } else if (action === "unpack") {
+        successMessage = `All items for ${traveler.name} marked as unpacked`;
+      } else if (action === "packRemaining") {
+        successMessage = `Remaining items for ${traveler.name} marked as packed`;
+      }
+      
+      toast({
+        title: "Success",
+        description: successMessage,
+      });
+    },
+    onError: (error: any, action) => {
+      let errorMessage = "Failed to update items";
+      
+      if (action === "packRemaining" && error.message === "No remaining items to pack") {
+        errorMessage = "No unpacked items remaining";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleBulkAction = (action: "pack" | "unpack" | "packRemaining") => {
+    bulkActionMutation.mutate(action);
   };
 
   return (

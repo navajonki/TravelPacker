@@ -1,8 +1,19 @@
 import { useState } from 'react';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import ItemRow from './ItemRow';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +47,9 @@ export default function BagCard({
 }: BagCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const percentComplete = bag.totalItems > 0 
     ? Math.round((bag.packedItems / bag.totalItems) * 100) 
@@ -48,6 +62,71 @@ export default function BagCard({
   const handleConfirmDelete = () => {
     onDeleteBag(bag.id);
     setShowDeleteDialog(false);
+  };
+  
+  const bulkActionMutation = useMutation({
+    mutationFn: async (action: string) => {
+      let data = {};
+      
+      if (action === "pack") {
+        data = { packed: true };
+      } else if (action === "unpack") {
+        data = { packed: false };
+      } else if (action === "packRemaining") {
+        // This is handled differently - we only want to affect unpacked items
+        const remainingItems = bag.items
+          .filter(item => !item.packed)
+          .map(item => item.id);
+          
+        if (remainingItems.length === 0) {
+          throw new Error("No remaining items to pack");
+        }
+        
+        return await apiRequest('PATCH', '/api/items/bulk-update', { 
+          ids: remainingItems, 
+          data: { packed: true } 
+        });
+      }
+      
+      return await apiRequest('PATCH', `/api/bags/${bag.id}/bulk-update-items`, data);
+    },
+    onSuccess: (_, action) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}/travelers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}`] });
+      
+      let successMessage = "";
+      if (action === "pack") {
+        successMessage = `All items in ${bag.name} marked as packed`;
+      } else if (action === "unpack") {
+        successMessage = `All items in ${bag.name} marked as unpacked`;
+      } else if (action === "packRemaining") {
+        successMessage = `Remaining items in ${bag.name} marked as packed`;
+      }
+      
+      toast({
+        title: "Success",
+        description: successMessage,
+      });
+    },
+    onError: (error: any, action) => {
+      let errorMessage = "Failed to update items";
+      
+      if (action === "packRemaining" && error.message === "No remaining items to pack") {
+        errorMessage = "No unpacked items remaining";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleBulkAction = (action: "pack" | "unpack" | "packRemaining") => {
+    bulkActionMutation.mutate(action);
   };
 
   return (
@@ -70,14 +149,36 @@ export default function BagCard({
               >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-gray-500 hover:text-red-500"
-                onClick={handleDeleteClick}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleBulkAction("pack")}>
+                    <CheckSquare className="h-4 w-4 mr-2" />
+                    <span>Pack All Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction("unpack")}>
+                    <Square className="h-4 w-4 mr-2" />
+                    <span>Unpack All Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleBulkAction("packRemaining")}>
+                    <ListChecks className="h-4 w-4 mr-2" />
+                    <span>Pack Remaining Items</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-red-600 focus:text-red-600"
+                    onClick={handleDeleteClick}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    <span>Delete Bag</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           

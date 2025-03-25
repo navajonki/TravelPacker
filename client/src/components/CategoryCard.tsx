@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GripVertical, Plus, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { GripVertical, Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -10,8 +10,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,6 +51,7 @@ export default function CategoryCard({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   const addItemMutation = useMutation({
     mutationFn: async () => {
@@ -82,6 +86,71 @@ export default function CategoryCard({
   const handleConfirmDelete = () => {
     onDeleteCategory(category.id);
     setShowDeleteDialog(false);
+  };
+  
+  const bulkActionMutation = useMutation({
+    mutationFn: async (action: string) => {
+      let data = {};
+      
+      if (action === "pack") {
+        data = { packed: true };
+      } else if (action === "unpack") {
+        data = { packed: false };
+      } else if (action === "packRemaining") {
+        // This is handled differently - we only want to affect unpacked items
+        const remainingItems = category.items
+          .filter(item => !item.packed)
+          .map(item => item.id);
+          
+        if (remainingItems.length === 0) {
+          throw new Error("No remaining items to pack");
+        }
+        
+        return await apiRequest('PATCH', '/api/items/bulk-update', { 
+          ids: remainingItems, 
+          data: { packed: true } 
+        });
+      }
+      
+      return await apiRequest('PATCH', `/api/categories/${category.id}/bulk-update-items`, data);
+    },
+    onSuccess: (_, action) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${category.packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${category.packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${category.packingListId}/travelers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${category.packingListId}`] });
+      
+      let successMessage = "";
+      if (action === "pack") {
+        successMessage = `All items in ${category.name} marked as packed`;
+      } else if (action === "unpack") {
+        successMessage = `All items in ${category.name} marked as unpacked`;
+      } else if (action === "packRemaining") {
+        successMessage = `Remaining items in ${category.name} marked as packed`;
+      }
+      
+      toast({
+        title: "Success",
+        description: successMessage,
+      });
+    },
+    onError: (error: any, action) => {
+      let errorMessage = "Failed to update items";
+      
+      if (action === "packRemaining" && error.message === "No remaining items to pack") {
+        errorMessage = "No unpacked items remaining";
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleBulkAction = (action: "pack" | "unpack" | "packRemaining") => {
+    bulkActionMutation.mutate(action);
   };
 
   return (
