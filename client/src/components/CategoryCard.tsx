@@ -12,6 +12,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CategoryCardProps {
   category: {
@@ -35,6 +45,7 @@ export default function CategoryCard({
 }: CategoryCardProps) {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const queryClient = useQueryClient();
   
