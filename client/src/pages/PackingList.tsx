@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useParams } from "wouter";
@@ -434,13 +434,7 @@ export default function PackingList() {
                                   packingListId={packingListId}
                                   isMultiEditMode={isMultiEditMode}
                                   isSelected={selectedItemIds.includes(item.id)}
-                                  onSelectChange={(itemId, isSelected) => {
-                                    if (isSelected) {
-                                      setSelectedItemIds([...selectedItemIds, itemId]);
-                                    } else {
-                                      setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
-                                    }
-                                  }}
+                                  onSelectChange={handleItemSelection}
                                 />
                               ))}
                             </div>
