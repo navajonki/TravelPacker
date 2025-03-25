@@ -39,14 +39,20 @@ export default function BulkEditItemsModal({
   const queryClient = useQueryClient();
 
   // Get categories, bags, and travelers for the packing list
-  const { data: packingListData } = useQuery<any>({
-    queryKey: [`/api/packing-lists/${packingListId}`],
+  const { data: categories = [] } = useQuery<any>({
+    queryKey: [`/api/packing-lists/${packingListId}/categories`],
     enabled: open,
   });
-
-  const categories = packingListData?.categories || [];
-  const bags = packingListData?.bags || [];
-  const travelers = packingListData?.travelers || [];
+  
+  const { data: bags = [] } = useQuery<any>({
+    queryKey: [`/api/packing-lists/${packingListId}/bags`],
+    enabled: open,
+  });
+  
+  const { data: travelers = [] } = useQuery<any>({
+    queryKey: [`/api/packing-lists/${packingListId}/travelers`],
+    enabled: open,
+  });
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -78,7 +84,12 @@ export default function BulkEditItemsModal({
       return response;
     },
     onSuccess: () => {
+      // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      
       toast({
         title: "Success",
         description: `Updated ${selectedItemIds.length} item${selectedItemIds.length === 1 ? '' : 's'}`
