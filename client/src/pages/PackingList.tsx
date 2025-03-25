@@ -43,6 +43,15 @@ export default function PackingList() {
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
   
+  // Common handler for item selection
+  const handleItemSelection = useCallback((itemId: number, isSelected: boolean) => {
+    if (isSelected) {
+      setSelectedItemIds((prev) => [...prev, itemId]);
+    } else {
+      setSelectedItemIds((prev) => prev.filter(id => id !== itemId));
+    }
+  }, []);
+  
   // Define interfaces for type safety
   interface PackingListData {
     id: number;
