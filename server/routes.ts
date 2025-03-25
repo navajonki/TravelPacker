@@ -504,112 +504,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(204).end();
   });
 
-  app.patch("/api/items/bulk-update", async (req, res) => {
+  // Removing the problematic /api/items/bulk-update endpoint and creating a new one
+  
+  // New endpoint for multi-item updates
+  app.post("/api/items/multi-edit", async (req, res) => {
     try {
-      console.log("Received bulk update request with body:", JSON.stringify(req.body));
+      console.log("Received multi-edit request with body:", JSON.stringify(req.body));
       
-      // Directly provide middleware to properly handle JSON
-      // Print debug data about the request
-      console.log("Request headers:", req.headers);
-      console.log("Request method:", req.method);
-      console.log("Request content-type:", req.headers['content-type']);
-      console.log("Request body raw:", req.body);
+      const { itemIds, updates } = req.body;
       
-      if (!req.body) {
-        return res.status(400).json({ 
-          message: "Invalid request: No request body", 
-          debug: { receivedBody: req.body }
+      // Basic validation
+      if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
+        return res.status(400).json({
+          message: "Invalid or empty itemIds array",
+          success: false
         });
       }
       
-      const { ids, data } = req.body;
-      
-      // Validate IDs array
-      if (!ids) {
-        return res.status(400).json({ 
-          message: "Invalid id parameter", 
-          debug: { 
-            receivedBody: req.body, 
-            ids: ids,
-            type: typeof ids
-          }
+      if (!updates || typeof updates !== 'object') {
+        return res.status(400).json({
+          message: "Invalid updates object",
+          success: false
         });
       }
       
-      if (!Array.isArray(ids)) {
-        return res.status(400).json({ 
-          message: "Invalid ids: not an array", 
-          debug: { 
-            receivedBody: req.body, 
-            ids: ids,
-            type: typeof ids
-          }
-        });
-      }
+      console.log("Processing multi-edit for items:", itemIds);
+      console.log("With updates:", updates);
       
-      if (ids.length === 0) {
-        return res.status(400).json({ 
-          message: "Empty ids array", 
-          debug: { 
-            receivedBody: req.body
-          }
-        });
-      }
+      // Track success/failure for each item
+      const results = [];
+      let successCount = 0;
       
-      console.log("Original IDs:", ids);
-      
-      // MANUAL UPDATE APPROACH - Bypass all the complex validation and filtering
-      // Update each item one by one to avoid any potential issues with the bulk update
-      try {
-        // Directly parse the data from the request
-        const updateData = data;
-        console.log("Update data:", updateData);
-        
-        let totalUpdated = 0;
-        
-        // Process each ID individually
-        for (const id of ids) {
-          try {
-            console.log(`Processing individual update for item ${id}`);
-            
-            // Get the item first to verify it exists
-            const item = await storage.getItem(id);
-            
-            if (item) {
-              // Update the item individually
-              const updated = await storage.updateItem(id, updateData);
-              if (updated) {
-                totalUpdated++;
-                console.log(`Successfully updated item ${id}`);
-              } else {
-                console.log(`Failed to update item ${id} - item not found or no changes`);
-              }
-            } else {
-              console.log(`Item ${id} not found`);
-            }
-          } catch (itemError) {
-            console.error(`Error updating item ${id}:`, itemError);
+      // Update each item individually
+      for (const itemId of itemIds) {
+        try {
+          const numericId = Number(itemId);
+          
+          if (isNaN(numericId)) {
+            results.push({ id: itemId, success: false, message: "Invalid ID format" });
+            continue;
           }
+          
+          // Check if item exists
+          const item = await storage.getItem(numericId);
+          
+          if (!item) {
+            results.push({ id: numericId, success: false, message: "Item not found" });
+            continue;
+          }
+          
+          // Attempt to update the item
+          const updatedItem = await storage.updateItem(numericId, updates);
+          
+          if (updatedItem) {
+            results.push({ id: numericId, success: true, item: updatedItem });
+            successCount++;
+          } else {
+            results.push({ id: numericId, success: false, message: "Update failed" });
+          }
+        } catch (error) {
+          console.error(`Error updating item ${itemId}:`, error);
+          results.push({ 
+            id: itemId, 
+            success: false, 
+            message: error instanceof Error ? error.message : "Unknown error" 
+          });
         }
-        
-        console.log(`Total items updated: ${totalUpdated}`);
-        return res.json({ updatedCount: totalUpdated });
-        
-      } catch (error) {
-        console.error("Error in manual update process:", error);
-        return res.status(500).json({ 
-          message: "Failed to process updates",
-          error: error instanceof Error ? error.message : String(error),
-          debug: { ids, data }
-        });
       }
+      
+      // Return detailed results
+      return res.json({
+        success: successCount > 0,
+        totalItems: itemIds.length,
+        updatedCount: successCount,
+        results
+      });
       
     } catch (error) {
-      console.error("Unexpected error in bulk update:", error);
-      return res.status(500).json({ 
-        message: "Internal server error",
-        error: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined
+      console.error("Unexpected error in multi-edit endpoint:", error);
+      return res.status(500).json({
+        message: "Server error processing multi-edit request",
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
       });
     }
   });

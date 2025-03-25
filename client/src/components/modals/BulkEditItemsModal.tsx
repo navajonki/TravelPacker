@@ -67,60 +67,51 @@ export default function BulkEditItemsModal({
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (data: FormValues) => {
-      console.log("Bulk edit - Selected item IDs:", selectedItemIds);
+      console.log("Multi edit - Selected item IDs:", selectedItemIds);
       
       // Filter out undefined values from form data
       const filteredData = Object.fromEntries(
         Object.entries(data).filter(([_, v]) => v !== undefined)
       );
-      console.log("Bulk edit - Form data after filtering:", filteredData);
+      console.log("Multi edit - Form data after filtering:", filteredData);
 
-      // Ensure all IDs are valid numbers
-      const validItemIds = selectedItemIds
-        .filter(id => id !== null && id !== undefined)
-        .map(id => {
-          console.log(`Processing ID: ${id}, type: ${typeof id}`);
-          return typeof id === 'string' ? parseInt(id, 10) : id;
-        })
-        .filter(id => {
-          const isValid = typeof id === 'number' && !isNaN(id);
-          console.log(`ID after conversion: ${id}, isValid: ${isValid}`);
-          return isValid;
-        });
-      
-      console.log("Bulk edit - Valid item IDs:", validItemIds);
-      
-      if (validItemIds.length === 0) {
-        throw new Error("No valid item IDs selected");
+      // Validate criteria
+      if (selectedItemIds.length === 0) {
+        throw new Error("No items selected");
       }
       
       if (Object.keys(filteredData).length === 0) {
-        throw new Error("No fields selected for update");
+        throw new Error("No update values provided");
       }
       
-      // Bulk update via API
+      // Use the new multi-edit endpoint
       try {
-        const payload = {
-          ids: validItemIds,
-          data: filteredData
-        };
-        console.log("Bulk edit - API request payload:", payload);
+        console.log("Multi edit - Making request");
         
         const response = await apiRequest(
-          "PATCH",
-          `/api/items/bulk-update`, 
-          payload
+          "POST",
+          `/api/items/multi-edit`, 
+          {
+            itemIds: selectedItemIds,
+            updates: filteredData
+          }
         );
         
-        console.log("Bulk edit - API response:", response);
+        console.log("Multi edit - API response:", response);
+        
+        // Verify the response has the expected format
+        if (!response.success) {
+          throw new Error(response.message || "Failed to update items");
+        }
+        
         return response;
       } catch (error) {
-        console.error("Bulk edit - API error:", error);
+        console.error("Multi edit - API error:", error);
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log("Bulk edit - Success response:", data);
+      console.log("Multi edit - Success response:", data);
       
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
@@ -128,20 +119,24 @@ export default function BulkEditItemsModal({
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       
+      // Show detailed success message
+      const updatedCount = data.updatedCount || 0;
+      const totalItems = data.totalItems || selectedItemIds.length;
+      
       toast({
         title: "Success",
-        description: `Updated ${selectedItemIds.length} item${selectedItemIds.length === 1 ? '' : 's'}`
+        description: `Updated ${updatedCount} of ${totalItems} selected item${totalItems === 1 ? '' : 's'}`
       });
       onClose();
     },
     onError: (error: any) => {
-      console.error("Bulk edit - Error details:", error);
+      console.error("Multi edit - Error details:", error);
       
       let errorMessage = "Failed to update items";
       
-      if (error?.response?.data?.debug) {
-        errorMessage += `: ${error.response.data.message}`;
-        console.error("Server debug info:", error.response.data.debug);
+      if (error?.response?.data) {
+        errorMessage += `: ${error.response.data.message || 'Unknown error'}`;
+        console.error("Server response data:", error.response.data);
       } else if (error?.message) {
         errorMessage += `: ${error.message}`;
       }
