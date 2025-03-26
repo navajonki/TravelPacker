@@ -17,8 +17,8 @@ interface PackingListHeaderProps {
     itemCount: number;
     progress: number;
   };
-  viewMode: 'category' | 'bag' | 'traveler';
-  onChangeViewMode: (mode: 'category' | 'bag' | 'traveler') => void;
+  viewMode: 'category' | 'bag' | 'traveler' | 'filters';
+  onChangeViewMode: (mode: 'category' | 'bag' | 'traveler' | 'filters') => void;
   onExport?: () => void;
 }
 
@@ -103,6 +103,9 @@ export default function PackingListHeader({
           </TabsTrigger>
           <TabsTrigger value="traveler" className="py-2 data-[state=active]:text-primary data-[state=active]:border-primary">
             By Traveler
+          </TabsTrigger>
+          <TabsTrigger value="filters" className="py-2 data-[state=active]:text-primary data-[state=active]:border-primary">
+            Filters
           </TabsTrigger>
         </TabsList>
       </Tabs>

@@ -31,7 +31,7 @@ export default function PackingList() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler'>('category');
+  const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBagOpen, setAddBagOpen] = useState(false);
@@ -42,6 +42,13 @@ export default function PackingList() {
   const [isMultiEditMode, setIsMultiEditMode] = useState(false);
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
+  
+  // Filter states
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [selectedBags, setSelectedBags] = useState<number[]>([]);
+  const [selectedTravelers, setSelectedTravelers] = useState<number[]>([]);
+  const [showPacked, setShowPacked] = useState<boolean>(true);
+  const [showUnpacked, setShowUnpacked] = useState<boolean>(true);
   
   // Common handler for item selection
   const handleItemSelection = useCallback((itemId: number, isSelected: boolean) => {
