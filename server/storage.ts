@@ -516,34 +516,50 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePackingList(id: number): Promise<void> {
-    // First get all categories, bags, and travelers for this packing list
-    const categories = await this.getCategories(id);
-    const bags = await this.getBags(id);
-    const travelers = await this.getTravelers(id);
-    
-    // 1. Delete all items in this packing list first
-    const allItems = await this.getAllItemsByPackingList(id);
-    for (const item of allItems) {
-      await db.delete(items).where(eq(items.id, item.id));
+    try {
+      // First get all related items and delete them
+      const allItems = await this.getAllItemsByPackingList(id);
+      console.log(`Deleting ${allItems.length} items for packing list ${id}`);
+      if (allItems.length > 0) {
+        for (const item of allItems) {
+          await db.delete(items).where(eq(items.id, item.id));
+        }
+      }
+      
+      // Delete all categories
+      const categoryItems = await this.getCategories(id);
+      console.log(`Deleting ${categoryItems.length} categories for packing list ${id}`);
+      if (categoryItems.length > 0) {
+        for (const category of categoryItems) {
+          await db.delete(categories).where(eq(categories.id, category.id));
+        }
+      }
+      
+      // Delete all bags
+      const bagItems = await this.getBags(id);
+      console.log(`Deleting ${bagItems.length} bags for packing list ${id}`);
+      if (bagItems.length > 0) {
+        for (const bag of bagItems) {
+          await db.delete(bags).where(eq(bags.id, bag.id));
+        }
+      }
+      
+      // Delete all travelers
+      const travelerItems = await this.getTravelers(id);
+      console.log(`Deleting ${travelerItems.length} travelers for packing list ${id}`);
+      if (travelerItems.length > 0) {
+        for (const traveler of travelerItems) {
+          await db.delete(travelers).where(eq(travelers.id, traveler.id));
+        }
+      }
+      
+      // Finally delete the packing list itself
+      await db.delete(packingLists).where(eq(packingLists.id, id));
+      console.log(`Successfully deleted packing list ${id}`);
+    } catch (error) {
+      console.error("Error in deletePackingList:", error);
+      throw error;
     }
-    
-    // 2. Delete all categories
-    for (const category of categories) {
-      await db.delete(categories).where(eq(categories.id, category.id));
-    }
-    
-    // 3. Delete all bags
-    for (const bag of bags) {
-      await db.delete(bags).where(eq(bags.id, bag.id));
-    }
-    
-    // 4. Delete all travelers
-    for (const traveler of travelers) {
-      await db.delete(travelers).where(eq(travelers.id, traveler.id));
-    }
-    
-    // 5. Finally delete the packing list itself
-    await db.delete(packingLists).where(eq(packingLists.id, id));
   }
 
   // Bag methods
