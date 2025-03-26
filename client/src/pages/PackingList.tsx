@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useParams } from "wouter";
+import { useParams, Link } from "wouter";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
 import QuickAddForm from "@/components/QuickAddForm";
@@ -343,7 +343,6 @@ export default function PackingList() {
       <MobileNav onCreateNewList={() => setCreateListOpen(true)} />
       
       <div className="flex flex-1 flex-col">
-        <Sidebar onCreateNewList={() => setCreateListOpen(true)} />
         
         <div className="flex-1 flex flex-col">
           {isLoadingList ? (
