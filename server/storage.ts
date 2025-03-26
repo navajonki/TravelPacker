@@ -682,10 +682,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createItem(insertItem: InsertItem): Promise<Item> {
-    // Convert dueDate string to Date if provided
-    let itemData = { ...insertItem };
-    if (typeof insertItem.dueDate === 'string' && insertItem.dueDate.trim() !== '') {
-      itemData.dueDate = new Date(insertItem.dueDate);
+    // Create a copy of the data to avoid modifying the original
+    let itemData: any = { ...insertItem };
+    
+    // Handle dueDate conversion
+    if (insertItem.dueDate !== undefined) {
+      if (insertItem.dueDate === null || (typeof insertItem.dueDate === 'string' && insertItem.dueDate.trim() === '')) {
+        // If dueDate is null or empty string, set it to null
+        itemData.dueDate = null;
+      } else if (typeof insertItem.dueDate === 'string') {
+        // Only convert non-empty strings to Date objects
+        itemData.dueDate = new Date(insertItem.dueDate);
+      }
     }
     
     const [item] = await db
@@ -696,10 +704,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateItem(id: number, data: Partial<InsertItem>): Promise<Item | undefined> {
-    // Convert dueDate string to Date if provided
+    // Create a copy of the data to avoid modifying the original
     let updateData: any = { ...data };
-    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
-      updateData.dueDate = new Date(data.dueDate);
+    
+    // Handle dueDate conversion
+    if (data.dueDate !== undefined) {
+      if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
+        // If dueDate is null or empty string, set it to null
+        updateData.dueDate = null;
+      } else if (typeof data.dueDate === 'string') {
+        // Only convert non-empty strings to Date objects
+        updateData.dueDate = new Date(data.dueDate);
+      }
     }
     
     const [updatedItem] = await db
@@ -718,10 +734,18 @@ export class DatabaseStorage implements IStorage {
     console.log("bulkUpdateItems called with ids:", ids);
     console.log("and data:", data);
     
-    // Convert dueDate string to Date if provided
+    // Create a copy of the data to avoid modifying the original
     let updateData: any = { ...data };
-    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
-      updateData.dueDate = new Date(data.dueDate);
+    
+    // Handle dueDate conversion
+    if (data.dueDate !== undefined) {
+      if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
+        // If dueDate is null or empty string, set it to null
+        updateData.dueDate = null;
+      } else if (typeof data.dueDate === 'string') {
+        // Only convert non-empty strings to Date objects
+        updateData.dueDate = new Date(data.dueDate);
+      }
     }
     
     // Ensure ids are all valid numbers
@@ -760,10 +784,18 @@ export class DatabaseStorage implements IStorage {
       return 0;
     }
     
-    // Convert dueDate string to Date if provided
+    // Create a copy of the data to avoid modifying the original
     let updateData: any = { ...data };
-    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
-      updateData.dueDate = new Date(data.dueDate);
+    
+    // Handle dueDate conversion
+    if (data.dueDate !== undefined) {
+      if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
+        // If dueDate is null or empty string, set it to null
+        updateData.dueDate = null;
+      } else if (typeof data.dueDate === 'string') {
+        // Only convert non-empty strings to Date objects
+        updateData.dueDate = new Date(data.dueDate);
+      }
     }
     
     const result = await db.update(items)
@@ -779,10 +811,18 @@ export class DatabaseStorage implements IStorage {
       return 0;
     }
     
-    // Convert dueDate string to Date if provided
+    // Create a copy of the data to avoid modifying the original
     let updateData: any = { ...data };
-    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
-      updateData.dueDate = new Date(data.dueDate);
+    
+    // Handle dueDate conversion
+    if (data.dueDate !== undefined) {
+      if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
+        // If dueDate is null or empty string, set it to null
+        updateData.dueDate = null;
+      } else if (typeof data.dueDate === 'string') {
+        // Only convert non-empty strings to Date objects
+        updateData.dueDate = new Date(data.dueDate);
+      }
     }
     
     const result = await db.update(items)
@@ -798,10 +838,18 @@ export class DatabaseStorage implements IStorage {
       return 0;
     }
     
-    // Convert dueDate string to Date if provided
+    // Create a copy of the data to avoid modifying the original
     let updateData: any = { ...data };
-    if (typeof data.dueDate === 'string' && data.dueDate.trim() !== '') {
-      updateData.dueDate = new Date(data.dueDate);
+    
+    // Handle dueDate conversion
+    if (data.dueDate !== undefined) {
+      if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
+        // If dueDate is null or empty string, set it to null
+        updateData.dueDate = null;
+      } else if (typeof data.dueDate === 'string') {
+        // Only convert non-empty strings to Date objects
+        updateData.dueDate = new Date(data.dueDate);
+      }
     }
     
     const result = await db.update(items)
