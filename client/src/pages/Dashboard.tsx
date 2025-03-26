@@ -5,12 +5,22 @@ import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import CreateListModal from "@/components/modals/CreateListModal";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Luggage } from "lucide-react";
+import { Luggage, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ListData {
   id: number;
@@ -25,6 +35,7 @@ interface ListData {
 
 export default function Dashboard() {
   const [createListOpen, setCreateListOpen] = useState(false);
+  const [deleteListId, setDeleteListId] = useState<number | null>(null);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -59,8 +70,43 @@ export default function Dashboard() {
     }
   });
   
+  const deletePackingListMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest('DELETE', `/api/packing-lists/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
+      toast({
+        title: "Success",
+        description: "Packing list deleted successfully",
+      });
+      setDeleteListId(null);
+    },
+    onError: (error: unknown) => {
+      console.error("Error deleting packing list:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      toast({
+        title: "Error Deleting List",
+        description: `Failed to delete packing list: ${errorMessage}`,
+        variant: "destructive",
+      });
+      setDeleteListId(null);
+    }
+  });
+
   const handleCreateList = async (data: { name: string; theme: string; dateRange?: string }) => {
     createPackingListMutation.mutate(data);
+  };
+  
+  const handleDeleteList = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation(); // Prevent card click from navigating
+    setDeleteListId(id);
+  };
+  
+  const confirmDelete = () => {
+    if (deleteListId) {
+      deletePackingListMutation.mutate(deleteListId);
+    }
   };
 
   return (
@@ -93,10 +139,12 @@ export default function Dashboard() {
                 {packingLists.map((list) => (
                   <Card 
                     key={list.id}
-                    className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => setLocation(`/list/${list.id}`)}
+                    className="overflow-hidden hover:shadow-md transition-shadow flex flex-col"
                   >
-                    <CardContent className="p-6">
+                    <CardContent 
+                      className="p-6 cursor-pointer flex-grow"
+                      onClick={() => setLocation(`/list/${list.id}`)}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <Luggage className="h-5 w-5 text-primary" />
                         <h2 className="text-lg font-semibold">{list.name}</h2>
@@ -113,6 +161,17 @@ export default function Dashboard() {
                         <span className="font-medium">{list.progress}% packed</span>
                       </div>
                     </CardContent>
+                    <CardFooter className="px-6 py-3 border-t flex justify-end">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50 transition"
+                        onClick={(e) => handleDeleteList(e, list.id)}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    </CardFooter>
                   </Card>
                 ))}
               </div>
@@ -141,6 +200,28 @@ export default function Dashboard() {
         onClose={() => setCreateListOpen(false)}
         onCreateList={handleCreateList}
       />
+      
+      <AlertDialog open={deleteListId !== null} onOpenChange={(open) => !open && setDeleteListId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Packing List</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this packing list? This action cannot be undone
+              and all items, bags, categories, and travelers associated with this list will
+              also be deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
