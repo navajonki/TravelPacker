@@ -3,15 +3,25 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
-
 import MobileNav from "@/components/MobileNav";
 import CreateListModal from "@/components/modals/CreateListModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertCircle, Luggage } from "lucide-react";
+import { Luggage } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+
+interface ListData {
+  id: number;
+  name: string;
+  theme: string;
+  dateRange?: string;
+  userId: number;
+  createdAt: string;
+  itemCount: number;
+  progress: number;
+}
 
 export default function Dashboard() {
   const [createListOpen, setCreateListOpen] = useState(false);
@@ -19,60 +29,38 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  const { data: packingLists = [], isLoading } = useQuery<any[]>({
+  const { data: packingLists = [], isLoading } = useQuery<ListData[]>({
     queryKey: ['/api/packing-lists?userId=1'],
   });
   
   const createPackingListMutation = useMutation({
-    mutationFn: async (data: any) => {
-      console.log("Creating new packing list with data:", data);
-      try {
-        const response = await apiRequest('POST', '/api/packing-lists', {
-          ...data,
-          userId: 1 // Using the default user ID
-        });
-        console.log("API response received:", response);
-        return response;
-      } catch (error) {
-        console.error("API request failed:", error);
-        throw error; 
-      }
+    mutationFn: async (data: { name: string; theme: string; dateRange?: string }) => {
+      return apiRequest('POST', '/api/packing-lists', {
+        ...data,
+        userId: 1 // Using the default user ID
+      });
     },
-    onSuccess: async (response) => {
-      try {
-        console.log("Success callback with response:", response);
-        const data = await response.json();
-        console.log("Parsed response data:", data);
-        queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
-        toast({
-          title: "Success",
-          description: "Packing list created successfully",
-        });
-        setLocation(`/list/${data.id}`);
-      } catch (error) {
-        console.error("Error in onSuccess handler:", error);
-        toast({
-          title: "Error",
-          description: `Success response received but failed to process result: ${error instanceof Error ? error.message : "Unknown error"}`,
-          variant: "destructive",
-        });
-      }
+    onSuccess: (data: ListData) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
+      toast({
+        title: "Success",
+        description: "Packing list created successfully",
+      });
+      setLocation(`/list/${data.id}`);
     },
     onError: (error: unknown) => {
       console.error("Error creating packing list:", error);
       const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      const status = (error as any)?.status || "No status";
-      
       toast({
         title: "Error Creating List",
-        description: `Failed to create packing list: ${errorMessage} (${status})`,
+        description: `Failed to create packing list: ${errorMessage}`,
         variant: "destructive",
       });
     }
   });
   
-  const handleCreateList = async (data: { name: string, theme: string, dateRange?: string }) => {
-    await createPackingListMutation.mutate(data);
+  const handleCreateList = async (data: { name: string; theme: string; dateRange?: string }) => {
+    createPackingListMutation.mutate(data);
   };
 
   return (
@@ -102,7 +90,7 @@ export default function Dashboard() {
               </div>
             ) : packingLists?.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {packingLists.map((list: any) => (
+                {packingLists.map((list) => (
                   <Card 
                     key={list.id}
                     className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"

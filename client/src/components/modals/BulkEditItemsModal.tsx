@@ -12,6 +12,29 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+// Define interfaces for better TypeScript support
+interface Category {
+  id: number;
+  name: string;
+  packingListId: number;
+  position: number;
+  createdAt: string;
+}
+
+interface Bag {
+  id: number;
+  name: string;
+  packingListId: number;
+  createdAt: string;
+}
+
+interface Traveler {
+  id: number;
+  name: string;
+  packingListId: number;
+  createdAt: string;
+}
+
 const formSchema = z.object({
   packed: z.boolean().optional(),
   categoryId: z.number().optional(),
@@ -65,7 +88,15 @@ export default function BulkEditItemsModal({
     }
   });
 
-  const { mutate, isPending } = useMutation({
+  // Define response type for better TypeScript support
+  interface MultiEditResponse {
+    success: boolean;
+    message?: string;
+    updatedCount: number;
+    totalItems: number;
+  }
+
+  const { mutate, isPending } = useMutation<MultiEditResponse, Error, FormValues>({
     mutationFn: async (data: FormValues) => {
       console.log("Multi edit - Selected item IDs:", selectedItemIds);
       
@@ -84,31 +115,26 @@ export default function BulkEditItemsModal({
         throw new Error("No update values provided");
       }
       
-      // Use the new multi-edit endpoint
-      try {
-        console.log("Multi edit - Making request");
-        
-        const response = await apiRequest(
-          "POST",
-          `/api/items/multi-edit`, 
-          {
-            itemIds: selectedItemIds,
-            updates: filteredData
-          }
-        );
-        
-        console.log("Multi edit - API response:", response);
-        
-        // Verify the response has the expected format
-        if (!response.success) {
-          throw new Error(response.message || "Failed to update items");
+      // Use the multi-edit endpoint
+      console.log("Multi edit - Making request");
+      
+      const response = await apiRequest<MultiEditResponse>(
+        "POST",
+        `/api/items/multi-edit`, 
+        {
+          itemIds: selectedItemIds,
+          updates: filteredData
         }
-        
-        return response;
-      } catch (error) {
-        console.error("Multi edit - API error:", error);
-        throw error;
+      );
+      
+      console.log("Multi edit - API response:", response);
+      
+      // Verify the response has the expected format
+      if (!response.success) {
+        throw new Error(response.message || "Failed to update items");
       }
+      
+      return response;
     },
     onSuccess: (data) => {
       console.log("Multi edit - Success response:", data);
@@ -129,20 +155,27 @@ export default function BulkEditItemsModal({
       });
       onClose();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       console.error("Multi edit - Error details:", error);
       
       let errorMessage = "Failed to update items";
       
-      if (error?.response?.data) {
-        errorMessage += `: ${error.response.data.message || 'Unknown error'}`;
-        console.error("Server response data:", error.response.data);
-      } else if (error?.message) {
+      if (error.message) {
         errorMessage += `: ${error.message}`;
       }
       
+      // Log additional details if available
+      const anyError = error as any;
+      if (anyError?.response?.data) {
+        console.error("Server response data:", anyError.response.data);
+        
+        if (anyError.response.data.message) {
+          errorMessage = `Failed to update items: ${anyError.response.data.message}`;
+        }
+      }
+      
       toast({
-        title: "Error",
+        title: "Error Updating Items",
         description: errorMessage,
         variant: "destructive",
       });
