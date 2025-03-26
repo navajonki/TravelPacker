@@ -1,31 +1,28 @@
-import { useLocation, Link } from "wouter";
-import { Luggage, FileText, Settings, User } from "lucide-react";
+import { Link } from "wouter";
+import { Luggage, Plus } from "lucide-react";
 
-export default function MobileNav() {
-  const [location] = useLocation();
-  
+interface MobileNavProps {
+  onCreateNewList?: () => void;
+}
+
+export default function MobileNav({ onCreateNewList }: MobileNavProps) {
   return (
-    <div className="md:hidden bg-white border-t border-gray-200">
-      <div className="flex items-center justify-around">
-        <Link href="/" className={`flex flex-col items-center p-3 ${location === '/' ? 'text-primary' : 'text-gray-500 hover:text-gray-700'}`}>
-          <Luggage className="h-5 w-5" />
-          <span className="text-xs mt-1">Lists</span>
+    <div className="md:hidden bg-white border-b border-gray-200">
+      <div className="flex items-center justify-between px-4 py-2">
+        <Link href="/" className="flex items-center p-2 text-gray-700">
+          <Luggage className="h-5 w-5 mr-1" />
+          <span className="font-medium">Back to Lists</span>
         </Link>
         
-        <button className="flex flex-col items-center p-3 text-gray-500 hover:text-gray-700">
-          <FileText className="h-5 w-5" />
-          <span className="text-xs mt-1">Templates</span>
-        </button>
-        
-        <button className="flex flex-col items-center p-3 text-gray-500 hover:text-gray-700">
-          <Settings className="h-5 w-5" />
-          <span className="text-xs mt-1">Settings</span>
-        </button>
-        
-        <button className="flex flex-col items-center p-3 text-gray-500 hover:text-gray-700">
-          <User className="h-5 w-5" />
-          <span className="text-xs mt-1">Account</span>
-        </button>
+        {onCreateNewList && (
+          <button 
+            onClick={onCreateNewList}
+            className="flex items-center p-2 bg-primary text-white rounded-md"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            <span>New</span>
+          </button>
+        )}
       </div>
     </div>
   );

@@ -340,7 +340,9 @@ export default function PackingList() {
     <div className="flex flex-col min-h-screen">
       <Header onCreateNewList={() => setCreateListOpen(true)} />
       
-      <div className="flex flex-1">
+      <MobileNav onCreateNewList={() => setCreateListOpen(true)} />
+      
+      <div className="flex flex-1 flex-col">
         <Sidebar onCreateNewList={() => setCreateListOpen(true)} />
         
         <div className="flex-1 flex flex-col">
@@ -585,8 +587,6 @@ export default function PackingList() {
           </div>
         </div>
       </div>
-      
-      <MobileNav />
       
       <AdvancedAddItemModal
         open={advancedAddOpen}
