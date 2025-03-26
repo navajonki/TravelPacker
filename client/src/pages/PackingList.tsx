@@ -337,13 +337,13 @@ export default function PackingList() {
   const isLoading = isLoadingList || isLoadingCategories || isLoadingBags || isLoadingTravelers;
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col min-h-screen">
       <Header onCreateNewList={() => setCreateListOpen(true)} />
       
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         <Sidebar onCreateNewList={() => setCreateListOpen(true)} />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col">
           {isLoadingList ? (
             <div className="bg-white p-4 border-b border-gray-200">
               <Skeleton className="h-8 w-64 mb-2" />
@@ -410,7 +410,7 @@ export default function PackingList() {
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto bg-background p-4">
+          <div className="bg-background p-4">
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
