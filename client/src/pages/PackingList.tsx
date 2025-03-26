@@ -14,6 +14,7 @@ import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import SelectableItemRow from "@/components/SelectableItemRow";
+import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
 import AddCategoryModal from "@/components/modals/AddCategoryModal";
 import AddBagModal from "@/components/modals/AddBagModal";
@@ -587,6 +588,185 @@ export default function PackingList() {
                     ))}
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>
+                )}
+
+                {viewMode === 'filters' && (
+                  <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                    <div className="bg-white rounded-lg shadow p-4 mb-6">
+                      <h3 className="text-lg font-medium mb-4">Filters</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Categories</h4>
+                          <div className="space-y-2">
+                            {categories?.map((category) => (
+                              <div key={category.id} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`category-${category.id}`}
+                                  checked={selectedCategories.length === 0 || selectedCategories.includes(category.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedCategories(prev => [...prev, category.id]);
+                                    } else {
+                                      setSelectedCategories(prev => prev.filter(id => id !== category.id));
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor={`category-${category.id}`} className="ml-2 text-sm">
+                                  {category.name} ({category.totalItems})
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Bags</h4>
+                          <div className="space-y-2">
+                            {bags?.map((bag) => (
+                              <div key={bag.id} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`bag-${bag.id}`}
+                                  checked={selectedBags.length === 0 || selectedBags.includes(bag.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedBags(prev => [...prev, bag.id]);
+                                    } else {
+                                      setSelectedBags(prev => prev.filter(id => id !== bag.id));
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor={`bag-${bag.id}`} className="ml-2 text-sm">
+                                  {bag.name} ({bag.totalItems})
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Travelers</h4>
+                          <div className="space-y-2">
+                            {travelers?.map((traveler) => (
+                              <div key={traveler.id} className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  id={`traveler-${traveler.id}`}
+                                  checked={selectedTravelers.length === 0 || selectedTravelers.includes(traveler.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedTravelers(prev => [...prev, traveler.id]);
+                                    } else {
+                                      setSelectedTravelers(prev => prev.filter(id => id !== traveler.id));
+                                    }
+                                  }}
+                                  className="rounded border-gray-300 text-primary focus:ring-primary"
+                                />
+                                <label htmlFor={`traveler-${traveler.id}`} className="ml-2 text-sm">
+                                  {traveler.name} ({traveler.totalItems})
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-4 mb-4">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="show-packed"
+                            checked={showPacked}
+                            onChange={(e) => setShowPacked(e.target.checked)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <label htmlFor="show-packed" className="ml-2 text-sm">
+                            Show Packed Items
+                          </label>
+                        </div>
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id="show-unpacked"
+                            checked={showUnpacked}
+                            onChange={(e) => setShowUnpacked(e.target.checked)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <label htmlFor="show-unpacked" className="ml-2 text-sm">
+                            Show Unpacked Items
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedCategories([]);
+                            setSelectedBags([]);
+                            setSelectedTravelers([]);
+                            setShowPacked(true);
+                            setShowUnpacked(true);
+                          }}
+                        >
+                          Reset Filters
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Filtered Items */}
+                    <div className="bg-white rounded-lg shadow">
+                      <div className="p-4 border-b border-gray-200">
+                        <h3 className="font-medium">Filtered Items</h3>
+                        <p className="text-sm text-gray-500 mt-1">Showing items matching your selected filters</p>
+                      </div>
+                      <div className="divide-y divide-gray-100">
+                        {/* Filter and display items */}
+                        {(() => {
+                          // Collect all items from all categories
+                          const allItems = categories?.flatMap(category => category.items) || [];
+                          
+                          // Apply filters
+                          const filteredItems = allItems.filter(item => {
+                            // Skip if packed status doesn't match filters
+                            if (item.packed && !showPacked) return false;
+                            if (!item.packed && !showUnpacked) return false;
+                            
+                            // Always show if no specific filters are selected
+                            if (selectedCategories.length === 0 && 
+                                selectedBags.length === 0 && 
+                                selectedTravelers.length === 0) {
+                              return true;
+                            }
+                            
+                            // Check category filter
+                            const categoryMatch = selectedCategories.length === 0 || 
+                                                selectedCategories.includes(item.categoryId);
+                            
+                            // Check bag filter
+                            const bagMatch = selectedBags.length === 0 || 
+                                          (item.bagId && selectedBags.includes(item.bagId));
+                            
+                            // Check traveler filter
+                            const travelerMatch = selectedTravelers.length === 0 || 
+                                               (item.travelerId && selectedTravelers.includes(item.travelerId));
+                            
+                            return categoryMatch && bagMatch && travelerMatch;
+                          });
+                          
+                          // Render filtered items
+                          return filteredItems.map(item => (
+                            <ItemRow key={item.id} item={item} packingListId={packingListId} />
+                          ));
+                        })()}
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
