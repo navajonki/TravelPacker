@@ -423,6 +423,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Items routes
+  app.get("/api/items/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid id parameter" });
+    }
+    
+    const item = await storage.getItem(id);
+    
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    
+    return res.json(item);
+  });
+
   app.get("/api/categories/:categoryId/items", async (req, res) => {
     const categoryId = parseInt(req.params.categoryId);
     

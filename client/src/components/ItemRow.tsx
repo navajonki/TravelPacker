@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import EditItemModal from "@/components/modals/EditItemModal";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ interface ItemRowProps {
 export default function ItemRow({ item, packingListId }: ItemRowProps) {
   const [hovering, setHovering] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const queryClient = useQueryClient();
   
   const { data: bags = [] } = useQuery<any[]>({
