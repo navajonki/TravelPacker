@@ -147,7 +147,12 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
           </div>
           {hovering && (
             <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-500 hover:bg-gray-200">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 text-gray-500 hover:bg-gray-200"
+                onClick={() => setShowEditModal(true)}
+              >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
               <Button 
@@ -162,6 +167,14 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
           )}
         </div>
       </div>
+      
+      {/* Edit Item Modal */}
+      <EditItemModal
+        open={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        packingListId={packingListId}
+        itemId={item.id}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
