@@ -24,7 +24,17 @@ import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { 
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator, 
+  DropdownMenuCheckboxItem
+} from "@/components/ui/dropdown-menu";
+import { Loader2, CheckCircle, ChevronDown } from "lucide-react";
 
 export default function PackingList() {
   const { id } = useParams<{ id: string }>();
@@ -598,107 +608,130 @@ export default function PackingList() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <div>
                           <h4 className="text-sm font-medium mb-2">Categories</h4>
-                          <div className="space-y-2">
-                            {categories?.map((category) => (
-                              <div key={category.id} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`category-${category.id}`}
-                                  checked={selectedCategories.length === 0 || selectedCategories.includes(category.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                <span>
+                                  {selectedCategories.length === 0 
+                                    ? "All Categories" 
+                                    : `${selectedCategories.length} Selected`}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                              <DropdownMenuLabel>Categories</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {categories?.map((category) => (
+                                <DropdownMenuCheckboxItem
+                                  key={category.id}
+                                  checked={selectedCategories.includes(category.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
                                       setSelectedCategories(prev => [...prev, category.id]);
                                     } else {
                                       setSelectedCategories(prev => prev.filter(id => id !== category.id));
                                     }
                                   }}
-                                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                                />
-                                <label htmlFor={`category-${category.id}`} className="ml-2 text-sm">
+                                >
                                   {category.name} ({category.totalItems})
-                                </label>
-                              </div>
-                            ))}
-                          </div>
+                                </DropdownMenuCheckboxItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
 
                         <div>
                           <h4 className="text-sm font-medium mb-2">Bags</h4>
-                          <div className="space-y-2">
-                            {bags?.map((bag) => (
-                              <div key={bag.id} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`bag-${bag.id}`}
-                                  checked={selectedBags.length === 0 || selectedBags.includes(bag.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                <span>
+                                  {selectedBags.length === 0 
+                                    ? "All Bags" 
+                                    : `${selectedBags.length} Selected`}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                              <DropdownMenuLabel>Bags</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {bags?.map((bag) => (
+                                <DropdownMenuCheckboxItem
+                                  key={bag.id}
+                                  checked={selectedBags.includes(bag.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
                                       setSelectedBags(prev => [...prev, bag.id]);
                                     } else {
                                       setSelectedBags(prev => prev.filter(id => id !== bag.id));
                                     }
                                   }}
-                                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                                />
-                                <label htmlFor={`bag-${bag.id}`} className="ml-2 text-sm">
+                                >
                                   {bag.name} ({bag.totalItems})
-                                </label>
-                              </div>
-                            ))}
-                          </div>
+                                </DropdownMenuCheckboxItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
 
                         <div>
                           <h4 className="text-sm font-medium mb-2">Travelers</h4>
-                          <div className="space-y-2">
-                            {travelers?.map((traveler) => (
-                              <div key={traveler.id} className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  id={`traveler-${traveler.id}`}
-                                  checked={selectedTravelers.length === 0 || selectedTravelers.includes(traveler.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                <span>
+                                  {selectedTravelers.length === 0 
+                                    ? "All Travelers" 
+                                    : `${selectedTravelers.length} Selected`}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56">
+                              <DropdownMenuLabel>Travelers</DropdownMenuLabel>
+                              <DropdownMenuSeparator />
+                              {travelers?.map((traveler) => (
+                                <DropdownMenuCheckboxItem
+                                  key={traveler.id}
+                                  checked={selectedTravelers.includes(traveler.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
                                       setSelectedTravelers(prev => [...prev, traveler.id]);
                                     } else {
                                       setSelectedTravelers(prev => prev.filter(id => id !== traveler.id));
                                     }
                                   }}
-                                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                                />
-                                <label htmlFor={`traveler-${traveler.id}`} className="ml-2 text-sm">
+                                >
                                   {traveler.name} ({traveler.totalItems})
-                                </label>
-                              </div>
-                            ))}
-                          </div>
+                                </DropdownMenuCheckboxItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
 
-                      <div className="flex space-x-4 mb-4">
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
+                      <div className="flex flex-col space-y-4 my-6">
+                        <div className="flex items-center space-x-2">
+                          <Switch 
                             id="show-packed"
                             checked={showPacked}
-                            onChange={(e) => setShowPacked(e.target.checked)}
-                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                            onCheckedChange={setShowPacked}
                           />
-                          <label htmlFor="show-packed" className="ml-2 text-sm">
+                          <Label htmlFor="show-packed" className="text-sm">
                             Show Packed Items
-                          </label>
+                          </Label>
                         </div>
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
+                        <div className="flex items-center space-x-2">
+                          <Switch 
                             id="show-unpacked"
                             checked={showUnpacked}
-                            onChange={(e) => setShowUnpacked(e.target.checked)}
-                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                            onCheckedChange={setShowUnpacked}
                           />
-                          <label htmlFor="show-unpacked" className="ml-2 text-sm">
+                          <Label htmlFor="show-unpacked" className="text-sm">
                             Show Unpacked Items
-                          </label>
+                          </Label>
                         </div>
                       </div>
 
