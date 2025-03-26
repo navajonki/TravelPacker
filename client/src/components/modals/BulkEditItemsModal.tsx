@@ -62,17 +62,17 @@ export default function BulkEditItemsModal({
   const queryClient = useQueryClient();
 
   // Get categories, bags, and travelers for the packing list
-  const { data: categories = [] } = useQuery<any>({
+  const { data: categories = [] } = useQuery<Category[]>({
     queryKey: [`/api/packing-lists/${packingListId}/categories`],
     enabled: open,
   });
   
-  const { data: bags = [] } = useQuery<any>({
+  const { data: bags = [] } = useQuery<Bag[]>({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
     enabled: open,
   });
   
-  const { data: travelers = [] } = useQuery<any>({
+  const { data: travelers = [] } = useQuery<Traveler[]>({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
     enabled: open,
   });
@@ -118,14 +118,14 @@ export default function BulkEditItemsModal({
       // Use the multi-edit endpoint
       console.log("Multi edit - Making request");
       
-      const response = await apiRequest<MultiEditResponse>(
+      const response = await apiRequest(
         "POST",
         `/api/items/multi-edit`, 
         {
           itemIds: selectedItemIds,
           updates: filteredData
         }
-      );
+      ) as MultiEditResponse;
       
       console.log("Multi edit - API response:", response);
       
@@ -238,7 +238,7 @@ export default function BulkEditItemsModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {categories.map((category: any) => (
+                      {categories.map((category) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name}
                         </SelectItem>
@@ -269,7 +269,7 @@ export default function BulkEditItemsModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {bags.map((bag: any) => (
+                      {bags.map((bag) => (
                         <SelectItem key={bag.id} value={bag.id.toString()}>
                           {bag.name}
                         </SelectItem>
@@ -300,7 +300,7 @@ export default function BulkEditItemsModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {travelers.map((traveler: any) => (
+                      {travelers.map((traveler) => (
                         <SelectItem key={traveler.id} value={traveler.id.toString()}>
                           {traveler.name}
                         </SelectItem>
