@@ -40,8 +40,16 @@ const formSchema = z.object({
   packed: z.boolean().default(false),
   isEssential: z.boolean().default(false),
   categoryId: z.coerce.number().int().positive(),
-  bagId: z.coerce.number().int().positive().optional().nullable(),
-  travelerId: z.coerce.number().int().positive().optional().nullable(),
+  bagId: z.union([
+    z.coerce.number().int().positive(), 
+    z.string(),
+    z.null()
+  ]).optional(),
+  travelerId: z.union([
+    z.coerce.number().int().positive(), 
+    z.string(),
+    z.null()
+  ]).optional(),
   dueDate: z.string().optional(),
 });
 
@@ -110,8 +118,8 @@ export default function EditItemModal({
         packed: item.packed,
         isEssential: item.isEssential,
         categoryId: item.categoryId,
-        bagId: item.bagId || null,
-        travelerId: item.travelerId || null,
+        bagId: item.bagId || "none", // Use "none" instead of null
+        travelerId: item.travelerId || "none", // Use "none" instead of null
         dueDate: item.dueDate || "",
       });
       setIsLoading(false);
@@ -121,7 +129,19 @@ export default function EditItemModal({
   // Handle form submission
   const mutation = useMutation({
     mutationFn: async (values: FormValues) => {
-      return await apiRequest('PATCH', `/api/items/${itemId}`, values);
+      // Process the values before submitting
+      const processedValues = { ...values };
+      
+      // Convert "none" to null for bagId and travelerId
+      if (processedValues.bagId && processedValues.bagId.toString() === "none") {
+        processedValues.bagId = null;
+      }
+      
+      if (processedValues.travelerId && processedValues.travelerId.toString() === "none") {
+        processedValues.travelerId = null;
+      }
+      
+      return await apiRequest('PATCH', `/api/items/${itemId}`, processedValues);
     },
     onSuccess: () => {
       // Show success message
@@ -235,7 +255,7 @@ export default function EditItemModal({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No Bag</SelectItem>
+                          <SelectItem value="none">No Bag</SelectItem>
                           {bags.map((bag) => (
                             <SelectItem key={bag.id} value={bag.id.toString()}>
                               {bag.name}
@@ -264,7 +284,7 @@ export default function EditItemModal({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">No Traveler</SelectItem>
+                          <SelectItem value="none">No Traveler</SelectItem>
                           {travelers.map((traveler) => (
                             <SelectItem key={traveler.id} value={traveler.id.toString()}>
                               {traveler.name}
