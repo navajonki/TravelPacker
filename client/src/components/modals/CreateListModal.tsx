@@ -1,4 +1,5 @@
-import { X } from "lucide-react";
+import { useState } from "react";
+import { X, AlertCircle, Loader2 } from "lucide-react";
 import { 
   Dialog, 
   DialogContent, 
@@ -13,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CreateListModalProps {
   open: boolean;
@@ -31,6 +33,9 @@ export default function CreateListModal({
   onClose,
   onCreateList
 }: CreateListModalProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,9 +46,19 @@ export default function CreateListModal({
   });
   
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    await onCreateList(data);
-    form.reset();
-    onClose();
+    setError(null);
+    setIsSubmitting(true);
+    
+    try {
+      await onCreateList(data);
+      form.reset();
+      onClose();
+    } catch (err) {
+      console.error("Error creating list:", err);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -64,6 +79,13 @@ export default function CreateListModal({
           </Button>
         </DialogHeader>
         
+        {error && (
+          <Alert variant="destructive" className="mt-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -73,7 +95,12 @@ export default function CreateListModal({
                 <FormItem>
                   <FormLabel>List Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Summer Beach Trip" {...field} autoFocus />
+                    <Input 
+                      placeholder="e.g. Summer Beach Trip" 
+                      {...field} 
+                      autoFocus 
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -87,7 +114,11 @@ export default function CreateListModal({
                 <FormItem>
                   <FormLabel>Theme</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Beach, Hiking, Business" {...field} />
+                    <Input 
+                      placeholder="e.g. Beach, Hiking, Business" 
+                      {...field} 
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -101,7 +132,11 @@ export default function CreateListModal({
                 <FormItem>
                   <FormLabel>Date Range (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Aug 15-20, 2023" {...field} />
+                    <Input 
+                      placeholder="e.g. Aug 15-20, 2023" 
+                      {...field} 
+                      disabled={isSubmitting}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,10 +144,27 @@ export default function CreateListModal({
             />
             
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
                 Cancel
               </Button>
-              <Button type="submit">Create List</Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create List"
+                )}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

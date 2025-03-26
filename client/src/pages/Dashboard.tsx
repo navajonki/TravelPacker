@@ -25,24 +25,47 @@ export default function Dashboard() {
   
   const createPackingListMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest('POST', '/api/packing-lists', {
-        ...data,
-        userId: 1 // Using the default user ID
-      });
+      console.log("Creating new packing list with data:", data);
+      try {
+        const response = await apiRequest('POST', '/api/packing-lists', {
+          ...data,
+          userId: 1 // Using the default user ID
+        });
+        console.log("API response received:", response);
+        return response;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error; 
+      }
     },
     onSuccess: async (response) => {
-      const data = await response.json();
-      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
-      toast({
-        title: "Success",
-        description: "Packing list created successfully",
-      });
-      setLocation(`/list/${data.id}`);
+      try {
+        console.log("Success callback with response:", response);
+        const data = await response.json();
+        console.log("Parsed response data:", data);
+        queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
+        toast({
+          title: "Success",
+          description: "Packing list created successfully",
+        });
+        setLocation(`/list/${data.id}`);
+      } catch (error) {
+        console.error("Error in onSuccess handler:", error);
+        toast({
+          title: "Error",
+          description: `Success response received but failed to process result: ${error instanceof Error ? error.message : "Unknown error"}`,
+          variant: "destructive",
+        });
+      }
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
+      console.error("Error creating packing list:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const status = (error as any)?.status || "No status";
+      
       toast({
-        title: "Error",
-        description: "Failed to create packing list",
+        title: "Error Creating List",
+        description: `Failed to create packing list: ${errorMessage} (${status})`,
         variant: "destructive",
       });
     }
