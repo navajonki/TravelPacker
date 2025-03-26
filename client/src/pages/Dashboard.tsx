@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+
 import MobileNav from "@/components/MobileNav";
 import CreateListModal from "@/components/modals/CreateListModal";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,8 +57,6 @@ export default function Dashboard() {
       <Header onCreateNewList={() => setCreateListOpen(true)} />
       
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar onCreateNewList={() => setCreateListOpen(true)} />
-        
         <div className="flex-1 overflow-y-auto bg-background p-4">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-2xl font-semibold mb-6">Your Packing Lists</h1>
