@@ -91,20 +91,8 @@ async function runMigrations() {
 }
 
 (async () => {
-  // Run migrations before starting the server
-  await runMigrations();
-  
-  // Setup user data (create user and assign packing lists)
-  try {
-    const result = await setupUserData();
-    if (result.success) {
-      log(`User data setup complete. User ID: ${result.userId}`, "setup");
-    } else {
-      log(`Error during user data setup: ${result.error}`, "setup");
-    }
-  } catch (error) {
-    log(`Exception during user data setup: ${error}`, "setup");
-  }
+  // Skip migrations and user setup for now to speed up server startup
+  log("Skipping migrations and user setup for faster startup", "setup");
   
   const server = await registerRoutes(app);
 
