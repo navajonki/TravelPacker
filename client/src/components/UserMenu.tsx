@@ -13,6 +13,7 @@ export default function UserMenu() {
   const { user, logoutMutation } = useAuth();
 
   const handleLogout = () => {
+    console.log("UserMenu: Logout clicked");
     logoutMutation.mutate();
   };
 

@@ -91,9 +91,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest("POST", "/api/auth/logout");
+      console.log("Calling logout API endpoint");
+      try {
+        const result = await apiRequest("POST", "/api/auth/logout");
+        console.log("Logout API response:", result);
+        return result;
+      } catch (error) {
+        console.error("Logout API error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log("Logout mutation succeeded");
       // Clear all cached data on logout
       queryClient.clear();
       // Then set the user to null
@@ -104,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     },
     onError: (error: Error) => {
+      console.error("Logout mutation error:", error);
       toast({
         title: "Logout failed",
         description: error.message,

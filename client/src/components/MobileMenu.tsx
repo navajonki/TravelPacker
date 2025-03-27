@@ -29,7 +29,9 @@ export default function MobileMenu({ isOpen, onClose, onCreateNewList }: MobileM
   if (!mounted && !isOpen) return null;
   
   const handleLogout = () => {
+    console.log("Logout button clicked");
     logoutMutation.mutate();
+    console.log("Logout mutation triggered");
     onClose();
   };
 
@@ -74,14 +76,14 @@ export default function MobileMenu({ isOpen, onClose, onCreateNewList }: MobileM
           </div>
           
           <div className="p-4 border-t">
-            <Button
-              variant="ghost"
-              className="w-full flex items-center justify-center text-red-500 hover:text-red-700 hover:bg-red-50"
+            <button
+              type="button"
+              className="w-full flex items-center justify-center p-2 rounded text-red-500 hover:text-red-700 hover:bg-red-50"
               onClick={handleLogout}
             >
               <LogOut className="h-5 w-5 mr-2" />
               Logout
-            </Button>
+            </button>
           </div>
         </div>
       </div>
