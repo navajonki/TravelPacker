@@ -54,11 +54,9 @@ export default function MobileMenu({ isOpen, onClose, onCreateNewList }: MobileM
           )}
           
           <div className="flex flex-col p-2 flex-grow">
-            <Link href="/">
-              <a className="flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-md" onClick={onClose}>
-                <Home className="h-5 w-5 mr-3 text-primary" />
-                Home
-              </a>
+            <Link href="/" onClick={onClose} className="flex items-center p-3 text-gray-700 hover:bg-gray-100 rounded-md">
+              <Home className="h-5 w-5 mr-3 text-primary" />
+              Home
             </Link>
             
             {onCreateNewList && (
