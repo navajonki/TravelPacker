@@ -7,11 +7,11 @@
 - [ ] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] Menu at the top right doesn't do anything
 - [ ] Remove New List button when looking at an existing list
+- [ ] Fix user login
 
 
 ## Features
 - [ ] Searching within the given packing list
 - [ ] Rearrange items on the lists
-- [ ] User login
 - [ ] Ability to collaborate
 - [ ] Copy list

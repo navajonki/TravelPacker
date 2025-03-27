@@ -24,6 +24,7 @@ const sessionStore = new PgSession({
 });
 
 // Setup express-session with custom session store
+// In production, the SESSION_SECRET should be set to a secure random value
 const sessionOptions = {
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'travelpack-session-secret',
@@ -91,8 +92,14 @@ async function runMigrations() {
 }
 
 (async () => {
-  // Skip migrations and user setup for now to speed up server startup
-  log("Skipping migrations and user setup for faster startup", "setup");
+  // Run migrations and setup when in production, skip for development
+  if (process.env.NODE_ENV === 'production') {
+    log("Running migrations for production deployment", "setup");
+    await runMigrations();
+    log("Migrations completed successfully", "setup");
+  } else {
+    log("Skipping migrations and user setup for faster development startup", "setup");
+  }
   
   const server = await registerRoutes(app);
 
