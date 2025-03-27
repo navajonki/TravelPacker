@@ -47,6 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await apiRequest("POST", "/api/auth/login", credentials);
     },
     onSuccess: (userData: User) => {
+      // Invalidate all queries to ensure fresh data for the new user
+      queryClient.clear();
+      // Then set the user data
       queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Login successful",
@@ -68,6 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return await apiRequest("POST", "/api/auth/register", credentials);
     },
     onSuccess: (userData: User) => {
+      // Clear all cached data for a fresh start
+      queryClient.clear();
+      // Then set the user data
       queryClient.setQueryData(["/api/user"], userData);
       toast({
         title: "Registration successful",
@@ -88,6 +94,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/auth/logout");
     },
     onSuccess: () => {
+      // Clear all cached data on logout
+      queryClient.clear();
+      // Then set the user to null
       queryClient.setQueryData(["/api/user"], null);
       toast({
         title: "Logout successful",
