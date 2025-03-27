@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
+import MobileMenu from "@/components/MobileMenu";
 import CreateListModal from "@/components/modals/CreateListModal";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,6 +37,7 @@ interface ListData {
 export default function Dashboard() {
   const [createListOpen, setCreateListOpen] = useState(false);
   const [deleteListId, setDeleteListId] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -111,7 +113,10 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col h-screen">
-      <Header onCreateNewList={() => setCreateListOpen(true)} />
+      <Header 
+        onCreateNewList={() => setCreateListOpen(true)} 
+        onToggleMenu={() => setMobileMenuOpen(true)}
+      />
       
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto bg-background p-4">
@@ -194,6 +199,15 @@ export default function Dashboard() {
       </div>
       
       <MobileNav />
+      
+      <MobileMenu 
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        onCreateNewList={() => {
+          setCreateListOpen(true);
+          setMobileMenuOpen(false);
+        }}
+      />
       
       <CreateListModal
         open={createListOpen}

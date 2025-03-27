@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Luggage, Search, Menu, User, Plus } from "lucide-react";
+import { Luggage, Search, Menu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import UserMenu from "@/components/UserMenu";
 
 interface HeaderProps {
   onCreateNewList: () => void;
@@ -65,9 +66,7 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
               <Menu className="h-5 w-5" />
             </Button>
             <div className="hidden md:block">
-              <div className="bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-700" />
-              </div>
+              <UserMenu />
             </div>
           </div>
         </div>
