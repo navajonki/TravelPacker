@@ -1,7 +1,9 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
+import passport from "passport";
+import { isAuthenticated, hashPassword } from "./auth";
 import { 
   insertUserSchema,
   insertPackingListSchema, 
@@ -9,11 +11,93 @@ import {
   insertTravelerSchema, 
   insertCategorySchema, 
   insertItemSchema,
-  insertTemplateSchema
+  insertTemplateSchema,
+  type User
 } from "@shared/schema";
+
+// Extend the Express Request type to include the user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = app.route('/api');
+  
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Hash password using the helper function
+      const hashedPassword = await hashPassword(req.body.password);
+      
+      // Create user with hashed password
+      const userData = insertUserSchema.parse({
+        username: req.body.username,
+        password: hashedPassword
+      });
+      
+      const user = await storage.createUser(userData);
+      
+      // Auto-login after registration
+      req.login(user, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Login failed after registration" });
+        }
+        return res.status(201).json({ 
+          id: user.id, 
+          username: user.username 
+        });
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+  
+  app.post("/api/auth/login", passport.authenticate("local"), (req, res) => {
+    // If this function is called, authentication was successful
+    // req.user contains the authenticated user
+    const user = req.user as User;
+    res.json({ 
+      id: user.id,
+      username: user.username
+    });
+  });
+  
+  app.post("/api/auth/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Error during logout" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+  
+  app.get("/api/auth/current-user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ authenticated: false });
+    }
+    
+    const user = req.user as User;
+    res.json({ 
+      authenticated: true,
+      user: {
+        id: user.id,
+        username: user.username
+      }
+    });
+  });
 
   // User routes
   app.post("/api/users", async (req, res) => {
@@ -45,13 +129,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json({ id: user.id, username: user.username });
   });
 
-  // PackingLists routes
-  app.get("/api/packing-lists", async (req, res) => {
-    const userId = parseInt(req.query.userId as string);
-    
-    if (isNaN(userId)) {
-      return res.status(400).json({ message: "Invalid userId parameter" });
-    }
+  // PackingLists routes - protected by authentication
+  app.get("/api/packing-lists", isAuthenticated, async (req, res) => {
+    // Get the current authenticated user's ID
+    const user = req.user as User;
+    const userId = user.id;
     
     const packingLists = await storage.getPackingLists(userId);
     
