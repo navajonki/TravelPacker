@@ -98,6 +98,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
   });
+  
+  // Current user endpoint for frontend
+  app.get("/api/user", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = req.user as User;
+    // Return user without the password
+    res.json({
+      id: user.id,
+      username: user.username
+    });
+  });
 
   // User routes
   app.post("/api/users", async (req, res) => {
@@ -129,10 +143,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json({ id: user.id, username: user.username });
   });
 
-  // PackingLists routes - temporarily removed authentication check
-  app.get("/api/packing-lists", async (req, res) => {
-    // Temporarily using a default user ID while authentication is being set up
-    const userId = 1; // Default user ID
+  // PackingLists routes - protected by authentication
+  app.get("/api/packing-lists", isAuthenticated, async (req, res) => {
+    // Get the current authenticated user's ID
+    const user = req.user as User;
+    const userId = user.id;
     
     const packingLists = await storage.getPackingLists(userId);
     

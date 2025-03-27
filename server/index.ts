@@ -9,6 +9,7 @@ import session from "express-session";
 import passport from "passport";
 import { configurePassport, configureSessions } from "./auth";
 import type { User } from "@shared/schema";
+import { setupUserData } from "./setup-user-data";
 
 const app = express();
 app.use(express.json());
@@ -92,6 +93,18 @@ async function runMigrations() {
 (async () => {
   // Run migrations before starting the server
   await runMigrations();
+  
+  // Setup user data (create user and assign packing lists)
+  try {
+    const result = await setupUserData();
+    if (result.success) {
+      log(`User data setup complete. User ID: ${result.userId}`, "setup");
+    } else {
+      log(`Error during user data setup: ${result.error}`, "setup");
+    }
+  } catch (error) {
+    log(`Exception during user data setup: ${error}`, "setup");
+  }
   
   const server = await registerRoutes(app);
 
