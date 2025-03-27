@@ -170,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json(lists);
   });
 
-  app.get("/api/packing-lists/:id", async (req, res) => {
+  app.get("/api/packing-lists/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -181,6 +181,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!packingList) {
       return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Check if the authenticated user owns this packing list
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
     const items = await storage.getAllItemsByPackingList(id);
@@ -196,9 +202,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.post("/api/packing-lists", async (req, res) => {
+  app.post("/api/packing-lists", isAuthenticated, async (req, res) => {
     try {
-      const data = insertPackingListSchema.parse(req.body);
+      // Get the current authenticated user's ID
+      const user = req.user as User;
+      
+      // Merge the user ID with the request data
+      const data = insertPackingListSchema.parse({
+        ...req.body,
+        userId: user.id // Set the userId from the authenticated user
+      });
+      
       const packingList = await storage.createPackingList(data);
       
       // Create default bags
@@ -222,15 +236,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/packing-lists/:id", async (req, res) => {
+  app.patch("/api/packing-lists/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid id parameter" });
     }
     
+    // Check if packing list exists and belongs to the authenticated user
+    const existingList = await storage.getPackingList(id);
+    if (!existingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (existingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to update this packing list" });
+    }
+    
     try {
       const data = insertPackingListSchema.partial().parse(req.body);
+      
+      // Never allow changing the userId
+      if (data.userId && data.userId !== user.id) {
+        delete data.userId;
+      }
+      
       const packingList = await storage.updatePackingList(id, data);
       
       if (!packingList) {
@@ -246,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/packing-lists/:id", async (req, res) => {
+  app.delete("/api/packing-lists/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -259,16 +291,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Packing list not found" });
     }
     
+    // Check if the authenticated user owns this packing list
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to delete this packing list" });
+    }
+    
     await storage.deletePackingList(id);
     return res.status(204).end();
   });
 
   // Bags routes
-  app.get("/api/packing-lists/:listId/bags", async (req, res) => {
+  app.get("/api/packing-lists/:listId/bags", isAuthenticated, async (req, res) => {
     const listId = parseInt(req.params.listId);
     
     if (isNaN(listId)) {
       return res.status(400).json({ message: "Invalid listId parameter" });
+    }
+    
+    // Check if the packing list exists and belongs to the authenticated user
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
     const bags = await storage.getBags(listId);
@@ -294,9 +344,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json(bagsWithItemsAndProgress);
   });
 
-  app.post("/api/bags", async (req, res) => {
+  app.post("/api/bags", isAuthenticated, async (req, res) => {
     try {
       const data = insertBagSchema.parse(req.body);
+      
+      // Verify user can access the packing list this bag belongs to
+      const packingList = await storage.getPackingList(data.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to modify this packing list" });
+      }
+      
       const bag = await storage.createBag(data);
       return res.status(201).json(bag);
     } catch (error) {
@@ -307,22 +370,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/bags/:id", async (req, res) => {
+  app.patch("/api/bags/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid id parameter" });
     }
     
+    // Get the bag to check ownership via the packing list
+    const bag = await storage.getBag(id);
+    if (!bag) {
+      return res.status(404).json({ message: "Bag not found" });
+    }
+    
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(bag.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to modify this bag" });
+    }
+    
     try {
       const data = insertBagSchema.partial().parse(req.body);
-      const bag = await storage.updateBag(id, data);
       
-      if (!bag) {
+      // Don't allow changing the packingListId to a list the user doesn't own
+      if (data.packingListId && data.packingListId !== bag.packingListId) {
+        const targetPackingList = await storage.getPackingList(data.packingListId);
+        if (!targetPackingList || targetPackingList.userId !== user.id) {
+          delete data.packingListId;
+        }
+      }
+      
+      const updatedBag = await storage.updateBag(id, data);
+      
+      if (!updatedBag) {
         return res.status(404).json({ message: "Bag not found" });
       }
       
-      return res.json(bag);
+      return res.json(updatedBag);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
@@ -331,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/bags/:id", async (req, res) => {
+  app.delete("/api/bags/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -344,16 +434,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Bag not found" });
     }
     
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(bag.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to delete this bag" });
+    }
+    
     await storage.deleteBag(id);
     return res.status(204).end();
   });
 
   // Travelers routes
-  app.get("/api/packing-lists/:listId/travelers", async (req, res) => {
+  app.get("/api/packing-lists/:listId/travelers", isAuthenticated, async (req, res) => {
     const listId = parseInt(req.params.listId);
     
     if (isNaN(listId)) {
       return res.status(400).json({ message: "Invalid listId parameter" });
+    }
+    
+    // Check if the packing list exists and belongs to the authenticated user
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
     const travelers = await storage.getTravelers(listId);
@@ -379,9 +493,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json(travelersWithItemsAndProgress);
   });
 
-  app.post("/api/travelers", async (req, res) => {
+  app.post("/api/travelers", isAuthenticated, async (req, res) => {
     try {
       const data = insertTravelerSchema.parse(req.body);
+      
+      // Verify user can access the packing list this traveler belongs to
+      const packingList = await storage.getPackingList(data.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to modify this packing list" });
+      }
+      
       const traveler = await storage.createTraveler(data);
       return res.status(201).json(traveler);
     } catch (error) {
@@ -392,22 +519,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/travelers/:id", async (req, res) => {
+  app.patch("/api/travelers/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid id parameter" });
     }
     
+    // Get the traveler to check ownership via the packing list
+    const traveler = await storage.getTraveler(id);
+    if (!traveler) {
+      return res.status(404).json({ message: "Traveler not found" });
+    }
+    
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(traveler.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to modify this traveler" });
+    }
+    
     try {
       const data = insertTravelerSchema.partial().parse(req.body);
-      const traveler = await storage.updateTraveler(id, data);
       
-      if (!traveler) {
+      // Don't allow changing the packingListId to a list the user doesn't own
+      if (data.packingListId && data.packingListId !== traveler.packingListId) {
+        const targetPackingList = await storage.getPackingList(data.packingListId);
+        if (!targetPackingList || targetPackingList.userId !== user.id) {
+          delete data.packingListId;
+        }
+      }
+      
+      const updatedTraveler = await storage.updateTraveler(id, data);
+      
+      if (!updatedTraveler) {
         return res.status(404).json({ message: "Traveler not found" });
       }
       
-      return res.json(traveler);
+      return res.json(updatedTraveler);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
@@ -416,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/travelers/:id", async (req, res) => {
+  app.delete("/api/travelers/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -429,16 +583,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Traveler not found" });
     }
     
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(traveler.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to delete this traveler" });
+    }
+    
     await storage.deleteTraveler(id);
     return res.status(204).end();
   });
 
   // Categories routes
-  app.get("/api/packing-lists/:listId/categories", async (req, res) => {
+  app.get("/api/packing-lists/:listId/categories", isAuthenticated, async (req, res) => {
     const listId = parseInt(req.params.listId);
     
     if (isNaN(listId)) {
       return res.status(400).json({ message: "Invalid listId parameter" });
+    }
+    
+    // Check if the packing list exists and belongs to the authenticated user
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
     // Get categories
@@ -464,9 +642,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json(categoriesWithItemsAndProgress);
   });
 
-  app.post("/api/categories", async (req, res) => {
+  app.post("/api/categories", isAuthenticated, async (req, res) => {
     try {
       const data = insertCategorySchema.parse(req.body);
+      
+      // Verify user can access the packing list this category belongs to
+      const packingList = await storage.getPackingList(data.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to modify this packing list" });
+      }
+      
       const category = await storage.createCategory(data);
       return res.status(201).json(category);
     } catch (error) {
@@ -477,22 +668,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/categories/:id", async (req, res) => {
+  app.patch("/api/categories/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid id parameter" });
     }
     
+    // Get the category to check ownership via the packing list
+    const category = await storage.getCategory(id);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(category.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to modify this category" });
+    }
+    
     try {
       const data = insertCategorySchema.partial().parse(req.body);
-      const category = await storage.updateCategory(id, data);
       
-      if (!category) {
+      // Don't allow changing the packingListId to a list the user doesn't own
+      if (data.packingListId && data.packingListId !== category.packingListId) {
+        const targetPackingList = await storage.getPackingList(data.packingListId);
+        if (!targetPackingList || targetPackingList.userId !== user.id) {
+          delete data.packingListId;
+        }
+      }
+      
+      const updatedCategory = await storage.updateCategory(id, data);
+      
+      if (!updatedCategory) {
         return res.status(404).json({ message: "Category not found" });
       }
       
-      return res.json(category);
+      return res.json(updatedCategory);
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
@@ -501,7 +719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/categories/:id", async (req, res) => {
+  app.delete("/api/categories/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -514,12 +732,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Category not found" });
     }
     
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(category.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to delete this category" });
+    }
+    
     await storage.deleteCategory(id);
     return res.status(204).end();
   });
 
   // Items routes
-  app.get("/api/items/:id", async (req, res) => {
+  app.get("/api/items/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -532,21 +762,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Item not found" });
     }
     
+    // Get the category to find the packing list
+    const category = await storage.getCategory(item.categoryId);
+    if (!category) {
+      return res.status(404).json({ message: "Associated category not found" });
+    }
+    
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(category.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to view this item" });
+    }
+    
     return res.json(item);
   });
 
-  app.get("/api/categories/:categoryId/items", async (req, res) => {
+  app.get("/api/categories/:categoryId/items", isAuthenticated, async (req, res) => {
     const categoryId = parseInt(req.params.categoryId);
     
     if (isNaN(categoryId)) {
       return res.status(400).json({ message: "Invalid categoryId parameter" });
     }
     
+    // Get the category to find the packing list
+    const category = await storage.getCategory(categoryId);
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+    
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(category.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to view items in this category" });
+    }
+    
     const items = await storage.getItems(categoryId);
     return res.json(items);
   });
 
-  app.post("/api/items", async (req, res) => {
+  app.post("/api/items", isAuthenticated, async (req, res) => {
     try {
       const data = insertItemSchema.parse(req.body);
       
@@ -555,6 +821,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isNaN(dueDateObj.getTime())) {
           return res.status(400).json({ message: "Invalid dueDate format" });
         }
+      }
+      
+      // Verify that the category belongs to a packing list owned by the user
+      const category = await storage.getCategory(data.categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(category.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to create items in this category" });
       }
       
       const item = await storage.createItem(data);
@@ -567,7 +851,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/items/:id", async (req, res) => {
+  app.patch("/api/items/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -575,6 +859,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
+      // Get the item first to check ownership
+      const existingItem = await storage.getItem(id);
+      if (!existingItem) {
+        return res.status(404).json({ message: "Item not found" });
+      }
+      
+      // Get the category to find the packing list
+      const category = await storage.getCategory(existingItem.categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Associated category not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(category.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to update this item" });
+      }
+      
       const data = insertItemSchema.partial().parse(req.body);
       
       if (data.dueDate) {
@@ -585,11 +893,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const item = await storage.updateItem(id, data);
-      
-      if (!item) {
-        return res.status(404).json({ message: "Item not found" });
-      }
-      
       return res.json(item);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -599,7 +902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/items/:id", async (req, res) => {
+  app.delete("/api/items/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
     if (isNaN(id)) {
@@ -612,12 +915,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Item not found" });
     }
     
+    // Get the category to find the packing list
+    const category = await storage.getCategory(item.categoryId);
+    if (!category) {
+      return res.status(404).json({ message: "Associated category not found" });
+    }
+    
+    // Check if the packing list belongs to the authenticated user
+    const packingList = await storage.getPackingList(category.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Verify ownership
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to delete this item" });
+    }
+    
     await storage.deleteItem(id);
     return res.status(204).end();
   });
 
   // CSV Export endpoint
-  app.get("/api/packing-lists/:id/export", async (req, res) => {
+  app.get("/api/packing-lists/:id/export", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       
@@ -629,6 +950,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const packingList = await storage.getPackingList(id);
       if (!packingList) {
         return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to export this packing list" });
       }
       
       // Get all items for the packing list
@@ -691,11 +1018,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Removing the problematic /api/items/bulk-update endpoint and creating a new one
   
   // New endpoint for multi-item updates
-  app.post("/api/items/multi-edit", async (req, res) => {
+  app.post("/api/items/multi-edit", isAuthenticated, async (req, res) => {
     try {
       console.log("Received multi-edit request with body:", JSON.stringify(req.body));
       
       const { itemIds, updates } = req.body;
+      const user = req.user as User;
       
       // Basic validation
       if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
@@ -737,6 +1065,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
+          // Check ownership
+          const category = await storage.getCategory(item.categoryId);
+          if (!category) {
+            results.push({ id: numericId, success: false, message: "Category not found" });
+            continue;
+          }
+          
+          const packingList = await storage.getPackingList(category.packingListId);
+          if (!packingList) {
+            results.push({ id: numericId, success: false, message: "Packing list not found" });
+            continue;
+          }
+          
+          // Verify the user owns this packing list
+          if (packingList.userId !== user.id) {
+            results.push({ id: numericId, success: false, message: "Not authorized to modify this item" });
+            continue;
+          }
+          
           // Attempt to update the item
           const updatedItem = await storage.updateItem(numericId, updates);
           
@@ -775,7 +1122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Bulk update routes by category, bag, traveler
-  app.patch("/api/categories/:categoryId/bulk-update-items", async (req, res) => {
+  app.patch("/api/categories/:categoryId/bulk-update-items", isAuthenticated, async (req, res) => {
     try {
       const categoryId = parseInt(req.params.categoryId);
       
@@ -786,6 +1133,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const category = await storage.getCategory(categoryId);
       if (!category) {
         return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(category.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to modify items in this category" });
       }
       
       const parsedData = insertItemSchema.partial().parse(req.body);
@@ -807,7 +1166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/bags/:bagId/bulk-update-items", async (req, res) => {
+  app.patch("/api/bags/:bagId/bulk-update-items", isAuthenticated, async (req, res) => {
     try {
       const bagId = parseInt(req.params.bagId);
       
@@ -818,6 +1177,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bag = await storage.getBag(bagId);
       if (!bag) {
         return res.status(404).json({ message: "Bag not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(bag.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to modify items in this bag" });
       }
       
       const parsedData = insertItemSchema.partial().parse(req.body);
@@ -839,7 +1210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/travelers/:travelerId/bulk-update-items", async (req, res) => {
+  app.patch("/api/travelers/:travelerId/bulk-update-items", isAuthenticated, async (req, res) => {
     try {
       const travelerId = parseInt(req.params.travelerId);
       
@@ -850,6 +1221,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const traveler = await storage.getTraveler(travelerId);
       if (!traveler) {
         return res.status(404).json({ message: "Traveler not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(traveler.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership
+      const user = req.user as User;
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "You don't have permission to modify items for this traveler" });
       }
       
       const parsedData = insertItemSchema.partial().parse(req.body);
@@ -872,15 +1255,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Templates routes
-  app.get("/api/templates", async (req, res) => {
+  app.get("/api/templates", isAuthenticated, async (req, res) => {
     const templates = await storage.getTemplates();
     return res.json(templates);
   });
 
-  app.post("/api/templates", async (req, res) => {
+  app.post("/api/templates", isAuthenticated, async (req, res) => {
     try {
       const data = insertTemplateSchema.parse(req.body);
-      const template = await storage.createTemplate(data);
+      
+      // Add the user's ID to the template data
+      const user = req.user as User;
+      const templateWithUser = {
+        ...data,
+        userId: user.id
+      };
+      
+      const template = await storage.createTemplate(templateWithUser);
       return res.status(201).json(template);
     } catch (error) {
       if (error instanceof z.ZodError) {

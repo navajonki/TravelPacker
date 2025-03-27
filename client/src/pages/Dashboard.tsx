@@ -43,18 +43,15 @@ export default function Dashboard() {
   const { toast } = useToast();
   
   const { data: packingLists = [], isLoading } = useQuery<ListData[]>({
-    queryKey: ['/api/packing-lists?userId=1'],
+    queryKey: ['/api/packing-lists'],
   });
   
   const createPackingListMutation = useMutation({
     mutationFn: async (data: { name: string; theme: string; dateRange?: string }) => {
-      return apiRequest('POST', '/api/packing-lists', {
-        ...data,
-        userId: 1 // Using the default user ID
-      });
+      return apiRequest('POST', '/api/packing-lists', data);
     },
     onSuccess: (data: ListData) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists'] });
       toast({
         title: "Success",
         description: "Packing list created successfully",
@@ -77,7 +74,7 @@ export default function Dashboard() {
       return apiRequest('DELETE', `/api/packing-lists/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists?userId=1'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists'] });
       toast({
         title: "Success",
         description: "Packing list deleted successfully",
