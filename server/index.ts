@@ -7,11 +7,25 @@ import postgres from "postgres";
 import connectPgSimple from "connect-pg-simple";
 import session from "express-session";
 import passport from "passport";
+import cors from "cors";
 import { configurePassport, configureSessions } from "./auth";
 import type { User } from "@shared/schema";
 import { setupUserData } from "./setup-user-data";
 
 const app = express();
+
+// Trust the first proxy in production environments
+// Critical for proper session handling with secure cookies
+app.set('trust proxy', 1);
+
+// Configure CORS for cross-origin requests
+app.use(cors({
+  origin: true, // Allow requests from any origin
+  credentials: true, // Allow cookies to be sent with requests
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -32,7 +46,8 @@ const sessionOptions = {
   saveUninitialized: false,
   cookie: { 
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const // Allow cookies to be sent on regular link navigation
   }
 };
 app.use(session(sessionOptions));
