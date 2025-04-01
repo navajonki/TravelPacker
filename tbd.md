@@ -8,7 +8,7 @@
 - [ ] Menu at the top right doesn't do anything
 - [ ] Remove New List button when looking at an existing list
 - [x] Fix user login
-- [ ] Why is it so laggy?
+- [x] Why is it so laggy?
 - [ ] Filters should stay when navigating away
 - [ ] Packed items shouldn't change their place in the lists
 - [ ] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
