@@ -8,7 +8,7 @@ import MobileMenu from "@/components/MobileMenu";
 import CreateListModal from "@/components/modals/CreateListModal";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Luggage, Trash2 } from "lucide-react";
+import { Luggage, Trash2, Plus } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -118,7 +118,16 @@ export default function Dashboard() {
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 overflow-y-auto bg-background p-4">
           <div className="max-w-6xl mx-auto">
-            <h1 className="text-2xl font-semibold mb-6">Your Packing Lists</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-semibold">Your Packing Lists</h1>
+              <Button 
+                onClick={() => setCreateListOpen(true)}
+                className="flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                New List
+              </Button>
+            </div>
             
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
