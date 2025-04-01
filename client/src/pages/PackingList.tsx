@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
 import QuickAddForm from "@/components/QuickAddForm";
+import SearchBar from "@/components/SearchBar";
 import ActionBar from "@/components/ActionBar";
 import CategoryCard from "@/components/CategoryCard";
 import AddCategoryCard from "@/components/AddCategoryCard";
@@ -23,6 +24,7 @@ import AddBagModal from "@/components/modals/AddBagModal";
 import EditBagModal from "@/components/modals/EditBagModal";
 import AddTravelerModal from "@/components/modals/AddTravelerModal";
 import EditTravelerModal from "@/components/modals/EditTravelerModal";
+import EditItemModal from "@/components/modals/EditItemModal";
 import CreateListModal from "@/components/modals/CreateListModal";
 import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
 import { useToast } from "@/hooks/use-toast";
@@ -57,9 +59,11 @@ export default function PackingList() {
   const [editCategoryOpen, setEditCategoryOpen] = useState(false);
   const [editBagOpen, setEditBagOpen] = useState(false);
   const [editTravelerOpen, setEditTravelerOpen] = useState(false);
+  const [editItemOpen, setEditItemOpen] = useState(false);
   const [currentCategoryId, setCurrentCategoryId] = useState<number | null>(null);
   const [currentBagId, setCurrentBagId] = useState<number | null>(null);
   const [currentTravelerId, setCurrentTravelerId] = useState<number | null>(null);
+  const [currentItemId, setCurrentItemId] = useState<number | null>(null);
   
   // Multi-select edit mode states
   const [isMultiEditMode, setIsMultiEditMode] = useState(false);
@@ -305,6 +309,13 @@ export default function PackingList() {
     setEditTravelerOpen(true);
   };
   
+  // Handle edit item function
+  const handleEditItem = (itemId: number) => {
+    console.log('Edit Item:', itemId);
+    setCurrentItemId(itemId);
+    setEditItemOpen(true);
+  };
+  
   // Function to export packing list as CSV
   const handleExportList = () => {
     // Display loading toast
@@ -434,6 +445,15 @@ export default function PackingList() {
             onOpenBulkEdit={() => setBulkEditModalOpen(true)}
             onExportList={handleExportList}
           />
+          
+          {/* Search bar */}
+          <div className="px-4 py-2 bg-white border-b border-gray-200">
+            <SearchBar 
+              packingListId={packingListId}
+              onSelectResult={handleEditItem}
+              className="max-w-md mx-auto"
+            />
+          </div>
           
           <div className="bg-background p-4">
             {isLoading ? (
@@ -891,6 +911,19 @@ export default function PackingList() {
           travelerId={currentTravelerId}
           travelerName={travelers.find(t => t.id === currentTravelerId)?.name || ""}
           packingListId={packingListId}
+        />
+      )}
+      
+      {/* Edit Item Modal */}
+      {currentItemId && (
+        <EditItemModal 
+          open={editItemOpen}
+          onClose={() => {
+            setEditItemOpen(false);
+            setCurrentItemId(null);
+          }}
+          packingListId={packingListId}
+          itemId={currentItemId}
         />
       )}
     </div>

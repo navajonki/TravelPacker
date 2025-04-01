@@ -1,22 +1,12 @@
 import { useState, useEffect } from "react";
-import { 
-  SideDialog, 
-  SideDialogContent, 
-  SideDialogHeader, 
-  SideDialogTitle,
-  SideDialogDescription,
-  SideDialogFooter 
-} from "@/components/ui/side-dialog";
-import { Button } from "@/components/ui/button";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { AlertCircle, Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { SideDialog } from "@/components/ui/side-dialog";
 import {
   Select,
   SelectContent,
@@ -24,11 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useSyncStatus } from "@/hooks/use-sync-status";
+import { Spinner } from "@/components/ui/spinner";
 
-// Define the component props
 interface EditItemModalProps {
   open: boolean;
   onClose: () => void;
@@ -36,407 +23,285 @@ interface EditItemModalProps {
   itemId: number;
 }
 
-// Create the form schema using zod
-const formSchema = z.object({
-  name: z.string().min(1, "Item name is required"),
-  quantity: z.coerce.number().int().min(1, "Quantity must be at least 1"),
-  packed: z.boolean().default(false),
-  isEssential: z.boolean().default(false),
-  categoryId: z.coerce.number().int().min(1, "Category is required"),
-  bagId: z.coerce.number().int().optional().nullable(),
-  travelerId: z.coerce.number().int().optional().nullable(),
-  dueDate: z.string().optional().nullable()
-});
-
-// The actual modal component
 export default function EditItemModal({
   open,
   onClose,
   packingListId,
-  itemId
+  itemId,
 }: EditItemModalProps) {
-  const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
-  const { incrementPending, decrementPending } = useSyncStatus();
-
-  // Fetch item data
-  const { data: item, isLoading } = useQuery({
+  const { toast } = useToast();
+  
+  const [form, setForm] = useState({
+    name: "",
+    packed: false,
+    categoryId: 0,
+    bagId: null as number | null,
+    travelerId: null as number | null,
+    quantity: 1,
+    weight: null as number | null,
+    notes: ""
+  });
+  
+  const { data: item, isLoading: isLoadingItem } = useQuery({
     queryKey: [`/api/items/${itemId}`],
-    enabled: open && itemId > 0
+    enabled: open && itemId > 0,
   });
-
-  // Fetch categories for select dropdown
-  const { data: categories = [] } = useQuery({
+  
+  const { data: categories, isLoading: isLoadingCategories } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/categories`],
-    enabled: open
+    enabled: open,
   });
-
-  // Fetch bags for select dropdown
-  const { data: bags = [] } = useQuery({
+  
+  const { data: bags, isLoading: isLoadingBags } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
-    enabled: open
+    enabled: open,
   });
-
-  // Fetch travelers for select dropdown
-  const { data: travelers = [] } = useQuery({
+  
+  const { data: travelers, isLoading: isLoadingTravelers } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
-    enabled: open
+    enabled: open,
   });
-
-  // Setup react-hook-form with zod validation
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      quantity: 1,
-      packed: false,
-      isEssential: false,
-      categoryId: 0,
-      bagId: null,
-      travelerId: null,
-      dueDate: null
-    }
-  });
-
-  // Update form values when item data is loaded
+  
+  // Update form when item data is loaded
   useEffect(() => {
     if (item) {
-      form.reset({
-        name: item.name,
-        quantity: item.quantity || 1,
+      setForm({
+        name: item.name || "",
         packed: item.packed || false,
-        isEssential: item.isEssential || false,
-        categoryId: item.categoryId,
+        categoryId: item.categoryId || 0,
         bagId: item.bagId || null,
         travelerId: item.travelerId || null,
-        dueDate: item.dueDate || null
+        quantity: item.quantity || 1,
+        weight: item.weight || null,
+        notes: item.notes || ""
       });
     }
-  }, [form, item]);
-
-  // Mutation for updating the item
+  }, [item]);
+  
+  const isLoading = isLoadingItem || isLoadingCategories || isLoadingBags || isLoadingTravelers;
+  
   const updateItemMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof formSchema>) => {
-      incrementPending();
-      try {
-        const res = await apiRequest('PATCH', `/api/items/${itemId}`, data);
-        return await res.json();
-      } finally {
-        decrementPending();
-      }
+    mutationFn: async (data: any) => {
+      return await apiRequest('PATCH', `/api/items/${itemId}`, data);
     },
     onSuccess: () => {
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/items/${itemId}`] });
       
-      if (form.getValues().bagId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      }
+      toast({
+        title: "Success",
+        description: "Item updated successfully",
+      });
       
-      if (form.getValues().travelerId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      }
-      
-      // Close the modal
-      onClose();
+      // Auto-close the modal after success with a short delay
+      setTimeout(() => {
+        onClose();
+      }, 500);
     },
-    onError: (err: any) => {
-      console.error("Error updating item:", err);
-      setError(err.message || "An unexpected error occurred. Please try again.");
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update item",
+        variant: "destructive",
+      });
     }
   });
   
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    setError(null);
-    setIsSubmitting(true);
-    
-    try {
-      await updateItemMutation.mutateAsync(data);
-    } finally {
-      setIsSubmitting(false);
+  const deleteItemMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('DELETE', `/api/items/${itemId}`);
+    },
+    onSuccess: () => {
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      
+      toast({
+        title: "Success",
+        description: "Item deleted successfully",
+      });
+      
+      // Auto-close the modal after success with a short delay
+      setTimeout(() => {
+        onClose();
+      }, 500);
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to delete item",
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleSave = () => {
+    updateItemMutation.mutate(form);
+  };
+  
+  const handleDelete = () => {
+    if (confirm("Are you sure you want to delete this item?")) {
+      deleteItemMutation.mutate();
     }
   };
-
-  // If we're still loading the item data, show a loading state
-  if (isLoading && open) {
-    return (
-      <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
-        <SideDialogContent>
-          <SideDialogHeader>
-            <SideDialogTitle>Edit Item</SideDialogTitle>
-            <SideDialogDescription>Loading item details...</SideDialogDescription>
-          </SideDialogHeader>
-          <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </SideDialogContent>
-      </SideDialog>
-    );
-  }
-
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setForm({
+      ...form,
+      [name]: type === 'checkbox' ? checked : value
+    });
+  };
+  
+  const handleSelectChange = (name: string, value: string | null) => {
+    setForm({
+      ...form,
+      [name]: value === "none" ? null : value === null ? null : parseInt(value)
+    });
+  };
+  
   return (
-    <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <SideDialogContent>
-        <SideDialogHeader>
-          <SideDialogTitle>Edit Item</SideDialogTitle>
-          <SideDialogDescription>
-            Update the details of this item.
-          </SideDialogDescription>
-        </SideDialogHeader>
-        
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Item Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g. Toothbrush" 
-                      {...field} 
-                      autoFocus 
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <SideDialog open={open} onClose={onClose} title="Edit Item">
+      <div className="space-y-4 pr-4">
+        {isLoading ? (
+          <div className="flex justify-center items-center h-60">
+            <Spinner size="lg" />
+          </div>
+        ) : (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="name">Item Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={form.name}
+                onChange={handleInputChange}
+                placeholder="Item name"
+              />
+            </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
+            <div className="space-y-2">
+              <Label htmlFor="categoryId">Category</Label>
+              <Select
+                value={form.categoryId?.toString() || ""}
+                onValueChange={(value) => handleSelectChange("categoryId", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories?.map((category: any) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="bagId">Bag (Optional)</Label>
+              <Select
+                value={form.bagId ? form.bagId.toString() : "none"}
+                onValueChange={(value) => handleSelectChange("bagId", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select bag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No bag</SelectItem>
+                  {bags?.map((bag: any) => (
+                    <SelectItem key={bag.id} value={bag.id.toString()}>
+                      {bag.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="travelerId">Traveler (Optional)</Label>
+              <Select
+                value={form.travelerId ? form.travelerId.toString() : "none"}
+                onValueChange={(value) => handleSelectChange("travelerId", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select traveler" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No traveler</SelectItem>
+                  {travelers?.map((traveler: any) => (
+                    <SelectItem key={traveler.id} value={traveler.id.toString()}>
+                      {traveler.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="quantity">Quantity</Label>
+              <Input
+                id="quantity"
                 name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min={1}
-                        {...field}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="categoryId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <Select 
-                      disabled={isSubmitting} 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value?.toString() || undefined}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map((category: any) => (
-                          <SelectItem 
-                            key={category.id} 
-                            value={category.id.toString()}
-                          >
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="number"
+                min="1"
+                value={form.quantity}
+                onChange={handleInputChange}
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="bagId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Bag (Optional)</FormLabel>
-                    <Select 
-                      disabled={isSubmitting} 
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)} 
-                      defaultValue={field.value?.toString() || undefined}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select bag" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        {bags.map((bag: any) => (
-                          <SelectItem 
-                            key={bag.id} 
-                            value={bag.id.toString()}
-                          >
-                            {bag.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="travelerId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Traveler (Optional)</FormLabel>
-                    <Select 
-                      disabled={isSubmitting} 
-                      onValueChange={(value) => field.onChange(value ? parseInt(value) : null)} 
-                      defaultValue={field.value?.toString() || undefined}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select traveler" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="">None</SelectItem>
-                        {travelers.map((traveler: any) => (
-                          <SelectItem 
-                            key={traveler.id} 
-                            value={traveler.id.toString()}
-                          >
-                            {traveler.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Input
+                id="notes"
+                name="notes"
+                value={form.notes || ""}
+                onChange={handleInputChange}
+                placeholder="Add notes"
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="packed"
                 name="packed"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 border">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Packed
-                      </FormLabel>
-                      <FormDescription>
-                        Mark as packed if this item is ready
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
+                checked={form.packed}
+                onCheckedChange={(checked) => setForm({...form, packed: !!checked})}
               />
-              
-              <FormField
-                control={form.control}
-                name="isEssential"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-4 border">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isSubmitting}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Essential
-                      </FormLabel>
-                      <FormDescription>
-                        Mark as essential if this item is critical
-                      </FormDescription>
-                    </div>
-                  </FormItem>
-                )}
-              />
+              <Label htmlFor="packed" className="cursor-pointer">
+                Item is packed
+              </Label>
             </div>
             
-            <FormField
-              control={form.control}
-              name="dueDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Due Date (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="date"
-                      {...field} 
-                      value={field.value || ""}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Optional date when this item needs to be packed
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <SideDialogFooter>
+            <div className="flex justify-between pt-6">
               <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="mr-2"
+                variant="destructive" 
+                onClick={handleDelete}
+                disabled={updateItemMutation.isPending || deleteItemMutation.isPending}
               >
-                Cancel
+                {deleteItemMutation.isPending ? <Spinner className="mr-2" size="sm" /> : null}
+                Delete
               </Button>
               <Button 
-                type="submit"
-                disabled={isSubmitting}
+                variant="default" 
+                onClick={handleSave}
+                disabled={updateItemMutation.isPending || deleteItemMutation.isPending}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Changes"
-                )}
+                {updateItemMutation.isPending ? <Spinner className="mr-2" size="sm" /> : null}
+                Save Changes
               </Button>
-            </SideDialogFooter>
-          </form>
-        </Form>
-      </SideDialogContent>
+            </div>
+          </>
+        )}
+      </div>
     </SideDialog>
   );
 }

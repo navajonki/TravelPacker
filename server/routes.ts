@@ -1281,6 +1281,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search within a packing list
+  app.get("/api/packing-lists/:listId/search", isAuthenticated, async (req, res) => {
+    const listId = parseInt(req.params.listId);
+    const query = req.query.query as string;
+    const userId = (req.user as User).id;
+    
+    if (isNaN(listId)) {
+      return res.status(400).json({ message: "Invalid listId parameter" });
+    }
+    
+    if (!query || query.trim() === '') {
+      return res.json([]);
+    }
+    
+    // Check if the packing list exists and belongs to the authenticated user
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Verify ownership
+    if (packingList.userId !== userId) {
+      return res.status(403).json({ message: "You don't have permission to access this packing list" });
+    }
+    
+    // Get all items in this packing list
+    const items = await storage.getAllItemsByPackingList(listId);
+    
+    // Filter items by the search query
+    const matchedItems = items.filter(item => 
+      item.name.toLowerCase().includes(query.toLowerCase())
+    );
+    
+    // Get categories, bags, and travelers to provide context for each item
+    const categories = await storage.getCategories(listId);
+    const bags = await storage.getBags(listId);
+    const travelers = await storage.getTravelers(listId);
+    
+    // Enhance the matched items with their context information
+    const enhancedItems = matchedItems.map(item => {
+      const category = categories.find(c => c.id === item.categoryId);
+      const bag = item.bagId ? bags.find(b => b.id === item.bagId) : null;
+      const traveler = item.travelerId ? travelers.find(t => t.id === item.travelerId) : null;
+      
+      return {
+        id: item.id,
+        name: item.name,
+        categoryName: category ? category.name : 'Unknown',
+        bagName: bag ? bag.name : null,
+        travelerName: traveler ? traveler.name : null,
+        packed: item.packed
+      };
+    });
+    
+    // Limit to 10 results for performance
+    const limitedResults = enhancedItems.slice(0, 10);
+    
+    return res.json(limitedResults);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

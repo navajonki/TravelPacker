@@ -6,7 +6,7 @@
 - [x] Each list doesn't need a + on the top right
 - [ ] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] Menu at the top right doesn't do anything
-- [ ] Remove New List button when looking at an existing list
+- [x] Remove New List button when looking at an existing list
 - [x] Fix user login
 - [x] Why is it so laggy?
 - [ ] Filters should stay when navigating away
@@ -16,8 +16,8 @@
 - [ ] Filters tab looks awkward on mobile
 - [ ] Modals should take up 1/4 of screen width on the right
 - [ ] Implement pack / unpack all
-- [ ] Add new Traveler modal is broken
-- [ ] Edit item modal is broken
+- [x] Add new Traveler modal is broken
+- [x] Edit item modal is broken
 
 
 ## Features
