@@ -72,14 +72,14 @@ export default function CreateListModal({
         </SideDialogHeader>
         
         {error && (
-          <Alert variant="destructive" className="mt-4 mb-2">
+          <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="name"
@@ -135,12 +135,13 @@ export default function CreateListModal({
               )}
             />
             
-            <SideDialogFooter className="gap-2 mt-6">
+            <SideDialogFooter>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
                 disabled={isSubmitting}
+                className="mr-2"
               >
                 Cancel
               </Button>

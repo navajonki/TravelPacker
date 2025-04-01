@@ -1,16 +1,18 @@
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 
+// Root Dialog component
 const SideDialog = DialogPrimitive.Root
 
+// Dialog Trigger component
 const SideDialogTrigger = DialogPrimitive.Trigger
 
+// Dialog Close component
 const SideDialogClose = DialogPrimitive.Close
 
-// Using the same overlay as the regular dialog
+// Overlay component
 const SideDialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -18,7 +20,7 @@ const SideDialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props}
@@ -26,7 +28,7 @@ const SideDialogOverlay = React.forwardRef<
 ))
 SideDialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-// Custom content component that appears from the right side
+// Content component that shows on the right side
 const SideDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
@@ -36,14 +38,19 @@ const SideDialogContent = React.forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed right-0 top-0 z-50 h-full w-1/4 border-l bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full",
-        // Responsive behavior
-        "min-w-[300px] max-w-md",
+        "fixed right-0 top-0 z-50 flex h-full flex-col border-l bg-background shadow-lg",
+        "w-full max-w-xs sm:max-w-sm md:max-w-md lg:w-1/4",
+        "translate-x-0 transition-all duration-200",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+        "data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-right-full",
+        "focus:outline-none",
         className
       )}
       {...props}
     >
-      {children}
+      <div className="p-6 overflow-y-auto flex-1">
+        {children}
+      </div>
       <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
         <X className="h-4 w-4" />
         <span className="sr-only">Close</span>
@@ -53,14 +60,14 @@ const SideDialogContent = React.forwardRef<
 ))
 SideDialogContent.displayName = DialogPrimitive.Content.displayName
 
-// Reusing the existing Dialog header, footer, title and description components
+// Header component
 const SideDialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 text-left",
+      "mb-4 flex flex-col space-y-1.5 text-left",
       className
     )}
     {...props}
@@ -68,13 +75,14 @@ const SideDialogHeader = ({
 )
 SideDialogHeader.displayName = "SideDialogHeader"
 
+// Footer component
 const SideDialogFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      "mt-6 flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
       className
     )}
     {...props}
@@ -82,6 +90,7 @@ const SideDialogFooter = ({
 )
 SideDialogFooter.displayName = "SideDialogFooter"
 
+// Title component
 const SideDialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
@@ -97,6 +106,7 @@ const SideDialogTitle = React.forwardRef<
 ))
 SideDialogTitle.displayName = DialogPrimitive.Title.displayName
 
+// Description component
 const SideDialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
@@ -109,6 +119,7 @@ const SideDialogDescription = React.forwardRef<
 ))
 SideDialogDescription.displayName = DialogPrimitive.Description.displayName
 
+// Export all components
 export {
   SideDialog,
   SideDialogTrigger,
