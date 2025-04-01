@@ -23,6 +23,8 @@ interface QuickAddFormProps {
     travelerId?: number;
   }) => Promise<void>;
   onOpenAdvancedAdd: () => void;
+  isInline?: boolean;
+  onClose?: () => void;
 }
 
 // Define interfaces for type safety
@@ -60,9 +62,11 @@ interface TravelerData {
 export default function QuickAddForm({ 
   packingListId, 
   onAddItem, 
-  onOpenAdvancedAdd 
+  onOpenAdvancedAdd,
+  isInline = false,
+  onClose
 }: QuickAddFormProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(isInline);
   const [itemName, setItemName] = useState("");
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined);
   const [selectedBagId, setSelectedBagId] = useState<string | undefined>(undefined);
@@ -116,20 +120,24 @@ export default function QuickAddForm({
   };
 
   const closeForm = () => {
-    setIsExpanded(false);
+    if (onClose) {
+      onClose();
+    } else {
+      setIsExpanded(false);
+    }
     setItemName("");
   };
 
   // If form is collapsed, just show the "Add Item" button
   if (!isExpanded) {
     return (
-      <div className="bg-white p-4 border-b border-gray-200 flex justify-center">
+      <div className={`${isInline ? 'w-full' : 'bg-white p-4 border-b border-gray-200'} flex justify-center`}>
         <Button
           onClick={toggleForm}
-          variant="outline"
-          className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow"
+          variant={isInline ? "default" : "outline"}
+          className={`flex items-center gap-2 ${isInline ? '' : 'px-4 py-2 border border-gray-200 rounded-full shadow-sm hover:shadow-md transition-shadow'}`}
         >
-          <Plus className="h-5 w-5 text-primary" />
+          <Plus className={`h-5 w-5 ${isInline ? 'text-white' : 'text-primary'}`} />
           <span>Add Item</span>
         </Button>
       </div>
@@ -140,7 +148,7 @@ export default function QuickAddForm({
   return (
     <AnimatePresence>
       <motion.div 
-        className="bg-white p-4 border-b border-gray-200"
+        className={`${isInline ? 'w-full' : 'bg-white p-4 border-b border-gray-200'}`}
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         exit={{ opacity: 0, height: 0 }}

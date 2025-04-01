@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
 import QuickAddForm from "@/components/QuickAddForm";
+import ActionBar from "@/components/ActionBar";
 import CategoryCard from "@/components/CategoryCard";
 import AddCategoryCard from "@/components/AddCategoryCard";
 import BagCard from "@/components/BagCard";
@@ -388,46 +389,21 @@ export default function PackingList() {
             />
           ) : null}
           
-          <div className="bg-white border-b border-gray-200 px-4 py-2">
-            <div className="flex items-center justify-between">
-              <QuickAddForm 
-                packingListId={packingListId}
-                onAddItem={handleAddItem}
-                onOpenAdvancedAdd={() => setAdvancedAddOpen(true)}
-              />
-              <div className="flex items-center ml-2">
-                {isMultiEditMode ? (
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        setIsMultiEditMode(false);
-                        setSelectedItemIds([]);
-                      }}
-                      variant="outline"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setBulkEditModalOpen(true)}
-                      disabled={selectedItemIds.length === 0}
-                    >
-                      Edit Selected ({selectedItemIds.length})
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsMultiEditMode(true)}
-                  >
-                    Edit Multiple
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+          <ActionBar 
+            packingListId={packingListId}
+            isMultiEditMode={isMultiEditMode}
+            selectedItemIds={selectedItemIds}
+            onOpenAdvancedAdd={() => setAdvancedAddOpen(true)}
+            onAddItem={handleAddItem}
+            onToggleMultiEditMode={(enabled) => {
+              setIsMultiEditMode(enabled);
+              if (!enabled) {
+                setSelectedItemIds([]);
+              }
+            }}
+            onOpenBulkEdit={() => setBulkEditModalOpen(true)}
+            onExportList={handleExportList}
+          />
           
           <div className="bg-background p-4">
             {isLoading ? (
