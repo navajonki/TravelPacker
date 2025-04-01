@@ -156,6 +156,11 @@ export default function TravelerCard({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEditTraveler(traveler.id)}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    <span>Edit Traveler</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
                   <DropdownMenuItem onClick={() => handleBulkAction("pack")}>
                     <CheckSquare className="h-4 w-4 mr-2" />
