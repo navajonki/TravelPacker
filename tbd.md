@@ -3,7 +3,7 @@
 - [ ] Remove the grabby thing
 - [ ] The things that appear in the items should always be of the types on the other two tabs - so if you're looking at Bags, the tags on the items should be category & traveler
 - [x] Theme shouldn't be mandatory
-- [ ] Each list doesn't need a + on the top right
+- [x] Each list doesn't need a + on the top right
 - [ ] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] Menu at the top right doesn't do anything
 - [ ] Remove New List button when looking at an existing list
@@ -16,6 +16,8 @@
 - [ ] Filters tab looks awkward on mobile
 - [ ] Modals should take up 1/4 of screen width on the right
 - [ ] Implement pack / unpack all
+- [ ] Add new Traveler modal is broken
+- [ ] Edit item modal is broken
 
 
 ## Features

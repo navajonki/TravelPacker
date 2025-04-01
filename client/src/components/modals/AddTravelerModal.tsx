@@ -14,22 +14,118 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { AlertCircle, Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// Temporary stub component while we update the modals
-export default function BaseModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+// Define the component props
+interface AddTravelerModalProps {
+  open: boolean;
+  onClose: () => void;
+  onAddTraveler: (name: string) => Promise<void>;
+}
+
+// Create the form schema using zod
+const formSchema = z.object({
+  name: z.string().min(1, "Traveler name is required")
+});
+
+// The actual modal component
+export default function AddTravelerModal({
+  open,
+  onClose,
+  onAddTraveler
+}: AddTravelerModalProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Setup react-hook-form with zod validation
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: ""
+    }
+  });
+  
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    setError(null);
+    setIsSubmitting(true);
+    
+    try {
+      await onAddTraveler(data.name);
+      form.reset();
+      onClose();
+    } catch (err) {
+      console.error("Error adding traveler:", err);
+      setError(err instanceof Error ? err.message : "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
       <SideDialogContent>
         <SideDialogHeader>
-          <SideDialogTitle>Modal Title</SideDialogTitle>
-          <SideDialogDescription>This modal is being updated to the new design.</SideDialogDescription>
+          <SideDialogTitle>Add Traveler</SideDialogTitle>
+          <SideDialogDescription>
+            Add a new traveler to your packing list.
+          </SideDialogDescription>
         </SideDialogHeader>
-        <div className="py-4">
-          <p>Sorry for the inconvenience. This modal is temporarily unavailable while we update the interface.</p>
-        </div>
-        <SideDialogFooter>
-          <Button onClick={onClose}>Close</Button>
-        </SideDialogFooter>
+        
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Traveler Name</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g. John, Sarah, Kids" 
+                      {...field} 
+                      autoFocus 
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <SideDialogFooter>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="mr-2"
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  "Add Traveler"
+                )}
+              </Button>
+            </SideDialogFooter>
+          </form>
+        </Form>
       </SideDialogContent>
     </SideDialog>
   );
