@@ -325,7 +325,7 @@ export default function PackingList() {
     }, 1000);
   };
   
-  const handleCreateNewList = async (data: { name: string, theme: string, dateRange?: string }) => {
+  const handleCreateNewList = async (data: { name: string, theme?: string, dateRange?: string }) => {
     await createPackingListMutation.mutate({
       ...data,
       userId: 1 // Using the default user ID

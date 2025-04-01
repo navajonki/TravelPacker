@@ -47,7 +47,7 @@ export default function Dashboard() {
   });
   
   const createPackingListMutation = useMutation({
-    mutationFn: async (data: { name: string; theme: string; dateRange?: string }) => {
+    mutationFn: async (data: { name: string; theme?: string; dateRange?: string }) => {
       return apiRequest('POST', '/api/packing-lists', data);
     },
     onSuccess: (data: ListData) => {
@@ -93,7 +93,7 @@ export default function Dashboard() {
     }
   });
 
-  const handleCreateList = async (data: { name: string; theme: string; dateRange?: string }) => {
+  const handleCreateList = async (data: { name: string; theme?: string; dateRange?: string }) => {
     createPackingListMutation.mutate(data);
   };
   

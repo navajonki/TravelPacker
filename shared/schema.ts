@@ -18,7 +18,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const packingLists = pgTable("packing_lists", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  theme: text("theme").notNull(),
+  theme: text("theme"),
   dateRange: text("date_range"),
   userId: integer("user_id").notNull().references(() => users.id),
   createdAt: timestamp("created_at").defaultNow().notNull()

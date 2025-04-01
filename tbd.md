@@ -1,5 +1,5 @@
 ## Bugs
-- [ ] Editing a bag / traveler / category
+- [x] Editing a bag / traveler / category
 - [ ] Remove the grabby thing
 - [ ] The things that appear in the items should always be of the types on the other two tabs - so if you're looking at Bags, the tags on the items should be category & traveler
 - [ ] Theme shouldn't be mandatory

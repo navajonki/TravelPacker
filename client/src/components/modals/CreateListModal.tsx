@@ -19,12 +19,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 interface CreateListModalProps {
   open: boolean;
   onClose: () => void;
-  onCreateList: (data: { name: string, theme: string, dateRange?: string }) => Promise<void>;
+  onCreateList: (data: { name: string, theme?: string, dateRange?: string }) => Promise<void>;
 }
 
 const formSchema = z.object({
   name: z.string().min(1, "List name is required"),
-  theme: z.string().min(1, "Theme is required"),
+  theme: z.string().optional(),
   dateRange: z.string().optional()
 });
 
@@ -112,7 +112,7 @@ export default function CreateListModal({
               name="theme"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Theme</FormLabel>
+                  <FormLabel>Theme (Optional)</FormLabel>
                   <FormControl>
                     <Input 
                       placeholder="e.g. Beach, Hiking, Business" 
