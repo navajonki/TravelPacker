@@ -18,8 +18,11 @@ import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
 import AddCategoryModal from "@/components/modals/AddCategoryModal";
+import EditCategoryModal from "@/components/modals/EditCategoryModal";
 import AddBagModal from "@/components/modals/AddBagModal";
+import EditBagModal from "@/components/modals/EditBagModal";
 import AddTravelerModal from "@/components/modals/AddTravelerModal";
+import EditTravelerModal from "@/components/modals/EditTravelerModal";
 import CreateListModal from "@/components/modals/CreateListModal";
 import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
 import { useToast } from "@/hooks/use-toast";
@@ -49,6 +52,14 @@ export default function PackingList() {
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
+  
+  // Edit modals
+  const [editCategoryOpen, setEditCategoryOpen] = useState(false);
+  const [editBagOpen, setEditBagOpen] = useState(false);
+  const [editTravelerOpen, setEditTravelerOpen] = useState(false);
+  const [currentCategoryId, setCurrentCategoryId] = useState<number | null>(null);
+  const [currentBagId, setCurrentBagId] = useState<number | null>(null);
+  const [currentTravelerId, setCurrentTravelerId] = useState<number | null>(null);
   
   // Multi-select edit mode states
   const [isMultiEditMode, setIsMultiEditMode] = useState(false);
@@ -275,6 +286,22 @@ export default function PackingList() {
     await addTravelerMutation.mutate(name);
   };
   
+  // Handle the edit functions
+  const handleEditCategory = (categoryId: number) => {
+    setCurrentCategoryId(categoryId);
+    setEditCategoryOpen(true);
+  };
+  
+  const handleEditBag = (bagId: number) => {
+    setCurrentBagId(bagId);
+    setEditBagOpen(true);
+  };
+  
+  const handleEditTraveler = (travelerId: number) => {
+    setCurrentTravelerId(travelerId);
+    setEditTravelerOpen(true);
+  };
+  
   // Function to export packing list as CSV
   const handleExportList = () => {
     // Display loading toast
@@ -459,7 +486,7 @@ export default function PackingList() {
                         ) : (
                           <CategoryCard 
                             category={category}
-                            onEditCategory={() => {}}
+                            onEditCategory={handleEditCategory}
                             onDeleteCategory={handleDeleteCategory}
                             onAddItem={() => {
                               setAdvancedAddOpen(true);
@@ -511,7 +538,7 @@ export default function PackingList() {
                         ) : (
                           <BagCard 
                             bag={bag}
-                            onEditBag={() => {}}
+                            onEditBag={handleEditBag}
                             onDeleteBag={handleDeleteBag}
                             onAddItem={() => {
                               setAdvancedAddOpen(true);
@@ -563,7 +590,7 @@ export default function PackingList() {
                         ) : (
                           <TravelerCard 
                             traveler={traveler}
-                            onEditTraveler={() => {}}
+                            onEditTraveler={handleEditTraveler}
                             onDeleteTraveler={handleDeleteTraveler}
                             onAddItem={() => {
                               setAdvancedAddOpen(true);
@@ -823,6 +850,46 @@ export default function PackingList() {
         selectedItemIds={selectedItemIds}
         packingListId={packingListId}
       />
+      
+      {/* Edit modal components */}
+      {currentCategoryId && categories && (
+        <EditCategoryModal 
+          open={editCategoryOpen}
+          onClose={() => {
+            setEditCategoryOpen(false);
+            setCurrentCategoryId(null);
+          }}
+          categoryId={currentCategoryId}
+          categoryName={categories.find(c => c.id === currentCategoryId)?.name || ""}
+          packingListId={packingListId}
+        />
+      )}
+      
+      {currentBagId && bags && (
+        <EditBagModal 
+          open={editBagOpen}
+          onClose={() => {
+            setEditBagOpen(false);
+            setCurrentBagId(null);
+          }}
+          bagId={currentBagId}
+          bagName={bags.find(b => b.id === currentBagId)?.name || ""}
+          packingListId={packingListId}
+        />
+      )}
+      
+      {currentTravelerId && travelers && (
+        <EditTravelerModal 
+          open={editTravelerOpen}
+          onClose={() => {
+            setEditTravelerOpen(false);
+            setCurrentTravelerId(null);
+          }}
+          travelerId={currentTravelerId}
+          travelerName={travelers.find(t => t.id === currentTravelerId)?.name || ""}
+          packingListId={packingListId}
+        />
+      )}
     </div>
   );
 }

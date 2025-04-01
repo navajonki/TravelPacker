@@ -13,12 +13,13 @@
 - [ ] Packed items shouldn't change their place in the lists
 - [ ] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
 - [ ] Dropdowns should have a select all / none toggle
+- [ ] Filters tab looks awkward on mobile
 
 
 ## Features
 - [ ] Searching within the given packing list
 - [ ] Rearrange items on the lists
-- [ ] New item entry fields should go away when not in use. There should just be a big plus button, when you tap on that those fields all pop up
+- [x] New item entry fields should go away when not in use. There should just be a big plus button, when you tap on that those fields all pop up
 - [ ] Ability to collaborate
 - [ ] Copy list
 - [ ] Create "On Person" category that doesn't count toward packing completion
