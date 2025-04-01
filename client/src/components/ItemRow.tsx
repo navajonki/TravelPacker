@@ -64,43 +64,70 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
   
   const togglePackedMutation = useMutation({
     mutationFn: async () => {
-      // Set optimistic state immediately
-      setOptimisticPacked(!isItemPacked);
+      const newPackedState = !isItemPacked;
       incrementPending();
       
       try {
-        await apiRequest('PATCH', `/api/items/${item.id}`, {
-          packed: !isItemPacked
+        const updatedItem = await apiRequest('PATCH', `/api/items/${item.id}`, {
+          packed: newPackedState
         });
+        return updatedItem;
       } catch (error) {
-        // Revert optimistic state on error
-        setOptimisticPacked(isItemPacked);
         throw error;
       } finally {
         decrementPending();
       }
     },
-    onSuccess: () => {
-      // Invalidate all relevant queries
+    onMutate: async () => {
+      // Cancel any outgoing refetches 
+      await queryClient.cancelQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      
+      // Set optimistic state
+      setOptimisticPacked(!isItemPacked);
+      
+      // Return context for potential rollback
+      return { previousState: isItemPacked };
+    },
+    onSuccess: (newItem) => {
+      // Use the returned data from the mutation to update the cache directly
+      // This prevents unnecessary refetches
+      queryClient.setQueryData(
+        [`/api/packing-lists/${packingListId}/categories`],
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          
+          return oldData.map((category: any) => {
+            if (category.id === item.categoryId) {
+              return {
+                ...category,
+                items: category.items.map((i: any) => 
+                  i.id === item.id ? { ...i, packed: newItem.packed } : i
+                )
+              };
+            }
+            return category;
+          });
+        }
+      );
+    },
+    onError: (_, __, context: any) => {
+      // Reset to the previous state if there was an error
+      if (context) {
+        setOptimisticPacked(context.previousState);
+      }
+    },
+    onSettled: () => {
+      // Always invalidate the queries when settled to ensure data consistency
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-
-      // If item is assigned to a bag, invalidate bags query
+      
       if (item.bagId) {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
       }
       
-      // If item is assigned to a traveler, invalidate travelers query
       if (item.travelerId) {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       }
-      
-      // Clear optimistic state after server confirms the change
-      setOptimisticPacked(null);
-    },
-    onError: () => {
-      // Revert optimistic state on error
-      setOptimisticPacked(null);
     }
   });
   
