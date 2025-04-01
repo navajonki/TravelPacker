@@ -211,6 +211,7 @@ export default function CategoryCard({
         
         <CardContent className="p-0">
           <ul className="p-2 divide-y divide-gray-100">
+            {/* Key point: We don't sort the items by packed status, preserving original order */}
             {category.items.map((item) => (
               <ItemRow
                 key={item.id}
