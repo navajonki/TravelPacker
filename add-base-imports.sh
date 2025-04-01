@@ -1,3 +1,17 @@
+#!/bin/bash
+
+for file in client/src/components/modals/AddBagModal.tsx \
+            client/src/components/modals/AddTravelerModal.tsx \
+            client/src/components/modals/BulkEditItemsModal.tsx \
+            client/src/components/modals/EditBagModal.tsx \
+            client/src/components/modals/EditCategoryModal.tsx \
+            client/src/components/modals/EditItemModal.tsx \
+            client/src/components/modals/EditTravelerModal.tsx; do
+    # Make a backup copy
+    cp "$file" "${file}.bak"
+    
+    # Create a new file with the updated content
+    cat > "$file" << 'EOL'
 import { useState } from "react";
 import { 
   SideDialog, 
@@ -34,3 +48,7 @@ export default function BaseModal({ open, onClose }: { open: boolean; onClose: (
     </SideDialog>
   );
 }
+EOL
+done
+
+echo "Created base modal components"

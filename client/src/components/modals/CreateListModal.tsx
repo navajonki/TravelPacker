@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { X, AlertCircle, Loader2 } from "lucide-react";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter 
-} from "@/components/ui/dialog";
+  SideDialog, 
+  SideDialogContent, 
+  SideDialogHeader, 
+  SideDialogTitle,
+  SideDialogDescription,
+  SideDialogFooter 
+} from "@/components/ui/side-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -62,32 +62,24 @@ export default function CreateListModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Create New Packing List</DialogTitle>
-          <DialogDescription>
+    <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <SideDialogContent>
+        <SideDialogHeader>
+          <SideDialogTitle>Create New Packing List</SideDialogTitle>
+          <SideDialogDescription>
             Fill in the details to create a new packing list.
-          </DialogDescription>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-4 top-4"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogHeader>
+          </SideDialogDescription>
+        </SideDialogHeader>
         
         {error && (
-          <Alert variant="destructive" className="mt-2">
+          <Alert variant="destructive" className="mt-4 mb-2">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
             <FormField
               control={form.control}
               name="name"
@@ -143,7 +135,7 @@ export default function CreateListModal({
               )}
             />
             
-            <DialogFooter className="gap-2 sm:gap-0">
+            <SideDialogFooter className="gap-2 mt-6">
               <Button 
                 type="button" 
                 variant="outline" 
@@ -165,10 +157,10 @@ export default function CreateListModal({
                   "Create List"
                 )}
               </Button>
-            </DialogFooter>
+            </SideDialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SideDialogContent>
+    </SideDialog>
   );
 }

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter 
-} from "@/components/ui/dialog";
+  SideDialog, 
+  SideDialogContent, 
+  SideDialogHeader, 
+  SideDialogTitle,
+  SideDialogDescription,
+  SideDialogFooter 
+} from "@/components/ui/side-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,13 +99,13 @@ export default function AdvancedAddItemModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add Item Details</DialogTitle>
-          <DialogDescription>
+    <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <SideDialogContent className="">
+        <SideDialogHeader>
+          <SideDialogTitle>Add Item Details</SideDialogTitle>
+          <SideDialogDescription>
             Enter details about the item you want to add to your packing list.
-          </DialogDescription>
+          </SideDialogDescription>
           <Button 
             variant="ghost" 
             size="icon" 
@@ -114,7 +114,7 @@ export default function AdvancedAddItemModal({
           >
             <X className="h-4 w-4" />
           </Button>
-        </DialogHeader>
+        </SideDialogHeader>
         
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -272,15 +272,15 @@ export default function AdvancedAddItemModal({
               />
             )}
             
-            <DialogFooter className="gap-2 sm:gap-0">
+            <SideDialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               <Button type="submit">Add Item</Button>
-            </DialogFooter>
+            </SideDialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SideDialogContent>
+    </SideDialog>
   );
 }

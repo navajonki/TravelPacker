@@ -1,12 +1,12 @@
 import { X } from "lucide-react";
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription,
-  DialogFooter 
-} from "@/components/ui/dialog";
+  SideDialog, 
+  SideDialogContent, 
+  SideDialogHeader, 
+  SideDialogTitle,
+  SideDialogDescription,
+  SideDialogFooter 
+} from "@/components/ui/side-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -44,25 +44,17 @@ export default function AddCategoryModal({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
-          <DialogDescription>
+    <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
+      <SideDialogContent>
+        <SideDialogHeader>
+          <SideDialogTitle>Add New Category</SideDialogTitle>
+          <SideDialogDescription>
             Create a new category to organize your packing items.
-          </DialogDescription>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-4 top-4"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </DialogHeader>
+          </SideDialogDescription>
+        </SideDialogHeader>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
             <FormField
               control={form.control}
               name="name"
@@ -77,15 +69,15 @@ export default function AddCategoryModal({
               )}
             />
             
-            <DialogFooter className="mt-6 gap-2 sm:gap-0">
+            <SideDialogFooter className="mt-6 gap-2">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
               <Button type="submit">Add Category</Button>
-            </DialogFooter>
+            </SideDialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </SideDialogContent>
+    </SideDialog>
   );
 }
