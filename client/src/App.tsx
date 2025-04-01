@@ -8,6 +8,8 @@ import PackingList from "@/pages/PackingList";
 import AuthPage from "@/pages/AuthPage";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { SyncStatusProvider } from "@/hooks/use-sync-status";
+import SyncStatusIndicator from "@/components/SyncStatusIndicator";
 
 function Router() {
   return (
@@ -24,8 +26,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router />
-        <Toaster />
+        <SyncStatusProvider>
+          <Router />
+          <SyncStatusIndicator />
+          <Toaster />
+        </SyncStatusProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -6,6 +6,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import EditItemModal from "@/components/modals/EditItemModal";
+import { useSyncStatus } from "@/hooks/use-sync-status";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +35,9 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
   const [hovering, setHovering] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [optimisticPacked, setOptimisticPacked] = useState<boolean | null>(null);
   const queryClient = useQueryClient();
+  const { incrementPending, decrementPending } = useSyncStatus();
   
   const { data: bags = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
@@ -56,11 +59,26 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
     return traveler?.name;
   };
   
+  // Get the current packed status, considering the optimistic state
+  const isItemPacked = optimisticPacked !== null ? optimisticPacked : item.packed;
+  
   const togglePackedMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest('PATCH', `/api/items/${item.id}`, {
-        packed: !item.packed
-      });
+      // Set optimistic state immediately
+      setOptimisticPacked(!isItemPacked);
+      incrementPending();
+      
+      try {
+        await apiRequest('PATCH', `/api/items/${item.id}`, {
+          packed: !isItemPacked
+        });
+      } catch (error) {
+        // Revert optimistic state on error
+        setOptimisticPacked(isItemPacked);
+        throw error;
+      } finally {
+        decrementPending();
+      }
     },
     onSuccess: () => {
       // Invalidate all relevant queries
@@ -76,12 +94,24 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
       if (item.travelerId) {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       }
+      
+      // Clear optimistic state after server confirms the change
+      setOptimisticPacked(null);
+    },
+    onError: () => {
+      // Revert optimistic state on error
+      setOptimisticPacked(null);
     }
   });
   
   const deleteItemMutation = useMutation({
     mutationFn: async () => {
-      await apiRequest('DELETE', `/api/items/${item.id}`);
+      incrementPending();
+      try {
+        await apiRequest('DELETE', `/api/items/${item.id}`);
+      } finally {
+        decrementPending();
+      }
     },
     onSuccess: () => {
       // Close dialog
@@ -120,13 +150,13 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
         <div className="flex items-center">
           <div className="flex-shrink-0">
             <Checkbox 
-              checked={item.packed}
+              checked={isItemPacked}
               onCheckedChange={() => togglePackedMutation.mutate()}
               className="w-4 h-4"
             />
           </div>
           <div className="ml-3 flex-1">
-            <p className={`text-sm font-medium ${item.packed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+            <p className={`text-sm font-medium ${isItemPacked ? 'line-through text-gray-500' : 'text-gray-900'}`}>
               {item.name}{item.quantity > 1 ? ` (${item.quantity})` : ''}
             </p>
             {(bagName || travelerName) && (
