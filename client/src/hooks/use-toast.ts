@@ -7,6 +7,7 @@ import type {
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000
+const SUCCESS_AUTO_CLOSE_DELAY = 500 // Auto close success messages after 0.5 seconds
 
 type ToasterToast = ToastProps & {
   id: string
@@ -160,6 +161,13 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+  
+  // Auto-dismiss success toasts after SUCCESS_AUTO_CLOSE_DELAY
+  if (props.title === "Success") {
+    setTimeout(() => {
+      dismiss()
+    }, SUCCESS_AUTO_CLOSE_DELAY)
+  }
 
   return {
     id: id,
