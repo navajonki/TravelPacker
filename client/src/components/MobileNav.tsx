@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link, useRoute } from "wouter";
 import { Luggage, Plus, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -6,10 +6,19 @@ import { Button } from "@/components/ui/button";
 interface MobileNavProps {
   onCreateNewList?: () => void;
   show?: boolean;
+  hideNewListButton?: boolean;
 }
 
-export default function MobileNav({ onCreateNewList, show = false }: MobileNavProps) {
+export default function MobileNav({ 
+  onCreateNewList, 
+  show = false,
+  hideNewListButton = false
+}: MobileNavProps) {
   const { logoutMutation } = useAuth();
+  const [isListPage] = useRoute("/list/:id");
+
+  // Hide the "New List" button on packing list detail pages
+  const shouldHideNewListButton = hideNewListButton || isListPage;
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -27,7 +36,7 @@ export default function MobileNav({ onCreateNewList, show = false }: MobileNavPr
         </Link>
         
         <div className="flex items-center space-x-2">
-          {onCreateNewList && (
+          {onCreateNewList && !shouldHideNewListButton && (
             <button 
               onClick={onCreateNewList}
               className="flex items-center p-2 bg-primary text-white rounded-md"

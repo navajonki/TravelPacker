@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useRoute } from "wouter";
 import { Luggage, Search, Menu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,20 @@ interface HeaderProps {
   onCreateNewList: () => void;
   onOpenSearch?: () => void;
   onToggleMenu?: () => void;
+  hideNewListButton?: boolean;
 }
 
-export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: HeaderProps) {
+export default function Header({ 
+  onCreateNewList, 
+  onOpenSearch, 
+  onToggleMenu,
+  hideNewListButton = false 
+}: HeaderProps) {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [isListPage] = useRoute("/list/:id");
+
+  // Hide the "New List" button on packing list detail pages
+  const shouldHideNewListButton = hideNewListButton || isListPage;
 
   const toggleMobileSearch = () => {
     setShowMobileSearch(!showMobileSearch);
@@ -23,6 +33,7 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
     <header className="bg-white border-b border-gray-200">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
+          {/* Left side - Logo */}
           <div className="flex items-center space-x-2">
             <Link href="/">
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -32,6 +43,7 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
             </Link>
           </div>
           
+          {/* Middle - Search and New List on desktop */}
           <div className="hidden md:flex items-center space-x-4">
             <div className="relative">
               <Input
@@ -42,12 +54,15 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
               <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
             </div>
             
-            <Button onClick={onCreateNewList} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition flex items-center">
-              <Plus className="h-4 w-4 mr-1" />
-              New List
-            </Button>
+            {!shouldHideNewListButton && (
+              <Button onClick={onCreateNewList} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition flex items-center">
+                <Plus className="h-4 w-4 mr-1" />
+                New List
+              </Button>
+            )}
           </div>
           
+          {/* Right side - Mobile controls and User menu */}
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
@@ -57,6 +72,7 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
             >
               <Search className="h-5 w-5" />
             </Button>
+            
             <Button
               variant="ghost"
               size="icon"
@@ -65,6 +81,7 @@ export default function Header({ onCreateNewList, onOpenSearch, onToggleMenu }: 
             >
               <Menu className="h-5 w-5" />
             </Button>
+            
             <div className="hidden md:block">
               <UserMenu />
             </div>

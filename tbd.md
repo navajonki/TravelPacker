@@ -10,12 +10,12 @@
 - [x] Fix user login
 - [x] Why is it so laggy?
 - [ ] Filters should stay when navigating away
-- [ ] Packed items shouldn't change their place in the lists
+- [x] Packed items shouldn't change their place in the lists
 - [ ] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
 - [ ] Dropdowns should have a select all / none toggle
 - [ ] Filters tab looks awkward on mobile
 - [ ] Modals should take up 1/4 of screen width on the right
-- [ ] 
+- [ ] Implement pack / unpack all
 
 
 ## Features
