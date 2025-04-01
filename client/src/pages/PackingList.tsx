@@ -288,16 +288,19 @@ export default function PackingList() {
   
   // Handle the edit functions
   const handleEditCategory = (categoryId: number) => {
+    console.log('Edit Category:', categoryId);
     setCurrentCategoryId(categoryId);
     setEditCategoryOpen(true);
   };
   
   const handleEditBag = (bagId: number) => {
+    console.log('Edit Bag:', bagId);
     setCurrentBagId(bagId);
     setEditBagOpen(true);
   };
   
   const handleEditTraveler = (travelerId: number) => {
+    console.log('Edit Traveler:', travelerId);
     setCurrentTravelerId(travelerId);
     setEditTravelerOpen(true);
   };
