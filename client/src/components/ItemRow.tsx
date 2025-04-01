@@ -82,15 +82,13 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
       // Cancel any outgoing refetches 
       await queryClient.cancelQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
       
+      // Store the current data for potential rollback
+      const previousData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/categories`]);
+      
       // Set optimistic state
       setOptimisticPacked(!isItemPacked);
       
-      // Return context for potential rollback
-      return { previousState: isItemPacked };
-    },
-    onSuccess: (newItem) => {
-      // Use the returned data from the mutation to update the cache directly
-      // This prevents unnecessary refetches
+      // Update the query data with our optimistic result
       queryClient.setQueryData(
         [`/api/packing-lists/${packingListId}/categories`],
         (oldData: any) => {
@@ -101,24 +99,47 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
               return {
                 ...category,
                 items: category.items.map((i: any) => 
-                  i.id === item.id ? { ...i, packed: newItem.packed } : i
-                )
+                  i.id === item.id ? { ...i, packed: !isItemPacked } : i
+                ),
+                packedItems: !isItemPacked 
+                  ? category.packedItems + 1 
+                  : Math.max(0, category.packedItems - 1)
               };
             }
             return category;
           });
         }
       );
+      
+      // Return context with the previous state and data
+      return { 
+        previousState: isItemPacked,
+        previousData
+      };
+    },
+    onSuccess: (newItem) => {
+      // We already updated the cache optimistically, and we don't want
+      // to sort or reorder items, so we don't need to do anything here
     },
     onError: (_, __, context: any) => {
       // Reset to the previous state if there was an error
       if (context) {
         setOptimisticPacked(context.previousState);
+        
+        // Restore the previous data
+        if (context.previousData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/categories`],
+            context.previousData
+          );
+        }
       }
     },
     onSettled: () => {
-      // Always invalidate the queries when settled to ensure data consistency
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      // We want to keep our manual updates and NOT fetch from the server
+      // which would reorder the items
+      
+      // Only invalidate the summary data
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
       
       if (item.bagId) {
