@@ -6,6 +6,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useSyncStatus } from '@/hooks/use-sync-status';
+import { useQuery } from '@tanstack/react-query';
+import { Item, Category, Bag, Traveler } from '@shared/schema';
 
 interface SearchBarProps {
   packingListId: number;
@@ -31,8 +33,29 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
   const resultsRef = useRef<HTMLDivElement>(null);
   const { isPending } = useSyncStatus();
 
-  // Define the search function to be reusable
-  const searchItems = useCallback(async () => {
+  // Use React Query to get all the necessary data
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/categories`],
+    enabled: !!packingListId
+  });
+  
+  const { data: bags = [] } = useQuery<Bag[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/bags`],
+    enabled: !!packingListId
+  });
+  
+  const { data: travelers = [] } = useQuery<Traveler[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/travelers`],
+    enabled: !!packingListId
+  });
+  
+  // Get all items from all categories (already in the client-side store)
+  const allItems = categories.flatMap(category => 
+    category.items || []
+  );
+  
+  // Define the search function to use local data instead of API calls
+  const searchItems = useCallback(() => {
     if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
       setResults([]);
       setShowResults(false);
@@ -41,47 +64,41 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
 
     setIsLoading(true);
     try {
-      // Add timestamp to prevent browser caching
-      const timestamp = new Date().getTime();
-      const response = await fetch(`/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}&_t=${timestamp}`, {
-        credentials: 'include',
-        cache: 'no-store', // Tell browser not to cache
+      // Filter items locally that match the search term
+      const matchedItems = allItems.filter(item => 
+        item.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+      );
+      
+      // Transform items into the search result format
+      const searchResults: SearchResult[] = matchedItems.map(item => {
+        const category = categories.find(c => c.id === item.categoryId);
+        const bag = item.bagId ? bags.find(b => b.id === item.bagId) : null;
+        const traveler = item.travelerId ? travelers.find(t => t.id === item.travelerId) : null;
+        
+        return {
+          id: item.id,
+          name: item.name,
+          categoryName: category?.name || 'Unknown',
+          bagName: bag?.name || null,
+          travelerName: traveler?.name || null,
+          packed: item.packed
+        };
       });
       
-      if (!response.ok) {
-        throw new Error(`Search failed: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        setResults(data);
-        setShowResults(true);
-      } else {
-        console.error('Invalid search results format:', data);
-        setResults([]);
-      }
+      setResults(searchResults);
+      setShowResults(true);
     } catch (error) {
       console.error('Error searching items:', error);
       setResults([]);
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearchTerm, packingListId]);
+  }, [debouncedSearchTerm, allItems, categories, bags, travelers]);
 
-  // Initial search and when search term changes
+  // Search when the search term or any related data changes
   useEffect(() => {
     searchItems();
   }, [searchItems]);
-  
-  // Refresh search results when items are updated anywhere in the app
-  useEffect(() => {
-    // When isPending changes from true to false, it means changes have been saved
-    // and we should refresh the search results
-    if (!isPending && debouncedSearchTerm.length >= 2 && showResults) {
-      searchItems();
-    }
-  }, [isPending, searchItems, debouncedSearchTerm.length, showResults]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
