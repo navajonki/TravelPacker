@@ -150,7 +150,9 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-gray-800">{result.name}</p>
+                    <p className={`font-medium ${result.packed ? 'line-through text-gray-500' : 'text-gray-800'}`}>
+                      {result.name}
+                    </p>
                     <p className="text-xs text-gray-500">
                       {result.categoryName}
                       {result.bagName && ` • ${result.bagName}`}
