@@ -38,13 +38,15 @@ interface CategoryCardProps {
   onEditCategory: (categoryId: number) => void;
   onDeleteCategory: (categoryId: number) => void;
   onAddItem: (categoryId: number) => void;
+  onEditItem?: (itemId: number) => void;
 }
 
 export default function CategoryCard({ 
   category, 
   onEditCategory,
   onDeleteCategory,
-  onAddItem
+  onAddItem,
+  onEditItem
 }: CategoryCardProps) {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
@@ -217,6 +219,7 @@ export default function CategoryCard({
                 key={item.id}
                 item={item}
                 packingListId={category.packingListId}
+                onEditItem={onEditItem}
               />
             ))}
             

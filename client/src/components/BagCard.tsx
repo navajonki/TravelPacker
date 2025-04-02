@@ -37,13 +37,15 @@ interface BagCardProps {
   onEditBag: (bagId: number) => void;
   onDeleteBag: (bagId: number) => void;
   onAddItem: (bagId: number) => void;
+  onEditItem?: (itemId: number) => void;
 }
 
 export default function BagCard({ 
   bag, 
   onEditBag, 
   onDeleteBag, 
-  onAddItem 
+  onAddItem,
+  onEditItem
 }: BagCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -208,6 +210,7 @@ export default function BagCard({
               key={item.id} 
               item={item}
               packingListId={bag.packingListId}
+              onEditItem={onEditItem}
             />
           ))}
           

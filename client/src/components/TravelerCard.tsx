@@ -37,13 +37,15 @@ interface TravelerCardProps {
   onEditTraveler: (travelerId: number) => void;
   onDeleteTraveler: (travelerId: number) => void;
   onAddItem: (travelerId: number) => void;
+  onEditItem?: (itemId: number) => void;
 }
 
 export default function TravelerCard({ 
   traveler, 
   onEditTraveler, 
   onDeleteTraveler, 
-  onAddItem 
+  onAddItem,
+  onEditItem
 }: TravelerCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -208,6 +210,7 @@ export default function TravelerCard({
               key={item.id} 
               item={item}
               packingListId={traveler.packingListId}
+              onEditItem={onEditItem}
             />
           ))}
           

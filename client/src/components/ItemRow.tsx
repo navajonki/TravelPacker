@@ -5,7 +5,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import EditItemModal from "@/components/modals/EditItemModal";
 import { useSyncStatus } from "@/hooks/use-sync-status";
 import {
   AlertDialog,
@@ -29,12 +28,12 @@ interface ItemRowProps {
     categoryId: number;
   };
   packingListId: number;
+  onEditItem?: (itemId: number) => void;
 }
 
-export default function ItemRow({ item, packingListId }: ItemRowProps) {
+export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProps) {
   const [hovering, setHovering] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [optimisticPacked, setOptimisticPacked] = useState<boolean | null>(null);
   const queryClient = useQueryClient();
   const { incrementPending, decrementPending } = useSyncStatus();
@@ -229,7 +228,7 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
                 variant="ghost" 
                 size="icon" 
                 className="h-6 w-6 text-gray-500 hover:bg-gray-200"
-                onClick={() => setShowEditModal(true)}
+                onClick={() => onEditItem && onEditItem(item.id)}
               >
                 <Pencil className="h-3.5 w-3.5" />
               </Button>
@@ -246,13 +245,7 @@ export default function ItemRow({ item, packingListId }: ItemRowProps) {
         </div>
       </div>
       
-      {/* Edit Item Modal */}
-      <EditItemModal
-        open={showEditModal}
-        onClose={() => setShowEditModal(false)}
-        packingListId={packingListId}
-        itemId={item.id}
-      />
+      {/* No local Edit Item Modal - using the one from parent component */}
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>

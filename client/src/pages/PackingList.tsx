@@ -514,6 +514,7 @@ export default function PackingList() {
                             onAddItem={() => {
                               setAdvancedAddOpen(true);
                             }}
+                            onEditItem={handleEditItem}
                           />
                         )}
                       </div>
@@ -566,6 +567,7 @@ export default function PackingList() {
                             onAddItem={() => {
                               setAdvancedAddOpen(true);
                             }}
+                            onEditItem={handleEditItem}
                           />
                         )}
                       </div>
@@ -618,6 +620,7 @@ export default function PackingList() {
                             onAddItem={() => {
                               setAdvancedAddOpen(true);
                             }}
+                            onEditItem={handleEditItem}
                           />
                         )}
                       </div>
@@ -820,7 +823,12 @@ export default function PackingList() {
                           
                           // Render filtered items
                           return filteredItems.map(item => (
-                            <ItemRow key={item.id} item={item} packingListId={packingListId} />
+                            <ItemRow 
+                              key={item.id} 
+                              item={item} 
+                              packingListId={packingListId} 
+                              onEditItem={handleEditItem} 
+                            />
                           ));
                         })()}
                       </div>
