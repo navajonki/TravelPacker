@@ -1,26 +1,29 @@
 ## Bugs
 - [x] Editing a bag / traveler / category
-- [ ] Remove the grabby thing
+- [x] Remove the grabby thing
 - [ ] The things that appear in the items should always be of the types on the other two tabs - so if you're looking at Bags, the tags on the items should be category & traveler
 - [x] Theme shouldn't be mandatory
 - [x] Each list doesn't need a + on the top right
-- [ ] Back to Lists shouldn't show in when looking at all packing lists
-- [ ] Menu at the top right doesn't do anything
 - [x] Remove New List button when looking at an existing list
 - [x] Fix user login
 - [x] Why is it so laggy?
-- [ ] Filters should stay when navigating away
 - [x] Packed items shouldn't change their place in the lists
-- [ ] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
-- [ ] Dropdowns should have a select all / none toggle
-- [ ] Filters tab looks awkward on mobile
-- [ ] Modals should take up 1/4 of screen width on the right
 - [ ] Implement pack / unpack all
 - [x] Add new Traveler modal is broken
 - [x] Edit item modal is broken
 - [x] Edit individual item doesnt' do anything
 - [ ] Edit multiple modal is broken
 
+## Papercuts
+- [ ] Top header in list view is redundant and takes up too much space. Everything should be in one line.
+- [ ] Menu at the top right doesn't do anything
+- [ ] Filters should stay when navigating away
+- [ ] Modals should take up 1/4 of screen width on the right
+- [ ] Filters tab looks awkward on mobile
+- [ ] Dropdowns should have a select all / none toggle
+- [ ] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
+- [ ] Back to Lists shouldn't show in when looking at all packing lists
+- [ ] In search dropdown, order should be person, category, bag
 
 ## Features
 - [x] Searching within the given packing list
