@@ -41,8 +41,11 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}`, {
+      // Add timestamp to prevent browser caching
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}&_t=${timestamp}`, {
         credentials: 'include',
+        cache: 'no-store', // Tell browser not to cache
       });
       
       if (!response.ok) {
@@ -95,8 +98,16 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
 
   const handleResultClick = (itemId: number) => {
     onSelectResult(itemId);
-    setSearchTerm('');
-    setShowResults(false);
+    
+    // Force a search refresh after a brief delay to allow the item update to complete
+    setTimeout(() => {
+      if (debouncedSearchTerm.length >= 2) {
+        searchItems();
+      }
+    }, 300);
+    
+    // Keep the search term and results visible after clicking
+    // so the user can see the updated status
   };
 
   return (
