@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { apiRequest } from '@/lib/queryClient';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -34,15 +33,29 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
     async function searchItems() {
       if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
         setResults([]);
+        setShowResults(false);
         return;
       }
 
       setIsLoading(true);
       try {
-        const response = await apiRequest('GET', `/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}`);
+        const response = await fetch(`/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}`, {
+          credentials: 'include',
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Search failed: ${response.status}`);
+        }
+        
         const data = await response.json();
-        setResults(data);
-        setShowResults(true);
+        
+        if (Array.isArray(data)) {
+          setResults(data);
+          setShowResults(true);
+        } else {
+          console.error('Invalid search results format:', data);
+          setResults([]);
+        }
       } catch (error) {
         console.error('Error searching items:', error);
         setResults([]);
@@ -100,7 +113,7 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
                 className="h-5 w-5 p-0"
                 onClick={() => {
                   setSearchTerm('');
-                  setResults([]);
+                  setShowResults(false);
                 }}
               >
                 <X className="h-3 w-3" />
