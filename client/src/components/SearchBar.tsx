@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
+import { useSyncStatus } from '@/hooks/use-sync-status';
 
 interface SearchBarProps {
   packingListId: number;
@@ -28,44 +29,56 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
   const [showResults, setShowResults] = useState(false);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const { isPending } = useSyncStatus();
 
-  useEffect(() => {
-    async function searchItems() {
-      if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
-        setResults([]);
-        setShowResults(false);
-        return;
-      }
-
-      setIsLoading(true);
-      try {
-        const response = await fetch(`/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}`, {
-          credentials: 'include',
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Search failed: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          setResults(data);
-          setShowResults(true);
-        } else {
-          console.error('Invalid search results format:', data);
-          setResults([]);
-        }
-      } catch (error) {
-        console.error('Error searching items:', error);
-        setResults([]);
-      } finally {
-        setIsLoading(false);
-      }
+  // Define the search function to be reusable
+  const searchItems = useCallback(async () => {
+    if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
+      setResults([]);
+      setShowResults(false);
+      return;
     }
 
-    searchItems();
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/packing-lists/${packingListId}/search?query=${encodeURIComponent(debouncedSearchTerm)}`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (Array.isArray(data)) {
+        setResults(data);
+        setShowResults(true);
+      } else {
+        console.error('Invalid search results format:', data);
+        setResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching items:', error);
+      setResults([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [debouncedSearchTerm, packingListId]);
+
+  // Initial search and when search term changes
+  useEffect(() => {
+    searchItems();
+  }, [searchItems]);
+  
+  // Refresh search results when items are updated anywhere in the app
+  useEffect(() => {
+    // When isPending changes from true to false, it means changes have been saved
+    // and we should refresh the search results
+    if (!isPending && debouncedSearchTerm.length >= 2 && showResults) {
+      searchItems();
+    }
+  }, [isPending, searchItems, debouncedSearchTerm.length, showResults]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
