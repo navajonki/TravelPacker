@@ -309,11 +309,20 @@ export default function PackingList() {
     setEditTravelerOpen(true);
   };
   
-  // Handle edit item function
+  // Handle edit item function with enhanced logging and state management
   const handleEditItem = (itemId: number) => {
-    console.log('Edit Item:', itemId);
+    // More verbose logging to debug the issue
+    console.log('Edit Item called with ID:', itemId);
+    console.log('Current state - editItemOpen:', editItemOpen, 'currentItemId:', currentItemId);
+    
+    // First set the item ID
     setCurrentItemId(itemId);
-    setEditItemOpen(true);
+    
+    // Then open the modal with a small delay to ensure state is updated
+    setTimeout(() => {
+      console.log('Opening edit modal for item:', itemId);
+      setEditItemOpen(true);
+    }, 50);
   };
   
   // Function to export packing list as CSV

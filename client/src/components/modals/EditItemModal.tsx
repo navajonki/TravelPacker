@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { SideDialog } from "@/components/ui/side-dialog";
+import * as Dialog from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -66,15 +67,16 @@ export default function EditItemModal({
   // Update form when item data is loaded
   useEffect(() => {
     if (item) {
+      const itemData = item as any;
       setForm({
-        name: item.name || "",
-        packed: item.packed || false,
-        categoryId: item.categoryId || 0,
-        bagId: item.bagId || null,
-        travelerId: item.travelerId || null,
-        quantity: item.quantity || 1,
-        weight: item.weight || null,
-        notes: item.notes || ""
+        name: itemData.name || "",
+        packed: itemData.packed || false,
+        categoryId: itemData.categoryId || 0,
+        bagId: itemData.bagId || null,
+        travelerId: itemData.travelerId || null,
+        quantity: itemData.quantity || 1,
+        weight: itemData.weight || null,
+        notes: itemData.notes || ""
       });
     }
   }, [item]);
@@ -167,141 +169,156 @@ export default function EditItemModal({
     });
   };
   
+  console.log('EditItemModal rendering:', { open, itemId });
+
   return (
-    <SideDialog open={open} onClose={onClose} title="Edit Item">
-      <div className="space-y-4 pr-4">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-60">
-            <Spinner size="lg" />
+    <Dialog.Root open={open} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" />
+        <Dialog.Content className="fixed right-0 top-0 z-50 flex h-full flex-col border-l bg-background shadow-lg w-full max-w-xs sm:max-w-sm md:max-w-md lg:w-1/4">
+          <div className="p-6 overflow-y-auto flex-1">
+            <Dialog.Title className="text-lg font-semibold mb-4">Edit Item</Dialog.Title>
+            
+            <div className="space-y-4 pr-4">
+              {isLoading ? (
+                <div className="flex justify-center items-center h-60">
+                  <Spinner size="lg" />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Item Name</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      value={form.name}
+                      onChange={handleInputChange}
+                      placeholder="Item name"
+                    />
+                  </div>
+                
+                  <div className="space-y-2">
+                    <Label htmlFor="categoryId">Category</Label>
+                    <Select
+                      value={form.categoryId?.toString() || ""}
+                      onValueChange={(value) => handleSelectChange("categoryId", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.isArray(categories) && categories.map((category: any) => (
+                          <SelectItem key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="bagId">Bag (Optional)</Label>
+                    <Select
+                      value={form.bagId ? form.bagId.toString() : "none"}
+                      onValueChange={(value) => handleSelectChange("bagId", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select bag" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No bag</SelectItem>
+                        {Array.isArray(bags) && bags.map((bag: any) => (
+                          <SelectItem key={bag.id} value={bag.id.toString()}>
+                            {bag.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="travelerId">Traveler (Optional)</Label>
+                    <Select
+                      value={form.travelerId ? form.travelerId.toString() : "none"}
+                      onValueChange={(value) => handleSelectChange("travelerId", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select traveler" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">No traveler</SelectItem>
+                        {Array.isArray(travelers) && travelers.map((traveler: any) => (
+                          <SelectItem key={traveler.id} value={traveler.id.toString()}>
+                            {traveler.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="quantity">Quantity</Label>
+                    <Input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      value={form.quantity}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes (Optional)</Label>
+                    <Input
+                      id="notes"
+                      name="notes"
+                      value={form.notes || ""}
+                      onChange={handleInputChange}
+                      placeholder="Add notes"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2 pt-2">
+                    <Checkbox
+                      id="packed"
+                      name="packed"
+                      checked={form.packed}
+                      onCheckedChange={(checked) => setForm({...form, packed: !!checked})}
+                    />
+                    <Label htmlFor="packed" className="cursor-pointer">
+                      Item is packed
+                    </Label>
+                  </div>
+                  
+                  <div className="flex justify-between pt-6">
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDelete}
+                      disabled={updateItemMutation.isPending || deleteItemMutation.isPending}
+                    >
+                      {deleteItemMutation.isPending ? <Spinner className="mr-2" size="sm" /> : null}
+                      Delete
+                    </Button>
+                    <Button 
+                      variant="default" 
+                      onClick={handleSave}
+                      disabled={updateItemMutation.isPending || deleteItemMutation.isPending}
+                    >
+                      {updateItemMutation.isPending ? <Spinner className="mr-2" size="sm" /> : null}
+                      Save Changes
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        ) : (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="name">Item Name</Label>
-              <Input
-                id="name"
-                name="name"
-                value={form.name}
-                onChange={handleInputChange}
-                placeholder="Item name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="categoryId">Category</Label>
-              <Select
-                value={form.categoryId?.toString() || ""}
-                onValueChange={(value) => handleSelectChange("categoryId", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories?.map((category: any) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="bagId">Bag (Optional)</Label>
-              <Select
-                value={form.bagId ? form.bagId.toString() : "none"}
-                onValueChange={(value) => handleSelectChange("bagId", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select bag" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No bag</SelectItem>
-                  {bags?.map((bag: any) => (
-                    <SelectItem key={bag.id} value={bag.id.toString()}>
-                      {bag.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="travelerId">Traveler (Optional)</Label>
-              <Select
-                value={form.travelerId ? form.travelerId.toString() : "none"}
-                onValueChange={(value) => handleSelectChange("travelerId", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select traveler" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No traveler</SelectItem>
-                  {travelers?.map((traveler: any) => (
-                    <SelectItem key={traveler.id} value={traveler.id.toString()}>
-                      {traveler.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                name="quantity"
-                type="number"
-                min="1"
-                value={form.quantity}
-                onChange={handleInputChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (Optional)</Label>
-              <Input
-                id="notes"
-                name="notes"
-                value={form.notes || ""}
-                onChange={handleInputChange}
-                placeholder="Add notes"
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox
-                id="packed"
-                name="packed"
-                checked={form.packed}
-                onCheckedChange={(checked) => setForm({...form, packed: !!checked})}
-              />
-              <Label htmlFor="packed" className="cursor-pointer">
-                Item is packed
-              </Label>
-            </div>
-            
-            <div className="flex justify-between pt-6">
-              <Button 
-                variant="destructive" 
-                onClick={handleDelete}
-                disabled={updateItemMutation.isPending || deleteItemMutation.isPending}
-              >
-                {deleteItemMutation.isPending ? <Spinner className="mr-2" size="sm" /> : null}
-                Delete
-              </Button>
-              <Button 
-                variant="default" 
-                onClick={handleSave}
-                disabled={updateItemMutation.isPending || deleteItemMutation.isPending}
-              >
-                {updateItemMutation.isPending ? <Spinner className="mr-2" size="sm" /> : null}
-                Save Changes
-              </Button>
-            </div>
-          </>
-        )}
-      </div>
-    </SideDialog>
+          <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 }

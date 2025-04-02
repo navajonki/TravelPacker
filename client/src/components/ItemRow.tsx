@@ -187,6 +187,17 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
     setShowDeleteDialog(true);
   };
 
+  // Add a handler for edit that includes logging and prevents propagation
+  const handleEditClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop event from bubbling up
+    e.preventDefault(); // Prevent default behavior
+    console.log('Edit button clicked for item:', item.id);
+    
+    if (onEditItem) {
+      onEditItem(item.id);
+    }
+  };
+
   return (
     <div>
       <div 
@@ -228,7 +239,8 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
               variant="ghost" 
               size="icon" 
               className="h-6 w-6 text-gray-500 hover:bg-gray-200"
-              onClick={() => onEditItem && onEditItem(item.id)}
+              onClick={handleEditClick}
+              type="button"
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
@@ -237,6 +249,7 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
               size="icon" 
               className="h-6 w-6 text-gray-500 hover:bg-gray-200 hover:text-red-500"
               onClick={handleDeleteClick}
+              type="button"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
