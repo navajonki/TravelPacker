@@ -18,7 +18,8 @@
 - [ ] Implement pack / unpack all
 - [x] Add new Traveler modal is broken
 - [x] Edit item modal is broken
-- [ ] Edit individual item doesnt' do anything
+- [x] Edit individual item doesnt' do anything
+- [ ] Edit multiple modal is broken
 
 
 ## Features

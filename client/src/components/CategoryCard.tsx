@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GripVertical, Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -161,9 +161,6 @@ export default function CategoryCard({
         <CardHeader className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="mr-2 text-gray-400 cursor-grab active:cursor-grabbing">
-                <GripVertical className="h-5 w-5" />
-              </div>
               <h3 className="font-medium">{category.name}</h3>
             </div>
             <div className="flex items-center space-x-1">
