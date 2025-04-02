@@ -7,7 +7,14 @@ import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 import { useSyncStatus } from '@/hooks/use-sync-status';
 import { useQuery } from '@tanstack/react-query';
-import { Item, Category, Bag, Traveler } from '@shared/schema';
+import { Item, Category as SchemaCategory, Bag, Traveler } from '@shared/schema';
+
+// Extended Category type that includes items
+interface Category extends SchemaCategory {
+  items: Item[];
+  totalItems: number;
+  packedItems: number;
+}
 
 interface SearchBarProps {
   packingListId: number;

@@ -222,26 +222,25 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
               </div>
             )}
           </div>
-          {hovering && (
-            <div className="flex items-center space-x-1">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6 text-gray-500 hover:bg-gray-200"
-                onClick={() => onEditItem && onEditItem(item.id)}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-6 w-6 text-gray-500 hover:bg-gray-200 hover:text-red-500"
-                onClick={handleDeleteClick}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          )}
+          {/* Always show buttons on mobile, show on hover for desktop */}
+          <div className={`flex items-center space-x-1 ${hovering ? 'opacity-100' : 'opacity-100 md:opacity-0 group-hover:opacity-100'}`}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 text-gray-500 hover:bg-gray-200"
+              onClick={() => onEditItem && onEditItem(item.id)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6 text-gray-500 hover:bg-gray-200 hover:text-red-500"
+              onClick={handleDeleteClick}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
       </div>
       
