@@ -7,8 +7,12 @@ import {
   items, type Item, type InsertItem,
   templates, type Template, type InsertTemplate
 } from "@shared/schema";
+import session from "express-session";
 
 export interface IStorage {
+  // Session store
+  sessionStore: session.Store;
+  
   // User methods
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -60,7 +64,11 @@ export interface IStorage {
   createTemplate(template: InsertTemplate): Promise<Template>;
 }
 
+import createMemoryStore from "memorystore";
+const MemoryStore = createMemoryStore(session);
+
 export class MemStorage implements IStorage {
+  sessionStore: session.Store;
   private users: Map<number, User>;
   private packingLists: Map<number, PackingList>;
   private bags: Map<number, Bag>;
@@ -78,6 +86,11 @@ export class MemStorage implements IStorage {
   private currentTemplateId: number;
 
   constructor() {
+    // Initialize session store
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+    
     this.users = new Map();
     this.packingLists = new Map();
     this.bags = new Map();
@@ -155,7 +168,8 @@ export class MemStorage implements IStorage {
       ...insertPackingList, 
       id, 
       createdAt: now,
-      dateRange: insertPackingList.dateRange || null 
+      dateRange: insertPackingList.dateRange || null,
+      theme: insertPackingList.theme || null
     };
     this.packingLists.set(id, packingList);
     return packingList;
@@ -468,8 +482,22 @@ export class MemStorage implements IStorage {
 
 import { db } from "./db";
 import { eq, and, inArray } from "drizzle-orm";
+import connectPgSimple from "connect-pg-simple";
+
+const PgSession = connectPgSimple(session);
 
 export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
+  constructor() {
+    // Initialize PostgreSQL session store
+    this.sessionStore = new PgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: 'session',
+      createTableIfMissing: true
+    });
+  }
+  
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;

@@ -18,10 +18,11 @@
 - [ ] Implement pack / unpack all
 - [x] Add new Traveler modal is broken
 - [x] Edit item modal is broken
+- [ ] Edit individual item doesnt' do anything
 
 
 ## Features
-- [ ] Searching within the given packing list
+- [x] Searching within the given packing list
 - [ ] Rearrange items on the lists
 - [x] New item entry fields should go away when not in use. There should just be a big plus button, when you tap on that those fields all pop up
 - [ ] Ability to collaborate

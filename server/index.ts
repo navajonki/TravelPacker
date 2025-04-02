@@ -4,13 +4,13 @@ import { setupVite, serveStatic, log } from "./vite";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
-import connectPgSimple from "connect-pg-simple";
 import session from "express-session";
 import passport from "passport";
 import cors from "cors";
-import { configurePassport, configureSessions } from "./auth";
+import { configurePassport } from "./auth";
 import type { User } from "@shared/schema";
 import { setupUserData } from "./setup-user-data";
+import { storage } from "./storage";
 
 const app = express();
 
@@ -29,18 +29,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Setup session store
-const PgSession = connectPgSimple(session);
-const sessionStore = new PgSession({
-  conString: process.env.DATABASE_URL,
-  tableName: 'session',
-  createTableIfMissing: true
-});
-
-// Setup express-session with custom session store
+// Setup express-session with session store from storage
 // In production, the SESSION_SECRET should be set to a secure random value
 const sessionOptions = {
-  store: sessionStore,
+  store: storage.sessionStore,
   secret: process.env.SESSION_SECRET || 'travelpack-session-secret',
   resave: false,
   saveUninitialized: false,
