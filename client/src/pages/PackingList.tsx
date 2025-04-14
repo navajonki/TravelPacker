@@ -644,7 +644,7 @@ export default function PackingList() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <div>
                           <h4 className="text-sm font-medium mb-2">Categories</h4>
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" className="w-full justify-between">
                                 <span>
@@ -655,8 +655,31 @@ export default function PackingList() {
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                              <DropdownMenuLabel>Categories</DropdownMenuLabel>
+                            <DropdownMenuContent className="w-56" align="start">
+                              <div className="p-2 flex items-center justify-between">
+                                <DropdownMenuLabel className="p-0">Categories</DropdownMenuLabel>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => {
+                                      if (categories) {
+                                        const allCategoryIds = categories.map(category => category.id);
+                                        setSelectedCategories(allCategoryIds);
+                                      }
+                                    }}
+                                  >
+                                    Select All
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setSelectedCategories([])}
+                                  >
+                                    Clear
+                                  </Button>
+                                </div>
+                              </div>
                               <DropdownMenuSeparator />
                               {categories?.map((category) => (
                                 <DropdownMenuCheckboxItem
@@ -679,7 +702,7 @@ export default function PackingList() {
 
                         <div>
                           <h4 className="text-sm font-medium mb-2">Bags</h4>
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" className="w-full justify-between">
                                 <span>
@@ -690,8 +713,31 @@ export default function PackingList() {
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                              <DropdownMenuLabel>Bags</DropdownMenuLabel>
+                            <DropdownMenuContent className="w-56" align="start">
+                              <div className="p-2 flex items-center justify-between">
+                                <DropdownMenuLabel className="p-0">Bags</DropdownMenuLabel>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => {
+                                      if (bags) {
+                                        const allBagIds = bags.map(bag => bag.id);
+                                        setSelectedBags(allBagIds);
+                                      }
+                                    }}
+                                  >
+                                    Select All
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setSelectedBags([])}
+                                  >
+                                    Clear
+                                  </Button>
+                                </div>
+                              </div>
                               <DropdownMenuSeparator />
                               {bags?.map((bag) => (
                                 <DropdownMenuCheckboxItem
@@ -714,7 +760,7 @@ export default function PackingList() {
 
                         <div>
                           <h4 className="text-sm font-medium mb-2">Travelers</h4>
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="outline" className="w-full justify-between">
                                 <span>
@@ -725,8 +771,31 @@ export default function PackingList() {
                                 <ChevronDown className="h-4 w-4 opacity-50" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
-                              <DropdownMenuLabel>Travelers</DropdownMenuLabel>
+                            <DropdownMenuContent className="w-56" align="start">
+                              <div className="p-2 flex items-center justify-between">
+                                <DropdownMenuLabel className="p-0">Travelers</DropdownMenuLabel>
+                                <div className="flex space-x-2">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => {
+                                      if (travelers) {
+                                        const allTravelerIds = travelers.map(traveler => traveler.id);
+                                        setSelectedTravelers(allTravelerIds);
+                                      }
+                                    }}
+                                  >
+                                    Select All
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={() => setSelectedTravelers([])}
+                                  >
+                                    Clear
+                                  </Button>
+                                </div>
+                              </div>
                               <DropdownMenuSeparator />
                               {travelers?.map((traveler) => (
                                 <DropdownMenuCheckboxItem

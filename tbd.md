@@ -15,8 +15,8 @@
 - [x] Edit multiple modal is broken
 
 ## Papercuts
-- [ ] Top header in list view is redundant and takes up too much space. Everything should be in one line.
-- [ ] Menu at the top right doesn't do anything
+- [x] Top header in list view is redundant and takes up too much space. Everything should be in one line.
+- [x] Menu at the top right doesn't do anything
 - [ ] Filters should stay when navigating away
 - [ ] Modals should take up 1/4 of screen width on the right
 - [ ] Filters tab looks awkward on mobile
