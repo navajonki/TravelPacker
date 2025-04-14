@@ -29,9 +29,15 @@ interface ItemRowProps {
   };
   packingListId: number;
   onEditItem?: (itemId: number) => void;
+  viewContext?: 'category' | 'bag' | 'traveler';
 }
 
-export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProps) {
+export default function ItemRow({ 
+  item, 
+  packingListId, 
+  onEditItem,
+  viewContext = 'category' // Default to category view
+}: ItemRowProps) {
   const [hovering, setHovering] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [optimisticPacked, setOptimisticPacked] = useState<boolean | null>(null);
@@ -46,6 +52,10 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
   });
   
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/categories`],
+  });
+  
   const getBagName = () => {
     if (!item.bagId || !bags.length) return null;
     const bag = bags.find((b) => b.id === item.bagId);
@@ -56,6 +66,12 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
     if (!item.travelerId || !travelers.length) return null;
     const traveler = travelers.find((t) => t.id === item.travelerId);
     return traveler?.name;
+  };
+  
+  const getCategoryName = () => {
+    if (!item.categoryId || !categories.length) return null;
+    const category = categories.find((c) => c.id === item.categoryId);
+    return category?.name;
   };
   
   // Get the current packed status, considering the optimistic state
@@ -182,6 +198,7 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
 
   const bagName = getBagName();
   const travelerName = getTravelerName();
+  const categoryName = getCategoryName();
 
   const handleDeleteClick = () => {
     setShowDeleteDialog(true);
@@ -217,21 +234,57 @@ export default function ItemRow({ item, packingListId, onEditItem }: ItemRowProp
             <p className={`text-sm font-medium ${isItemPacked ? 'line-through text-gray-500' : 'text-gray-900'}`}>
               {item.name}{item.quantity > 1 ? ` (${item.quantity})` : ''}
             </p>
-            {(bagName || travelerName) && (
-              <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                {bagName && (
-                  <Badge variant="outline" className={`px-2 py-0.5 rounded ${item.bagId ? 'bg-blue-100 text-primary border-blue-200' : 'bg-gray-100 text-gray-700'}`}>
-                    {bagName}
-                  </Badge>
-                )}
-                {bagName && travelerName && <span className="mx-1">•</span>}
-                {travelerName && (
-                  <Badge variant="outline" className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border-emerald-200">
-                    {travelerName}
-                  </Badge>
-                )}
-              </div>
-            )}
+            <div className="flex items-center text-xs text-gray-500 mt-0.5">
+              {/* Conditionally show badges based on current view context */}
+              {viewContext === 'category' && (
+                // In category view, show bag and traveler
+                <>
+                  {bagName && (
+                    <Badge variant="outline" className={`px-2 py-0.5 rounded ${item.bagId ? 'bg-blue-100 text-primary border-blue-200' : 'bg-gray-100 text-gray-700'}`}>
+                      {bagName}
+                    </Badge>
+                  )}
+                  {bagName && travelerName && <span className="mx-1">•</span>}
+                  {travelerName && (
+                    <Badge variant="outline" className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border-emerald-200">
+                      {travelerName}
+                    </Badge>
+                  )}
+                </>
+              )}
+              {viewContext === 'bag' && (
+                // In bag view, show category and traveler
+                <>
+                  {categoryName && (
+                    <Badge variant="outline" className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 border-purple-200">
+                      {categoryName}
+                    </Badge>
+                  )}
+                  {categoryName && travelerName && <span className="mx-1">•</span>}
+                  {travelerName && (
+                    <Badge variant="outline" className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 border-emerald-200">
+                      {travelerName}
+                    </Badge>
+                  )}
+                </>
+              )}
+              {viewContext === 'traveler' && (
+                // In traveler view, show category and bag
+                <>
+                  {categoryName && (
+                    <Badge variant="outline" className="px-2 py-0.5 rounded bg-purple-100 text-purple-700 border-purple-200">
+                      {categoryName}
+                    </Badge>
+                  )}
+                  {categoryName && bagName && <span className="mx-1">•</span>}
+                  {bagName && (
+                    <Badge variant="outline" className={`px-2 py-0.5 rounded ${item.bagId ? 'bg-blue-100 text-primary border-blue-200' : 'bg-gray-100 text-gray-700'}`}>
+                      {bagName}
+                    </Badge>
+                  )}
+                </>
+              )}
+            </div>
           </div>
           {/* Always show buttons on mobile, show on hover for desktop */}
           <div className={`flex items-center space-x-1 ${hovering ? 'opacity-100' : 'opacity-100 md:opacity-0 group-hover:opacity-100'}`}>

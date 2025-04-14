@@ -211,6 +211,7 @@ export default function BagCard({
               item={item}
               packingListId={bag.packingListId}
               onEditItem={onEditItem}
+              viewContext="bag"
             />
           ))}
           
