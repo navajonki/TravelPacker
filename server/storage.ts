@@ -375,6 +375,7 @@ export class MemStorage implements IStorage {
       dueDate = new Date(insertItem.dueDate);
     }
     
+    // Ensure permissionLevel has a default value if not provided
     const item: Item = { 
       name: insertItem.name,
       categoryId: insertItem.categoryId,
@@ -508,8 +509,10 @@ export class MemStorage implements IStorage {
   async addCollaborator(collaborator: InsertCollaborator): Promise<PackingListCollaborator> {
     const key = `${collaborator.packingListId}-${collaborator.userId}`;
     const now = new Date();
+    // Ensure permissionLevel has a default value
     const newCollaborator: PackingListCollaborator = {
       ...collaborator,
+      permissionLevel: collaborator.permissionLevel || 'read',
       createdAt: now
     };
     this.collaborators.set(key, newCollaborator);
@@ -548,7 +551,10 @@ export class MemStorage implements IStorage {
       accepted: false,
       createdAt: now,
       expires: oneWeekLater,
-      ...invitation
+      permissionLevel: invitation.permissionLevel || 'read',
+      packingListId: invitation.packingListId,
+      invitedByUserId: invitation.invitedByUserId,
+      email: invitation.email
     };
     
     this.invitations.set(id, newInvitation);
@@ -605,7 +611,7 @@ export class MemStorage implements IStorage {
 }
 
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import connectPgSimple from "connect-pg-simple";
 
 const PgSession = connectPgSimple(session);
@@ -1085,13 +1091,19 @@ export class DatabaseStorage implements IStorage {
     const oneWeekLater = new Date(now);
     oneWeekLater.setDate(oneWeekLater.getDate() + 7);
     
+    // Ensure permissionLevel has a default value
+    const invitationData = {
+      packingListId: invitation.packingListId,
+      invitedByUserId: invitation.invitedByUserId,
+      email: invitation.email,
+      permissionLevel: invitation.permissionLevel || 'read',
+      token,
+      expires: oneWeekLater
+    };
+    
     const [newInvitation] = await db
       .insert(collaborationInvitations)
-      .values({
-        ...invitation,
-        token,
-        expires: oneWeekLater
-      })
+      .values(invitationData)
       .returning();
     
     return newInvitation;

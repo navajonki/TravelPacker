@@ -12,6 +12,8 @@ import {
   insertCategorySchema, 
   insertItemSchema,
   insertTemplateSchema,
+  insertCollaboratorSchema,
+  insertInvitationSchema,
   type User
 } from "@shared/schema";
 
@@ -1355,6 +1357,283 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const limitedResults = enhancedItems.slice(0, 10);
     
     return res.json(limitedResults);
+  });
+
+  // Collaboration routes
+  // Get all collaborators for a packing list
+  app.get("/api/packing-lists/:listId/collaborators", isAuthenticated, async (req, res) => {
+    const listId = parseInt(req.params.listId);
+    
+    if (isNaN(listId)) {
+      return res.status(400).json({ message: "Invalid listId parameter" });
+    }
+    
+    // Check if the packing list exists
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Check if the user has access to this packing list
+    const user = req.user as User;
+    const hasAccess = await storage.canUserAccessPackingList(user.id, listId);
+    if (!hasAccess) {
+      return res.status(403).json({ message: "You don't have permission to access this packing list" });
+    }
+    
+    // Get the collaborators
+    const collaborators = await storage.getCollaborators(listId);
+    
+    // For each collaborator, get the user details
+    const collaboratorsWithUserDetails = await Promise.all(
+      collaborators.map(async (collaborator) => {
+        const user = await storage.getUser(collaborator.userId);
+        return {
+          ...collaborator,
+          username: user?.username || 'Unknown user'
+        };
+      })
+    );
+    
+    return res.json(collaboratorsWithUserDetails);
+  });
+
+  // Add a collaborator to a packing list
+  app.post("/api/collaborators", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Validate the request data
+      const data = insertCollaboratorSchema.parse(req.body);
+      
+      // Check if the packing list exists
+      const packingList = await storage.getPackingList(data.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Check if user is the owner of the packing list
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "Only the owner can add collaborators" });
+      }
+      
+      // Check if the target user exists
+      const targetUser = await storage.getUser(data.userId);
+      if (!targetUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Check if the user is trying to add themselves
+      if (data.userId === user.id) {
+        return res.status(400).json({ message: "You cannot add yourself as a collaborator" });
+      }
+      
+      // Add the collaborator
+      const collaborator = await storage.addCollaborator(data);
+      
+      return res.status(201).json({
+        ...collaborator,
+        username: targetUser.username
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+
+  // Remove a collaborator from a packing list
+  app.delete("/api/packing-lists/:listId/collaborators/:userId", isAuthenticated, async (req, res) => {
+    const listId = parseInt(req.params.listId);
+    const targetUserId = parseInt(req.params.userId);
+    
+    if (isNaN(listId) || isNaN(targetUserId)) {
+      return res.status(400).json({ message: "Invalid parameters" });
+    }
+    
+    // Check if the packing list exists
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Check if user is the owner of the packing list or removing themselves
+    const user = req.user as User;
+    if (packingList.userId !== user.id && targetUserId !== user.id) {
+      return res.status(403).json({ message: "You don't have permission to remove this collaborator" });
+    }
+    
+    // Remove the collaborator
+    await storage.removeCollaborator(listId, targetUserId);
+    
+    return res.status(204).end();
+  });
+
+  // Get all shared packing lists for the current user
+  app.get("/api/shared-packing-lists", isAuthenticated, async (req, res) => {
+    const user = req.user as User;
+    
+    // Get all packing lists shared with this user
+    const sharedLists = await storage.getSharedPackingLists(user.id);
+    
+    // Get the progress for each list
+    const listsWithProgress = await Promise.all(
+      sharedLists.map(async (list) => {
+        const items = await storage.getAllItemsByPackingList(list.id);
+        const totalItems = items.length;
+        const packedItems = items.filter(item => item.packed).length;
+        const progress = totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0;
+        
+        // Get the owner details
+        const owner = await storage.getUser(list.userId);
+        
+        return {
+          ...list,
+          itemCount: totalItems,
+          packedItemCount: packedItems,
+          progress,
+          ownerUsername: owner?.username || 'Unknown'
+        };
+      })
+    );
+    
+    return res.json(listsWithProgress);
+  });
+
+  // Create a collaboration invitation
+  app.post("/api/invitations", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Validate the request data
+      const data = insertInvitationSchema.parse({
+        ...req.body,
+        invitedByUserId: user.id
+      });
+      
+      // Check if the packing list exists
+      const packingList = await storage.getPackingList(data.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Check if user is the owner of the packing list
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "Only the owner can send invitations" });
+      }
+      
+      // Create the invitation
+      const invitation = await storage.createInvitation(data);
+      
+      return res.status(201).json(invitation);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      throw error;
+    }
+  });
+
+  // Get invitation details by token
+  app.get("/api/invitations/:token", async (req, res) => {
+    const token = req.params.token;
+    
+    const invitation = await storage.getInvitation(token);
+    
+    if (!invitation) {
+      return res.status(404).json({ message: "Invitation not found" });
+    }
+    
+    // Check if the invitation is expired
+    if (invitation.expires < new Date()) {
+      return res.status(400).json({ message: "Invitation has expired" });
+    }
+    
+    // Check if the invitation is already accepted
+    if (invitation.accepted) {
+      return res.status(400).json({ message: "Invitation has already been accepted" });
+    }
+    
+    // Get the packing list details
+    const packingList = await storage.getPackingList(invitation.packingListId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Associated packing list not found" });
+    }
+    
+    // Get the inviter details
+    const inviter = await storage.getUser(invitation.invitedByUserId);
+    
+    return res.json({
+      invitation,
+      packingList: {
+        id: packingList.id,
+        name: packingList.name,
+        theme: packingList.theme
+      },
+      invitedBy: inviter ? inviter.username : 'Unknown user'
+    });
+  });
+
+  // Accept an invitation
+  app.post("/api/invitations/:token/accept", isAuthenticated, async (req, res) => {
+    const token = req.params.token;
+    const user = req.user as User;
+    
+    try {
+      // Try to accept the invitation
+      await storage.acceptInvitation(token, user.id);
+      
+      // Get the invitation to return the packing list ID
+      const invitation = await storage.getInvitation(token);
+      
+      return res.json({
+        message: "Invitation accepted successfully",
+        packingListId: invitation?.packingListId
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      throw error;
+    }
+  });
+
+  // Get all invitations for a packing list
+  app.get("/api/packing-lists/:listId/invitations", isAuthenticated, async (req, res) => {
+    const listId = parseInt(req.params.listId);
+    
+    if (isNaN(listId)) {
+      return res.status(400).json({ message: "Invalid listId parameter" });
+    }
+    
+    // Check if the packing list exists
+    const packingList = await storage.getPackingList(listId);
+    if (!packingList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Check if user is the owner of the packing list
+    const user = req.user as User;
+    if (packingList.userId !== user.id) {
+      return res.status(403).json({ message: "Only the owner can view invitations" });
+    }
+    
+    // Get the invitations
+    const invitations = await storage.getInvitationsByPackingList(listId);
+    
+    return res.json(invitations);
+  });
+
+  // Check for pending invitations by email
+  app.get("/api/invitations", isAuthenticated, async (req, res) => {
+    const user = req.user as User;
+    
+    // Try to find invitations by email
+    // This is useful for users to check if they have any pending invitations
+    const pendingInvitations = await storage.getPendingInvitationsByEmail(user.username);
+    
+    return res.json(pendingInvitations);
   });
 
   const httpServer = createServer(app);
