@@ -1,6 +1,8 @@
 import { 
   users, type User, type InsertUser,
   packingLists, type PackingList, type InsertPackingList,
+  packingListCollaborators, type PackingListCollaborator, type InsertCollaborator,
+  collaborationInvitations, type CollaborationInvitation, type InsertInvitation,
   bags, type Bag, type InsertBag,
   travelers, type Traveler, type InsertTraveler,
   categories, type Category, type InsertCategory,
@@ -88,6 +90,8 @@ export class MemStorage implements IStorage {
   private categories: Map<number, Category>;
   private items: Map<number, Item>;
   private templates: Map<number, Template>;
+  private collaborators: Map<string, PackingListCollaborator>;
+  private invitations: Map<number, CollaborationInvitation>;
   
   private currentUserId: number;
   private currentPackingListId: number;
@@ -110,6 +114,8 @@ export class MemStorage implements IStorage {
     this.categories = new Map();
     this.items = new Map();
     this.templates = new Map();
+    this.collaborators = new Map();
+    this.invitations = new Map();
     
     this.currentUserId = 1;
     this.currentPackingListId = 1;
@@ -377,6 +383,8 @@ export class MemStorage implements IStorage {
       isEssential: insertItem.isEssential ?? false,
       bagId: insertItem.bagId ?? null,
       travelerId: insertItem.travelerId ?? null,
+      createdBy: insertItem.createdBy ?? null,
+      lastModifiedBy: insertItem.lastModifiedBy ?? null,
       id, 
       createdAt: now,
       dueDate,
@@ -489,6 +497,110 @@ export class MemStorage implements IStorage {
     const template: Template = { ...insertTemplate, id, createdAt: now };
     this.templates.set(id, template);
     return template;
+  }
+  
+  // Collaboration methods
+  async getCollaborators(packingListId: number): Promise<PackingListCollaborator[]> {
+    return Array.from(this.collaborators.values())
+      .filter(collab => collab.packingListId === packingListId);
+  }
+  
+  async addCollaborator(collaborator: InsertCollaborator): Promise<PackingListCollaborator> {
+    const key = `${collaborator.packingListId}-${collaborator.userId}`;
+    const now = new Date();
+    const newCollaborator: PackingListCollaborator = {
+      ...collaborator,
+      createdAt: now
+    };
+    this.collaborators.set(key, newCollaborator);
+    return newCollaborator;
+  }
+  
+  async removeCollaborator(packingListId: number, userId: number): Promise<void> {
+    const key = `${packingListId}-${userId}`;
+    this.collaborators.delete(key);
+  }
+  
+  async getSharedPackingLists(userId: number): Promise<PackingList[]> {
+    // Find all collaborations this user has
+    const userCollaborations = Array.from(this.collaborators.values())
+      .filter(collab => collab.userId === userId)
+      .map(collab => collab.packingListId);
+    
+    // Get the packing lists for these collaborations
+    return Array.from(this.packingLists.values())
+      .filter(list => userCollaborations.includes(list.id));
+  }
+  
+  async createInvitation(invitation: InsertInvitation): Promise<CollaborationInvitation> {
+    const id = Date.now(); // Use timestamp as ID
+    const now = new Date();
+    const oneWeekLater = new Date(now);
+    oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+    
+    // Generate a random token
+    const token = Math.random().toString(36).substring(2, 15) + 
+      Math.random().toString(36).substring(2, 15);
+    
+    const newInvitation: CollaborationInvitation = {
+      id,
+      token,
+      accepted: false,
+      createdAt: now,
+      expires: oneWeekLater,
+      ...invitation
+    };
+    
+    this.invitations.set(id, newInvitation);
+    return newInvitation;
+  }
+  
+  async getInvitation(token: string): Promise<CollaborationInvitation | undefined> {
+    return Array.from(this.invitations.values())
+      .find(invitation => invitation.token === token);
+  }
+  
+  async acceptInvitation(token: string, userId: number): Promise<void> {
+    const invitation = await this.getInvitation(token);
+    if (!invitation) throw new Error("Invitation not found");
+    if (invitation.accepted) throw new Error("Invitation already accepted");
+    if (invitation.expires < new Date()) throw new Error("Invitation expired");
+    
+    // Mark invitation as accepted
+    const updatedInvitation = { ...invitation, accepted: true };
+    this.invitations.set(invitation.id, updatedInvitation);
+    
+    // Add the user as a collaborator
+    await this.addCollaborator({
+      packingListId: invitation.packingListId,
+      userId,
+      permissionLevel: invitation.permissionLevel
+    });
+  }
+  
+  async getInvitationsByPackingList(packingListId: number): Promise<CollaborationInvitation[]> {
+    return Array.from(this.invitations.values())
+      .filter(invitation => invitation.packingListId === packingListId);
+  }
+  
+  async getPendingInvitationsByEmail(email: string): Promise<CollaborationInvitation[]> {
+    const now = new Date();
+    return Array.from(this.invitations.values())
+      .filter(invitation => 
+        invitation.email === email && 
+        !invitation.accepted && 
+        invitation.expires > now
+      );
+  }
+  
+  async canUserAccessPackingList(userId: number, packingListId: number): Promise<boolean> {
+    // Check if user is the owner
+    const packingList = await this.getPackingList(packingListId);
+    if (packingList?.userId === userId) return true;
+    
+    // Check if user is a collaborator
+    const key = `${packingListId}-${userId}`;
+    return this.collaborators.has(key);
   }
 }
 
@@ -916,6 +1028,152 @@ export class DatabaseStorage implements IStorage {
       .values(insertTemplate)
       .returning();
     return template;
+  }
+  
+  // Collaboration methods
+  async getCollaborators(packingListId: number): Promise<PackingListCollaborator[]> {
+    return await db
+      .select()
+      .from(packingListCollaborators)
+      .where(eq(packingListCollaborators.packingListId, packingListId));
+  }
+  
+  async addCollaborator(collaborator: InsertCollaborator): Promise<PackingListCollaborator> {
+    const [newCollaborator] = await db
+      .insert(packingListCollaborators)
+      .values(collaborator)
+      .returning();
+    return newCollaborator;
+  }
+  
+  async removeCollaborator(packingListId: number, userId: number): Promise<void> {
+    await db
+      .delete(packingListCollaborators)
+      .where(
+        and(
+          eq(packingListCollaborators.packingListId, packingListId),
+          eq(packingListCollaborators.userId, userId)
+        )
+      );
+  }
+  
+  async getSharedPackingLists(userId: number): Promise<PackingList[]> {
+    // Get all packing list IDs that this user is a collaborator on
+    const collaborations = await db
+      .select()
+      .from(packingListCollaborators)
+      .where(eq(packingListCollaborators.userId, userId));
+    
+    if (collaborations.length === 0) return [];
+    
+    const packingListIds = collaborations.map(collab => collab.packingListId);
+    
+    // Get all these packing lists
+    return await db
+      .select()
+      .from(packingLists)
+      .where(inArray(packingLists.id, packingListIds));
+  }
+  
+  async createInvitation(invitation: InsertInvitation): Promise<CollaborationInvitation> {
+    // Generate a random token
+    const token = Math.random().toString(36).substring(2, 15) + 
+      Math.random().toString(36).substring(2, 15);
+    
+    // Set expiration date (1 week from now)
+    const now = new Date();
+    const oneWeekLater = new Date(now);
+    oneWeekLater.setDate(oneWeekLater.getDate() + 7);
+    
+    const [newInvitation] = await db
+      .insert(collaborationInvitations)
+      .values({
+        ...invitation,
+        token,
+        expires: oneWeekLater
+      })
+      .returning();
+    
+    return newInvitation;
+  }
+  
+  async getInvitation(token: string): Promise<CollaborationInvitation | undefined> {
+    const [invitation] = await db
+      .select()
+      .from(collaborationInvitations)
+      .where(eq(collaborationInvitations.token, token));
+    
+    return invitation || undefined;
+  }
+  
+  async acceptInvitation(token: string, userId: number): Promise<void> {
+    const invitation = await this.getInvitation(token);
+    if (!invitation) throw new Error("Invitation not found");
+    if (invitation.accepted) throw new Error("Invitation already accepted");
+    if (invitation.expires < new Date()) throw new Error("Invitation expired");
+    
+    // Mark invitation as accepted
+    await db
+      .update(collaborationInvitations)
+      .set({ accepted: true })
+      .where(eq(collaborationInvitations.token, token));
+    
+    // Add the user as a collaborator
+    await this.addCollaborator({
+      packingListId: invitation.packingListId,
+      userId,
+      permissionLevel: invitation.permissionLevel
+    });
+  }
+  
+  async getInvitationsByPackingList(packingListId: number): Promise<CollaborationInvitation[]> {
+    return await db
+      .select()
+      .from(collaborationInvitations)
+      .where(eq(collaborationInvitations.packingListId, packingListId));
+  }
+  
+  async getPendingInvitationsByEmail(email: string): Promise<CollaborationInvitation[]> {
+    const now = new Date();
+    
+    return await db
+      .select()
+      .from(collaborationInvitations)
+      .where(
+        and(
+          eq(collaborationInvitations.email, email),
+          eq(collaborationInvitations.accepted, false),
+          sql`${collaborationInvitations.expires} > ${now}`
+        )
+      );
+  }
+  
+  async canUserAccessPackingList(userId: number, packingListId: number): Promise<boolean> {
+    // Check if user is the owner
+    const [packingList] = await db
+      .select()
+      .from(packingLists)
+      .where(
+        and(
+          eq(packingLists.id, packingListId),
+          eq(packingLists.userId, userId)
+        )
+      );
+    
+    if (packingList) return true;
+    
+    // Check if user is a collaborator
+    const [collaborator] = await db
+      .select()
+      .from(packingListCollaborators)
+      .where(
+        and(
+          eq(packingListCollaborators.packingListId, packingListId),
+          eq(packingListCollaborators.userId, userId)
+        )
+      );
+    
+    return !!collaborator;
   }
 }
 
