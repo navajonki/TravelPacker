@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useParams, Link } from "wouter";
 import Header from "@/components/Header";
+import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
 
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
@@ -644,176 +645,44 @@ export default function PackingList() {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                         <div>
                           <h4 className="text-sm font-medium mb-2">Categories</h4>
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="w-full justify-between">
-                                <span>
-                                  {selectedCategories.length === 0 
-                                    ? "All Categories" 
-                                    : `${selectedCategories.length} Selected`}
-                                </span>
-                                <ChevronDown className="h-4 w-4 opacity-50" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="start">
-                              <div className="p-2 flex items-center justify-between">
-                                <DropdownMenuLabel className="p-0">Categories</DropdownMenuLabel>
-                                <div className="flex space-x-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => {
-                                      if (categories) {
-                                        const allCategoryIds = categories.map(category => category.id);
-                                        setSelectedCategories(allCategoryIds);
-                                      }
-                                    }}
-                                  >
-                                    Select All
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => setSelectedCategories([])}
-                                  >
-                                    Clear
-                                  </Button>
-                                </div>
-                              </div>
-                              <DropdownMenuSeparator />
-                              {categories?.map((category) => (
-                                <DropdownMenuCheckboxItem
-                                  key={category.id}
-                                  checked={selectedCategories.includes(category.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedCategories(prev => [...prev, category.id]);
-                                    } else {
-                                      setSelectedCategories(prev => prev.filter(id => id !== category.id));
-                                    }
-                                  }}
-                                >
-                                  {category.name} ({category.totalItems})
-                                </DropdownMenuCheckboxItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <MultiSelectDropdown
+                            title="Categories"
+                            items={categories?.map(cat => ({ 
+                              id: cat.id, 
+                              name: cat.name, 
+                              count: cat.totalItems 
+                            })) || []}
+                            selectedIds={selectedCategories}
+                            onSelectionChange={setSelectedCategories}
+                          />
                         </div>
 
                         <div>
                           <h4 className="text-sm font-medium mb-2">Bags</h4>
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="w-full justify-between">
-                                <span>
-                                  {selectedBags.length === 0 
-                                    ? "All Bags" 
-                                    : `${selectedBags.length} Selected`}
-                                </span>
-                                <ChevronDown className="h-4 w-4 opacity-50" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="start">
-                              <div className="p-2 flex items-center justify-between">
-                                <DropdownMenuLabel className="p-0">Bags</DropdownMenuLabel>
-                                <div className="flex space-x-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => {
-                                      if (bags) {
-                                        const allBagIds = bags.map(bag => bag.id);
-                                        setSelectedBags(allBagIds);
-                                      }
-                                    }}
-                                  >
-                                    Select All
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => setSelectedBags([])}
-                                  >
-                                    Clear
-                                  </Button>
-                                </div>
-                              </div>
-                              <DropdownMenuSeparator />
-                              {bags?.map((bag) => (
-                                <DropdownMenuCheckboxItem
-                                  key={bag.id}
-                                  checked={selectedBags.includes(bag.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedBags(prev => [...prev, bag.id]);
-                                    } else {
-                                      setSelectedBags(prev => prev.filter(id => id !== bag.id));
-                                    }
-                                  }}
-                                >
-                                  {bag.name} ({bag.totalItems})
-                                </DropdownMenuCheckboxItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <MultiSelectDropdown
+                            title="Bags"
+                            items={bags?.map(bag => ({ 
+                              id: bag.id, 
+                              name: bag.name, 
+                              count: bag.totalItems 
+                            })) || []}
+                            selectedIds={selectedBags}
+                            onSelectionChange={setSelectedBags}
+                          />
                         </div>
 
                         <div>
                           <h4 className="text-sm font-medium mb-2">Travelers</h4>
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="w-full justify-between">
-                                <span>
-                                  {selectedTravelers.length === 0 
-                                    ? "All Travelers" 
-                                    : `${selectedTravelers.length} Selected`}
-                                </span>
-                                <ChevronDown className="h-4 w-4 opacity-50" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="start">
-                              <div className="p-2 flex items-center justify-between">
-                                <DropdownMenuLabel className="p-0">Travelers</DropdownMenuLabel>
-                                <div className="flex space-x-2">
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => {
-                                      if (travelers) {
-                                        const allTravelerIds = travelers.map(traveler => traveler.id);
-                                        setSelectedTravelers(allTravelerIds);
-                                      }
-                                    }}
-                                  >
-                                    Select All
-                                  </Button>
-                                  <Button 
-                                    variant="outline" 
-                                    size="sm" 
-                                    onClick={() => setSelectedTravelers([])}
-                                  >
-                                    Clear
-                                  </Button>
-                                </div>
-                              </div>
-                              <DropdownMenuSeparator />
-                              {travelers?.map((traveler) => (
-                                <DropdownMenuCheckboxItem
-                                  key={traveler.id}
-                                  checked={selectedTravelers.includes(traveler.id)}
-                                  onCheckedChange={(checked) => {
-                                    if (checked) {
-                                      setSelectedTravelers(prev => [...prev, traveler.id]);
-                                    } else {
-                                      setSelectedTravelers(prev => prev.filter(id => id !== traveler.id));
-                                    }
-                                  }}
-                                >
-                                  {traveler.name} ({traveler.totalItems})
-                                </DropdownMenuCheckboxItem>
-                              ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <MultiSelectDropdown
+                            title="Travelers"
+                            items={travelers?.map(traveler => ({ 
+                              id: traveler.id, 
+                              name: traveler.name, 
+                              count: traveler.totalItems 
+                            })) || []}
+                            selectedIds={selectedTravelers}
+                            onSelectionChange={setSelectedTravelers}
+                          />
                         </div>
                       </div>
 
