@@ -7,6 +7,7 @@ import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
 
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
+import CollaborationView from "@/components/CollaborationView";
 import QuickAddForm from "@/components/QuickAddForm";
 import SearchBar from "@/components/SearchBar";
 import ActionBar from "@/components/ActionBar";
