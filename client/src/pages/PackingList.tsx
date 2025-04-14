@@ -29,6 +29,7 @@ import EditTravelerModal from "@/components/modals/EditTravelerModal";
 import EditItemModal from "@/components/modals/EditItemModal";
 import CreateListModal from "@/components/modals/CreateListModal";
 import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
+import InviteDialog from "@/components/modals/InviteDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -444,6 +445,7 @@ export default function PackingList() {
               viewMode={viewMode}
               onChangeViewMode={setViewMode}
               onExport={handleExportList}
+              onShare={handleOpenShareDialog}
             />
           ) : null}
           
@@ -894,6 +896,13 @@ export default function PackingList() {
           itemId={currentItemId}
         />
       )}
+      
+      {/* Invite Dialog */}
+      <InviteDialog
+        packingListId={packingListId}
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+      />
     </div>
   );
 }
