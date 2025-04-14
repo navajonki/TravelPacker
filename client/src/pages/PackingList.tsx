@@ -638,6 +638,12 @@ export default function PackingList() {
                   </>
                 )}
 
+                {viewMode === 'collaboration' && (
+                  <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                    <CollaborationView packingListId={packingListId} />
+                  </div>
+                )}
+
                 {viewMode === 'filters' && (
                   <div className="col-span-1 md:col-span-2 lg:col-span-3">
                     <div className="bg-white rounded-lg shadow p-4 mb-6">

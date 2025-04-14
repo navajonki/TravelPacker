@@ -48,17 +48,22 @@ export default function InvitationHandler({ token }: InvitationHandlerProps) {
   // Fetch invitation details
   const { data: invitation, isLoading, error } = useQuery<InvitationData>({
     queryKey: [`/api/invitations/${token}`],
-    onSuccess: (data) => {
+    enabled: !!token,
+    retry: false,
+    staleTime: 0,
+  });
+  
+  // Effect to update status based on invitation data
+  useEffect(() => {
+    if (invitation) {
       // Check if invitation has expired
-      if (new Date(data.expiresAt) < new Date()) {
+      if (new Date(invitation.expiresAt) < new Date()) {
         setStatus("expired");
       }
-    },
-    onError: () => {
+    } else if (error) {
       setStatus("invalid");
-    },
-    enabled: !!token,
-  });
+    }
+  }, [invitation, error]);
 
   // Accept invitation mutation
   const acceptInvitationMutation = useMutation({
