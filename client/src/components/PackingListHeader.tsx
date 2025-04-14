@@ -1,4 +1,4 @@
-import { Calendar, Share2, Download, MoreHorizontal } from "lucide-react";
+import { Calendar, Share2, Download, MoreHorizontal, Users } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -17,9 +17,10 @@ interface PackingListHeaderProps {
     itemCount: number;
     progress: number;
   };
-  viewMode: 'category' | 'bag' | 'traveler' | 'filters';
-  onChangeViewMode: (mode: 'category' | 'bag' | 'traveler' | 'filters') => void;
+  viewMode: 'category' | 'bag' | 'traveler' | 'filters' | 'collaboration';
+  onChangeViewMode: (mode: 'category' | 'bag' | 'traveler' | 'filters' | 'collaboration') => void;
   onExport?: () => void;
+  onShare?: () => void;
 }
 
 export default function PackingListHeader({ 
@@ -106,6 +107,10 @@ export default function PackingListHeader({
           </TabsTrigger>
           <TabsTrigger value="filters" className="py-2 data-[state=active]:text-primary data-[state=active]:border-primary">
             Filters
+          </TabsTrigger>
+          <TabsTrigger value="collaboration" className="py-2 data-[state=active]:text-primary data-[state=active]:border-primary">
+            <Users className="h-4 w-4 mr-1 inline" />
+            Collaboration
           </TabsTrigger>
         </TabsList>
       </Tabs>

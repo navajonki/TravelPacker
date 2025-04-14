@@ -49,7 +49,7 @@ export default function PackingList() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters'>('category');
+  const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters' | 'collaboration'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBagOpen, setAddBagOpen] = useState(false);
