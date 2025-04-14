@@ -20,9 +20,9 @@
 - [ ] Filters should stay when navigating away
 - [ ] Modals should take up 1/4 of screen width on the right
 - [ ] Filters tab looks awkward on mobile
-- [ ] Dropdowns should have a select all / none toggle
-- [ ] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
-- [ ] Back to Lists shouldn't show in when looking at all packing lists
+- [x] Dropdowns should have a select all / none toggle
+- [x] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
+- [x] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] In search dropdown, order should be person, category, bag
 
 ## Features
@@ -32,3 +32,4 @@
 - [ ] Ability to collaborate
 - [ ] Copy list
 - [ ] Create "On Person" category that doesn't count toward packing completion
+- [ ] Shift-click should select all items in between previously selected item and next tapped one

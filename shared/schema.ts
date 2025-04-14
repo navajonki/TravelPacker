@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, primaryKey, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -21,7 +21,8 @@ export const packingLists = pgTable("packing_lists", {
   theme: text("theme"),
   dateRange: text("date_range"),
   userId: integer("user_id").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastModified: timestamp("last_modified").defaultNow().notNull()
 });
 
 export const insertPackingListSchema = createInsertSchema(packingLists).pick({
@@ -29,6 +30,44 @@ export const insertPackingListSchema = createInsertSchema(packingLists).pick({
   theme: true,
   dateRange: true,
   userId: true,
+});
+
+// Collaborators junction table
+export const packingListCollaborators = pgTable("packing_list_collaborators", {
+  packingListId: integer("packing_list_id").notNull().references(() => packingLists.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  permissionLevel: varchar("permission_level", { length: 20 }).notNull().default("editor"),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.packingListId, table.userId] }),
+  };
+});
+
+export const insertCollaboratorSchema = createInsertSchema(packingListCollaborators).pick({
+  packingListId: true,
+  userId: true,
+  permissionLevel: true,
+});
+
+// Collaboration invitations table
+export const collaborationInvitations = pgTable("collaboration_invitations", {
+  id: serial("id").primaryKey(),
+  packingListId: integer("packing_list_id").notNull().references(() => packingLists.id),
+  invitedByUserId: integer("invited_by_user_id").notNull().references(() => users.id),
+  email: text("email").notNull(),
+  token: text("token").notNull().unique(),
+  permissionLevel: varchar("permission_level", { length: 20 }).notNull().default("editor"),
+  accepted: boolean("accepted").notNull().default(false),
+  expires: timestamp("expires").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const insertInvitationSchema = createInsertSchema(collaborationInvitations).pick({
+  packingListId: true,
+  invitedByUserId: true,
+  email: true,
+  permissionLevel: true,
 });
 
 // Bags schema
@@ -83,12 +122,16 @@ export const items = pgTable("items", {
   categoryId: integer("category_id").notNull().references(() => categories.id),
   bagId: integer("bag_id").references(() => bags.id),
   travelerId: integer("traveler_id").references(() => travelers.id),
-  createdAt: timestamp("created_at").defaultNow().notNull()
+  createdBy: integer("created_by").references(() => users.id),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastModified: timestamp("last_modified").defaultNow().notNull()
 });
 
 export const insertItemSchema = createInsertSchema(items).omit({
   id: true,
   createdAt: true,
+  lastModified: true,
 }).extend({
   dueDate: z.string().optional(),
 });
@@ -110,6 +153,12 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 
 export type PackingList = typeof packingLists.$inferSelect;
 export type InsertPackingList = z.infer<typeof insertPackingListSchema>;
+
+export type PackingListCollaborator = typeof packingListCollaborators.$inferSelect;
+export type InsertCollaborator = z.infer<typeof insertCollaboratorSchema>;
+
+export type CollaborationInvitation = typeof collaborationInvitations.$inferSelect;
+export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
 
 export type Bag = typeof bags.$inferSelect;
 export type InsertBag = z.infer<typeof insertBagSchema>;
