@@ -21,8 +21,7 @@ export const packingLists = pgTable("packing_lists", {
   theme: text("theme"),
   dateRange: text("date_range"),
   userId: integer("user_id").notNull().references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastModified: timestamp("last_modified").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
 export const insertPackingListSchema = createInsertSchema(packingLists).pick({
@@ -124,14 +123,12 @@ export const items = pgTable("items", {
   travelerId: integer("traveler_id").references(() => travelers.id),
   createdBy: integer("created_by").references(() => users.id),
   lastModifiedBy: integer("last_modified_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  lastModified: timestamp("last_modified").defaultNow().notNull()
+  createdAt: timestamp("created_at").defaultNow().notNull()
 });
 
 export const insertItemSchema = createInsertSchema(items).omit({
   id: true,
   createdAt: true,
-  lastModified: true,
 }).extend({
   dueDate: z.string().optional(),
 });

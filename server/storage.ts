@@ -24,6 +24,18 @@ export interface IStorage {
   createPackingList(packingList: InsertPackingList): Promise<PackingList>;
   updatePackingList(id: number, data: Partial<InsertPackingList>): Promise<PackingList | undefined>;
   deletePackingList(id: number): Promise<void>;
+  
+  // Collaboration methods
+  getCollaborators(packingListId: number): Promise<PackingListCollaborator[]>;
+  addCollaborator(collaborator: InsertCollaborator): Promise<PackingListCollaborator>;
+  removeCollaborator(packingListId: number, userId: number): Promise<void>;
+  getSharedPackingLists(userId: number): Promise<PackingList[]>;
+  createInvitation(invitation: InsertInvitation): Promise<CollaborationInvitation>;
+  getInvitation(token: string): Promise<CollaborationInvitation | undefined>;
+  acceptInvitation(token: string, userId: number): Promise<void>;
+  getInvitationsByPackingList(packingListId: number): Promise<CollaborationInvitation[]>;
+  getPendingInvitationsByEmail(email: string): Promise<CollaborationInvitation[]>;
+  canUserAccessPackingList(userId: number, packingListId: number): Promise<boolean>;
 
   // Bag methods
   getBags(packingListId: number): Promise<Bag[]>;
