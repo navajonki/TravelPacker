@@ -1017,7 +1017,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Removing the problematic /api/items/bulk-update endpoint and creating a new one
   
-  // New endpoint for multi-item updates
+  // Multi-item update endpoint
   app.post("/api/items/multi-edit", isAuthenticated, async (req, res) => {
     try {
       console.log("Received multi-edit request with body:", JSON.stringify(req.body));
@@ -1047,6 +1047,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const results = [];
       let successCount = 0;
       
+      // Parse and validate the updates
+      let parsedUpdates;
+      try {
+        parsedUpdates = insertItemSchema.partial().parse(updates);
+      } catch (parseError) {
+        if (parseError instanceof z.ZodError) {
+          return res.status(400).json({ 
+            message: "Invalid update data format",
+            errors: parseError.errors,
+            success: false
+          });
+        }
+        throw parseError;
+      }
+      
       // Update each item individually
       for (const itemId of itemIds) {
         try {
@@ -1065,40 +1080,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          // Check ownership
+          // Get the category to check ownership via the packing list
           const category = await storage.getCategory(item.categoryId);
           if (!category) {
             results.push({ id: numericId, success: false, message: "Category not found" });
             continue;
           }
           
+          // Check if the packing list belongs to the authenticated user
           const packingList = await storage.getPackingList(category.packingListId);
           if (!packingList) {
             results.push({ id: numericId, success: false, message: "Packing list not found" });
             continue;
           }
           
-          // Verify the user owns this packing list
+          // Verify ownership
           if (packingList.userId !== user.id) {
             results.push({ id: numericId, success: false, message: "Not authorized to modify this item" });
             continue;
           }
           
-          // Attempt to update the item
-          const updatedItem = await storage.updateItem(numericId, updates);
+          // Apply the updates to the item
+          const updatedItem = await storage.updateItem(numericId, parsedUpdates);
           
           if (updatedItem) {
-            results.push({ id: numericId, success: true, item: updatedItem });
+            results.push({ id: numericId, success: true });
             successCount++;
           } else {
-            results.push({ id: numericId, success: false, message: "Update failed" });
+            results.push({ id: numericId, success: false, message: "Failed to update item" });
           }
-        } catch (error) {
-          console.error(`Error updating item ${itemId}:`, error);
+        } catch (itemError) {
+          console.error(`Error updating item ${itemId}:`, itemError);
           results.push({ 
             id: itemId, 
             success: false, 
-            message: error instanceof Error ? error.message : "Unknown error" 
+            message: itemError instanceof Error ? itemError.message : "Unknown error" 
           });
         }
       }

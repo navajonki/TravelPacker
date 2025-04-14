@@ -76,9 +76,9 @@ export default function BulkEditItemsModal({
         }
       }
       
-      return await apiRequest('PATCH', '/api/items/bulk-update', { 
-        ids: selectedItemIds,
-        data
+      return await apiRequest('POST', '/api/items/multi-edit', { 
+        itemIds: selectedItemIds,
+        updates: data
       });
     },
     onSuccess: () => {
@@ -105,10 +105,22 @@ export default function BulkEditItemsModal({
       
       onClose();
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      // Log the error for debugging
+      console.error('Bulk update error:', error);
+      
+      let errorMessage = "Failed to update items";
+      
+      // Extract more detailed error information if available
+      if (error.response?.data?.message) {
+        errorMessage += `: ${error.response.data.message}`;
+      } else if (error.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to update items",
+        description: errorMessage,
         variant: "destructive"
       });
     }
