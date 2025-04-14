@@ -1,7 +1,7 @@
 ## Bugs
 - [x] Editing a bag / traveler / category
 - [x] Remove the grabby thing
-- [ ] The things that appear in the items should always be of the types on the other two tabs - so if you're looking at Bags, the tags on the items should be category & traveler
+- [x] The things that appear in the items should always be of the types on the other two tabs - so if you're looking at Bags, the tags on the items should be category & traveler
 - [x] Theme shouldn't be mandatory
 - [x] Each list doesn't need a + on the top right
 - [x] Remove New List button when looking at an existing list

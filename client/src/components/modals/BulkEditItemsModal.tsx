@@ -8,14 +8,8 @@ import {
   SideDialogFooter 
 } from "@/components/ui/side-dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,6 +34,22 @@ export default function BulkEditItemsModal({
   const [bag, setBag] = useState<string>('');
   const [traveler, setTraveler] = useState<string>('');
   
+  // Fetch categories, bags, and travelers for the dropdowns
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/categories`],
+    enabled: !!packingListId
+  });
+  
+  const { data: bags = [] } = useQuery<any[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/bags`],
+    enabled: !!packingListId
+  });
+  
+  const { data: travelers = [] } = useQuery<any[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/travelers`],
+    enabled: !!packingListId
+  });
+  
   const bulkUpdateMutation = useMutation({
     mutationFn: async () => {
       let data: any = {};
@@ -51,10 +61,17 @@ export default function BulkEditItemsModal({
       } else if (action === 'move' && category) {
         data = { categoryId: parseInt(category) };
       } else if (action === 'assign') {
-        if (bag) {
+        if (bag === 'null') {
+          // Set bagId to null to clear the assignment
+          data.bagId = null;
+        } else if (bag) {
           data.bagId = parseInt(bag);
         }
-        if (traveler) {
+        
+        if (traveler === 'null') {
+          // Set travelerId to null to clear the assignment
+          data.travelerId = null;
+        } else if (traveler) {
           data.travelerId = parseInt(traveler);
         }
       }
@@ -109,90 +126,98 @@ export default function BulkEditItemsModal({
           <SideDialogDescription>Apply changes to multiple items at once</SideDialogDescription>
         </SideDialogHeader>
         
-        <div className="py-4 space-y-4">
+        <div className="py-4 space-y-6">
+          {/* Mark as packed/unpacked dropdown */}
           <div className="space-y-2">
-            <Label>Action</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <Button 
-                variant={action === 'pack' ? 'default' : 'outline'} 
-                onClick={() => setAction('pack')}
-                type="button"
-              >
-                Mark as Packed
-              </Button>
-              <Button 
-                variant={action === 'unpack' ? 'default' : 'outline'} 
-                onClick={() => setAction('unpack')}
-                type="button"
-              >
-                Mark as Unpacked
-              </Button>
-              <Button 
-                variant={action === 'move' ? 'default' : 'outline'} 
-                onClick={() => setAction('move')}
-                type="button"
-              >
-                Move to Category
-              </Button>
-              <Button 
-                variant={action === 'assign' ? 'default' : 'outline'} 
-                onClick={() => setAction('assign')}
-                type="button"
-              >
-                Assign Bag/Traveler
-              </Button>
-            </div>
+            <Label>Mark as packed / unpacked</Label>
+            <Select 
+              value={action === 'pack' ? 'pack' : action === 'unpack' ? 'unpack' : ''} 
+              onValueChange={(value) => {
+                if (value === 'pack' || value === 'unpack') {
+                  setAction(value);
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select action" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pack">Mark as packed</SelectItem>
+                <SelectItem value="unpack">Mark as unpacked</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
-          {action === 'move' && (
-            <div className="space-y-2">
-              <Label>Select Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {/* Categories would be fetched and mapped here */}
-                  <SelectItem value="1">Category 1</SelectItem>
-                  <SelectItem value="2">Category 2</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          {/* Move to category dropdown */}
+          <div className="space-y-2">
+            <Label>Move to category</Label>
+            <Select 
+              value={action === 'move' ? category : ''} 
+              onValueChange={(value) => {
+                setAction('move');
+                setCategory(value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id.toString()}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           
-          {action === 'assign' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Assign to Bag (optional)</Label>
-                <Select value={bag} onValueChange={setBag}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a bag" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Bags would be fetched and mapped here */}
-                    <SelectItem value="1">Bag 1</SelectItem>
-                    <SelectItem value="2">Bag 2</SelectItem>
-                    <SelectItem value="">None</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Assign to Traveler (optional)</Label>
-                <Select value={traveler} onValueChange={setTraveler}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a traveler" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {/* Travelers would be fetched and mapped here */}
-                    <SelectItem value="1">Traveler 1</SelectItem>
-                    <SelectItem value="2">Traveler 2</SelectItem>
-                    <SelectItem value="">None</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+          {/* Assign to bag dropdown */}
+          <div className="space-y-2">
+            <Label>Assign to bag</Label>
+            <Select 
+              value={action === 'assign' ? bag : ''}
+              onValueChange={(value) => {
+                setAction('assign');
+                setBag(value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select bag" />
+              </SelectTrigger>
+              <SelectContent>
+                {bags.map((b) => (
+                  <SelectItem key={b.id} value={b.id.toString()}>
+                    {b.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="null">None</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Assign to traveler dropdown */}
+          <div className="space-y-2">
+            <Label>Assign to traveler</Label>
+            <Select 
+              value={action === 'assign' ? traveler : ''}
+              onValueChange={(value) => {
+                setAction('assign');
+                setTraveler(value);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select traveler" />
+              </SelectTrigger>
+              <SelectContent>
+                {travelers.map((t) => (
+                  <SelectItem key={t.id} value={t.id.toString()}>
+                    {t.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="null">None</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <SideDialogFooter>
@@ -206,7 +231,7 @@ export default function BulkEditItemsModal({
             onClick={handleSubmit}
             disabled={bulkUpdateMutation.isPending || 
               (action === 'move' && !category) || 
-              (action === 'assign' && !bag && !traveler)}
+              (action === 'assign' && bag === '' && traveler === '')}
           >
             {bulkUpdateMutation.isPending ? 'Updating...' : 'Update Items'}
           </Button>
