@@ -26,11 +26,11 @@ interface InvitationData {
   role: string;
   createdAt: string;
   expiresAt: string;
-  packingList: {
+  packingList?: {
     id: number;
     name: string;
   };
-  inviter: {
+  inviter?: {
     id: number;
     username: string;
   };

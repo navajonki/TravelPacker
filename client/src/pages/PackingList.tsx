@@ -56,6 +56,7 @@ export default function PackingList() {
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   
   // Edit modals
   const [editCategoryOpen, setEditCategoryOpen] = useState(false);
@@ -345,6 +346,13 @@ export default function PackingList() {
         description: "Your packing list has been exported as CSV",
       });
     }, 1000);
+  };
+  
+  // Handler to open the share/invite dialog
+  const handleOpenShareDialog = () => {
+    setInviteDialogOpen(true);
+    // Switch to collaboration view
+    setViewMode('collaboration');
   };
   
   const handleCreateNewList = async (data: { name: string, theme?: string, dateRange?: string }) => {
