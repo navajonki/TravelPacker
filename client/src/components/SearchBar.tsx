@@ -93,19 +93,22 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
       });
       
       setResults(searchResults);
-      setShowResults(true);
+      setShowResults(searchResults.length > 0);
     } catch (error) {
       console.error('Error searching items:', error);
       setResults([]);
+      setShowResults(false);
     } finally {
       setIsLoading(false);
     }
   }, [debouncedSearchTerm, allItems, categories, bags, travelers]);
 
-  // Search when the search term or any related data changes
+  // Search when the search term changes
   useEffect(() => {
-    searchItems();
-  }, [searchItems]);
+    if (debouncedSearchTerm) {
+      searchItems();
+    }
+  }, [debouncedSearchTerm, searchItems]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

@@ -211,6 +211,7 @@ export default function TravelerCard({
               item={item}
               packingListId={traveler.packingListId}
               onEditItem={onEditItem}
+              viewContext="traveler"
             />
           ))}
           

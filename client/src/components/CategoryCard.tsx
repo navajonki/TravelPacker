@@ -217,6 +217,7 @@ export default function CategoryCard({
                 item={item}
                 packingListId={category.packingListId}
                 onEditItem={onEditItem}
+                viewContext="category"
               />
             ))}
             
