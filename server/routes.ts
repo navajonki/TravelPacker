@@ -1624,6 +1624,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     return res.json(invitations);
   });
+  
+  // Create an invitation for a packing list
+  app.post("/api/packing-lists/:listId/invitations", isAuthenticated, async (req, res) => {
+    try {
+      const listId = parseInt(req.params.listId);
+      const user = req.user as User;
+      
+      if (isNaN(listId)) {
+        return res.status(400).json({ message: "Invalid listId parameter" });
+      }
+      
+      // Check if the packing list exists
+      const packingList = await storage.getPackingList(listId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Check if user is the owner of the packing list
+      if (packingList.userId !== user.id) {
+        return res.status(403).json({ message: "Only the owner can send invitations" });
+      }
+      
+      // Prepare invitation data
+      const invitationData = {
+        packingListId: listId,
+        invitedByUserId: user.id,
+        email: req.body.email,
+        permissionLevel: req.body.role || 'viewer'
+      };
+      
+      // Create the invitation
+      const invitation = await storage.createInvitation(invitationData);
+      
+      return res.json(invitation);
+    } catch (error) {
+      console.error("Error creating invitation:", error);
+      
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      
+      return res.status(500).json({ message: "Internal server error creating invitation" });
+    }
+  });
 
   // Check for pending invitations by email
   app.get("/api/invitations", isAuthenticated, async (req, res) => {
