@@ -1,33 +1,16 @@
-import { useState } from "react";
 import { Link, useRoute } from "wouter";
-import { Luggage, Search, Menu, Plus } from "lucide-react";
+import { Luggage, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import UserMenu from "@/components/UserMenu";
 
 interface HeaderProps {
-  onCreateNewList: () => void;
-  onOpenSearch?: () => void;
-  onToggleMenu?: () => void;
-  hideNewListButton?: boolean;
+  onCreateNewList?: () => void;
 }
 
 export default function Header({ 
-  onCreateNewList, 
-  onOpenSearch, 
-  onToggleMenu,
-  hideNewListButton = false 
+  onCreateNewList
 }: HeaderProps) {
-  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isListPage] = useRoute("/list/:id");
-
-  // Hide the "New List" button on packing list detail pages
-  const shouldHideNewListButton = hideNewListButton || isListPage;
-
-  const toggleMobileSearch = () => {
-    setShowMobileSearch(!showMobileSearch);
-    if (onOpenSearch) onOpenSearch();
-  };
 
   return (
     <header className="bg-white border-b border-gray-200">
@@ -43,64 +26,21 @@ export default function Header({
             </Link>
           </div>
           
-          {/* Middle - Search and New List on desktop */}
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Search packing lists..."
-                className="pl-9 pr-4 py-2 w-64"
-              />
-              <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
-            </div>
-            
-            {!shouldHideNewListButton && (
-              <Button onClick={onCreateNewList} className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition flex items-center">
-                <Plus className="h-4 w-4 mr-1" />
-                New List
+          {/* Middle - Back to Lists button */}
+          {isListPage && (
+            <Link href="/">
+              <Button variant="ghost" className="flex items-center">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Lists
               </Button>
-            )}
-          </div>
+            </Link>
+          )}
           
-          {/* Right side - Mobile controls and User menu */}
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-gray-500 hover:text-gray-700"
-              onClick={toggleMobileSearch}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden text-gray-500 hover:text-gray-700"
-              onClick={onToggleMenu}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            
-            <div className="hidden md:block">
-              <UserMenu />
-            </div>
+          {/* Right side - User menu with logout */}
+          <div className="flex items-center">
+            <UserMenu />
           </div>
         </div>
-        
-        {/* Mobile search (hidden by default) */}
-        {showMobileSearch && (
-          <div className="md:hidden py-2">
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Search packing lists..."
-                className="pl-9 pr-4 py-2 w-full"
-              />
-              <Search className="absolute left-3 top-2.5 text-gray-400 h-4 w-4" />
-            </div>
-          </div>
-        )}
       </div>
     </header>
   );

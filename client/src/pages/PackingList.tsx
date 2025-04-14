@@ -407,9 +407,7 @@ export default function PackingList() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header onCreateNewList={() => setCreateListOpen(true)} />
-      
-      <MobileNav onCreateNewList={() => setCreateListOpen(true)} />
+      <Header />
       
       <div className="flex flex-1 flex-col">
         
