@@ -89,11 +89,44 @@ export default function InvitationHandler({ token }: InvitationHandlerProps) {
         }
       }, 2000);
     },
-    onError: () => {
+    onError: async (error: any) => {
       setStatus("error");
+      
+      let errorMessage = "Failed to accept invitation";
+      
+      // Try to extract more detailed error information
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error.response) {
+        try {
+          // Try to get response text
+          const responseText = await error.response.text();
+          
+          // Try to parse as JSON
+          try {
+            const errorData = JSON.parse(responseText);
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If not JSON, use the response text
+            if (responseText) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (e) {
+          // If we can't get response text, use status text
+          errorMessage = `${error.response.status}: ${error.response.statusText}`;
+        }
+      }
+      
+      console.error("Accept invitation error details:", error);
+      
       toast({
-        title: "Error",
-        description: "Failed to accept invitation",
+        title: "Error Accepting Invitation",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -245,12 +278,21 @@ export default function InvitationHandler({ token }: InvitationHandlerProps) {
         <CardHeader>
           <CardTitle className="flex items-center text-red-500">
             <XCircle className="h-6 w-6 mr-2" />
-            Error
+            Error Accepting Invitation
           </CardTitle>
         </CardHeader>
         <CardContent>
+          <p className="text-gray-600 mb-4">
+            There was an error accepting the invitation. This could be because:
+          </p>
+          <ul className="list-disc pl-5 mb-4 text-gray-600 space-y-1">
+            <li>The invitation has already been accepted</li>
+            <li>The invitation has been revoked by the owner</li>
+            <li>You don't have permission to accept this invitation</li>
+            <li>There was a server error processing your request</li>
+          </ul>
           <p className="text-gray-600">
-            There was an error accepting the invitation. Please try again.
+            You can try again or contact the list owner for a new invitation.
           </p>
         </CardContent>
         <CardFooter className="flex justify-between">

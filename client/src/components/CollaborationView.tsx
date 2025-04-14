@@ -102,10 +102,42 @@ export default function CollaborationView({ packingListId }: CollaborationViewPr
       setInviteEmail("");
       setInviteDialogOpen(false);
     },
-    onError: (error: any) => {
+    onError: async (error: any) => {
+      let errorMessage = "Failed to send invitation";
+      
+      // Try to extract more detailed error information
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error.response) {
+        try {
+          // Try to get response text
+          const responseText = await error.response.text();
+          
+          // Try to parse as JSON
+          try {
+            const errorData = JSON.parse(responseText);
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If not JSON, use the response text
+            if (responseText) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (e) {
+          // If we can't get response text, use status text
+          errorMessage = `${error.response.status}: ${error.response.statusText}`;
+        }
+      }
+      
+      console.error("Invitation error details:", error);
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to send invitation",
+        title: "Error Sending Invitation",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -124,10 +156,42 @@ export default function CollaborationView({ packingListId }: CollaborationViewPr
       });
       setRemoveCollaboratorId(null);
     },
-    onError: (error: any) => {
+    onError: async (error: any) => {
+      let errorMessage = "Failed to remove collaborator";
+      
+      // Try to extract more detailed error information
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error.response) {
+        try {
+          // Try to get response text
+          const responseText = await error.response.text();
+          
+          // Try to parse as JSON
+          try {
+            const errorData = JSON.parse(responseText);
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If not JSON, use the response text
+            if (responseText) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (e) {
+          // If we can't get response text, use status text
+          errorMessage = `${error.response.status}: ${error.response.statusText}`;
+        }
+      }
+      
+      console.error("Remove collaborator error details:", error);
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to remove collaborator",
+        title: "Error Removing Collaborator",
+        description: errorMessage,
         variant: "destructive",
       });
       setRemoveCollaboratorId(null);
@@ -147,10 +211,42 @@ export default function CollaborationView({ packingListId }: CollaborationViewPr
       });
       setCancelInvitationId(null);
     },
-    onError: (error: any) => {
+    onError: async (error: any) => {
+      let errorMessage = "Failed to cancel invitation";
+      
+      // Try to extract more detailed error information
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error.response) {
+        try {
+          // Try to get response text
+          const responseText = await error.response.text();
+          
+          // Try to parse as JSON
+          try {
+            const errorData = JSON.parse(responseText);
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If not JSON, use the response text
+            if (responseText) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (e) {
+          // If we can't get response text, use status text
+          errorMessage = `${error.response.status}: ${error.response.statusText}`;
+        }
+      }
+      
+      console.error("Cancel invitation error details:", error);
+      
       toast({
-        title: "Error",
-        description: error.message || "Failed to cancel invitation",
+        title: "Error Cancelling Invitation",
+        description: errorMessage,
         variant: "destructive",
       });
       setCancelInvitationId(null);

@@ -54,10 +54,42 @@ export default function InviteDialog({
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/collaborators`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/invitations`] });
     },
-    onError: () => {
+    onError: async (error: any) => {
+      let errorMessage = "Failed to create invitation";
+      
+      // Try to extract more detailed error information
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error.response) {
+        try {
+          // Try to get response text
+          const responseText = await error.response.text();
+          
+          // Try to parse as JSON
+          try {
+            const errorData = JSON.parse(responseText);
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            } else if (errorData.error) {
+              errorMessage = errorData.error;
+            }
+          } catch (e) {
+            // If not JSON, use the response text
+            if (responseText) {
+              errorMessage = responseText;
+            }
+          }
+        } catch (e) {
+          // If we can't get response text, use status text
+          errorMessage = `${error.response.status}: ${error.response.statusText}`;
+        }
+      }
+      
+      console.error("Invitation error details:", error);
+      
       toast({
-        title: "Error",
-        description: "Failed to create invitation",
+        title: "Error Creating Invitation",
+        description: errorMessage,
         variant: "destructive",
       });
     }
