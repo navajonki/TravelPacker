@@ -35,6 +35,7 @@ export interface IStorage {
   createInvitation(invitation: InsertInvitation): Promise<CollaborationInvitation>;
   getInvitation(token: string): Promise<CollaborationInvitation | undefined>;
   acceptInvitation(token: string, userId: number): Promise<void>;
+  deleteInvitation(invitationId: number): Promise<void>;
   getInvitationsByPackingList(packingListId: number): Promise<CollaborationInvitation[]>;
   getPendingInvitationsByEmail(email: string): Promise<CollaborationInvitation[]>;
   canUserAccessPackingList(userId: number, packingListId: number): Promise<boolean>;
@@ -582,6 +583,19 @@ export class MemStorage implements IStorage {
       userId,
       permissionLevel: invitation.permissionLevel
     });
+  }
+  
+  async deleteInvitation(invitationId: number): Promise<void> {
+    // Find the invitation by ID
+    const invitation = Array.from(this.invitations.values())
+      .find(inv => inv.id === invitationId);
+      
+    if (!invitation) {
+      throw new Error("Invitation not found");
+    }
+    
+    // Delete the invitation
+    this.invitations.delete(invitationId);
   }
   
   async getInvitationsByPackingList(packingListId: number): Promise<CollaborationInvitation[]> {

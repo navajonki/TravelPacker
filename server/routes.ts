@@ -151,10 +151,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const user = req.user as User;
     const userId = user.id;
     
-    const packingLists = await storage.getPackingLists(userId);
+    // Get both owned and shared lists
+    const ownedLists = await storage.getPackingLists(userId);
+    const sharedLists = await storage.getSharedPackingLists(userId);
+    
+    // Combine all lists, marking shared ones
+    const allPackingLists = [
+      ...ownedLists.map(list => ({ ...list, isOwner: true, isShared: false })),
+      ...sharedLists.map(list => ({ ...list, isOwner: false, isShared: true }))
+    ];
     
     const lists = await Promise.all(
-      packingLists.map(async (list) => {
+      allPackingLists.map(async (list) => {
         const items = await storage.getAllItemsByPackingList(list.id);
         const totalItems = items.length;
         const packedItems = items.filter(item => item.packed).length;
@@ -185,11 +193,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Packing list not found" });
     }
     
-    // Check if the authenticated user owns this packing list
+    // Check if the authenticated user owns this packing list or has access as a collaborator
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const hasAccess = await storage.canUserAccessPackingList(user.id, id);
+    
+    if (packingList.userId !== user.id && !hasAccess) {
       return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
+    
+    // Check if the user is the owner or a collaborator
+    const isOwner = packingList.userId === user.id;
     
     const items = await storage.getAllItemsByPackingList(id);
     const totalItems = items.length;
@@ -200,7 +213,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ...packingList,
       itemCount: totalItems,
       packedItemCount: packedItems,
-      progress
+      progress,
+      isOwner,
+      isShared: !isOwner
     });
   });
 
@@ -1678,6 +1693,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const pendingInvitations = await storage.getPendingInvitationsByEmail(user.username);
     
     return res.json(pendingInvitations);
+  });
+  
+  // Accept invitation 
+  app.post("/api/invitations/:token/accept", isAuthenticated, async (req, res) => {
+    try {
+      const token = req.params.token;
+      const user = req.user as User;
+      
+      // Check if the invitation exists
+      const invitation = await storage.getInvitation(token);
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found or has expired" });
+      }
+      
+      // Check if the invitation is for this user (by email)
+      if (invitation.email !== user.username) {
+        return res.status(403).json({ 
+          message: "This invitation is not for you", 
+          details: `Invitation is for ${invitation.email}, but you are logged in as ${user.username}` 
+        });
+      }
+      
+      // Check if the invitation has already been accepted
+      if (invitation.accepted) {
+        return res.status(400).json({ message: "This invitation has already been accepted" });
+      }
+      
+      // Accept the invitation
+      await storage.acceptInvitation(token, user.id);
+      
+      return res.status(200).json({ message: "Invitation accepted successfully" });
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      
+      return res.status(500).json({ message: "Internal server error accepting invitation" });
+    }
+  });
+  
+  // Delete/Cancel invitation
+  app.delete("/api/invitations/:id", isAuthenticated, async (req, res) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      
+      if (isNaN(invitationId)) {
+        return res.status(400).json({ message: "Invalid invitation ID" });
+      }
+      
+      // Get the invitation to check if the user has permission to delete it
+      const invitation = await storage.getInvitation(invitationId.toString());
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      // Get the packing list to check if the user is the owner
+      const packingList = await storage.getPackingList(invitation.packingListId);
+      
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      const user = req.user as User;
+      
+      // Allow the invitation to be deleted if:
+      // 1. The user is the owner of the packing list OR
+      // 2. The invitation email matches the user's email (they're declining the invitation)
+      if (packingList.userId !== user.id && invitation.email !== user.username) {
+        return res.status(403).json({ message: "You don't have permission to delete this invitation" });
+      }
+      
+      // Delete the invitation
+      await storage.deleteInvitation(invitationId);
+      
+      return res.status(200).end();
+    } catch (error) {
+      console.error("Error deleting invitation:", error);
+      
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      
+      return res.status(500).json({ message: "Internal server error deleting invitation" });
+    }
   });
 
   const httpServer = createServer(app);
