@@ -1159,6 +1159,23 @@ export class DatabaseStorage implements IStorage {
       .where(eq(collaborationInvitations.packingListId, packingListId));
   }
   
+  async deleteInvitation(invitationId: number): Promise<void> {
+    // Check if the invitation exists before deleting
+    const [invitation] = await db
+      .select()
+      .from(collaborationInvitations)
+      .where(eq(collaborationInvitations.id, invitationId));
+      
+    if (!invitation) {
+      throw new Error("Invitation not found");
+    }
+    
+    // Delete the invitation
+    await db
+      .delete(collaborationInvitations)
+      .where(eq(collaborationInvitations.id, invitationId));
+  }
+  
   async getPendingInvitationsByEmail(email: string): Promise<CollaborationInvitation[]> {
     const now = new Date();
     
