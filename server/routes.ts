@@ -624,15 +624,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Invalid listId parameter" });
     }
     
-    // Check if the packing list exists and belongs to the authenticated user
+    // Check if the packing list exists
     const packingList = await storage.getPackingList(listId);
     if (!packingList) {
       return res.status(404).json({ message: "Packing list not found" });
     }
     
-    // Verify ownership
+    // Check if the authenticated user has access to this packing list
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const hasAccess = await storage.canUserAccessPackingList(user.id, listId);
+    
+    if (!hasAccess) {
       return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
@@ -663,15 +665,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = insertCategorySchema.parse(req.body);
       
-      // Verify user can access the packing list this category belongs to
+      // Verify the packing list exists
       const packingList = await storage.getPackingList(data.packingListId);
       if (!packingList) {
         return res.status(404).json({ message: "Packing list not found" });
       }
       
-      // Verify ownership
+      // Check if the user has access to this packing list
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, data.packingListId);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify this packing list" });
       }
       
