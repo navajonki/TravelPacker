@@ -1695,6 +1695,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json(pendingInvitations);
   });
   
+  // Get a specific invitation by token
+  app.get("/api/invitations/:token", isAuthenticated, async (req, res) => {
+    try {
+      const token = req.params.token;
+      const user = req.user as User;
+      
+      // Get the invitation
+      const invitation = await storage.getInvitation(token);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found or has expired" });
+      }
+      
+      // Check if this invitation is for the authenticated user
+      if (invitation.email !== user.username) {
+        return res.status(403).json({ 
+          message: "This invitation is not for you",
+          details: `Invitation is for ${invitation.email}, but you are logged in as ${user.username}`
+        });
+      }
+      
+      // Get the packing list to include in the response
+      const packingList = await storage.getPackingList(invitation.packingListId);
+      
+      // Get the inviter's username
+      const inviter = await storage.getUser(invitation.invitedByUserId);
+      
+      // Return the invitation with additional details
+      return res.json({
+        ...invitation,
+        packingList: packingList ? {
+          id: packingList.id,
+          name: packingList.name
+        } : undefined,
+        inviter: inviter ? {
+          id: inviter.id,
+          username: inviter.username
+        } : undefined,
+        role: invitation.permissionLevel
+      });
+    } catch (error) {
+      console.error("Error fetching invitation:", error);
+      return res.status(500).json({ message: "Error fetching invitation details" });
+    }
+  });
+  
   // Accept invitation 
   app.post("/api/invitations/:token/accept", isAuthenticated, async (req, res) => {
     try {
@@ -1744,8 +1790,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid invitation ID" });
       }
       
-      // Get the invitation to check if the user has permission to delete it
-      const invitation = await storage.getInvitation(invitationId.toString());
+      // First get all packing lists 
+      const packingLists = await storage.getPackingLists((req.user as User).id);
+      
+      // Then gather all invitations from all packing lists (to find the one we want to delete)
+      let foundInvitation = null;
+      
+      // Loop through each packing list
+      for (const packingList of packingLists) {
+        const invitations = await storage.getInvitationsByPackingList(packingList.id);
+        // Look for the specific invitation
+        const invitation = invitations.find(inv => inv.id === invitationId);
+        if (invitation) {
+          foundInvitation = invitation;
+          break;
+        }
+      }
+      
+      // Also check invitations sent to the current user
+      if (!foundInvitation) {
+        const userInvitations = await storage.getPendingInvitationsByEmail((req.user as User).username);
+        const invitation = userInvitations.find(inv => inv.id === invitationId);
+        if (invitation) {
+          foundInvitation = invitation;
+        }
+      }
+      
+      const invitation = foundInvitation;
       
       if (!invitation) {
         return res.status(404).json({ message: "Invitation not found" });
