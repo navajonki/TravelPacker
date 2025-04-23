@@ -1816,15 +1816,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[DEBUG] Manually added collaborator:`, newCollaborator);
       
-      // If token was provided, also mark the invitation as accepted
+      // If token was provided, also mark the invitation as accepted without using Drizzle directly
       if (token) {
         const invitation = await storage.getInvitation(token);
         if (invitation) {
-          await db
-            .update(collaborationInvitations)
-            .set({ accepted: true })
-            .where(eq(collaborationInvitations.token, token));
-          
+          // Use the acceptInvitation method instead of direct DB access
+          await storage.acceptInvitation(token, user.id);
           console.log(`[DEBUG] Marked invitation ${token} as accepted`);
         }
       }
