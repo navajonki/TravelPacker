@@ -4,12 +4,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
 import CreateListModal from "@/components/modals/CreateListModal";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Luggage, Trash2, Plus } from "lucide-react";
+import { Luggage, Trash2, Plus, Wrench, Users } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { useAuth } from "@/hooks/use-auth";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,9 +37,14 @@ interface ListData {
 export default function Dashboard() {
   const [createListOpen, setCreateListOpen] = useState(false);
   const [deleteListId, setDeleteListId] = useState<number | null>(null);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [packingListIdForDiagnostic, setPackingListIdForDiagnostic] = useState<string>("");
+  const [tokenForDiagnostic, setTokenForDiagnostic] = useState<string>("");
+  const [diagnosticResult, setDiagnosticResult] = useState<any>(null);
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const { data: packingLists = [], isLoading } = useQuery<ListData[]>({
     queryKey: ['/api/packing-lists'],
@@ -104,6 +111,45 @@ export default function Dashboard() {
       deletePackingListMutation.mutate(deleteListId);
     }
   };
+  
+  // Manual invitation acceptance for debugging
+  const manualAcceptMutation = useMutation({
+    mutationFn: async ({ packingListId, token }: { packingListId: number, token?: string }) => {
+      return apiRequest('POST', `/api/invitations/manual-accept`, { packingListId, token });
+    },
+    onSuccess: (data) => {
+      setDiagnosticResult(data);
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists'] });
+      toast({
+        title: "Collaboration Diagnostic",
+        description: "Manual invitation acceptance completed",
+      });
+    },
+    onError: (error: any) => {
+      setDiagnosticResult({ error: error.message });
+      toast({
+        title: "Error",
+        description: `Failed to manually accept invitation: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleManualAccept = () => {
+    if (!packingListIdForDiagnostic) {
+      toast({
+        title: "Error",
+        description: "Please enter a packing list ID",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    manualAcceptMutation.mutate({ 
+      packingListId: parseInt(packingListIdForDiagnostic),
+      token: tokenForDiagnostic || undefined
+    });
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -114,14 +160,88 @@ export default function Dashboard() {
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-semibold">Your Packing Lists</h1>
-              <Button 
-                onClick={() => setCreateListOpen(true)}
-                className="flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                New List
-              </Button>
+              <div className="flex gap-2">
+                {/* Only show diagnostic button if user is logged in */}
+                {user && (
+                  <Button 
+                    onClick={() => setShowDiagnostic(!showDiagnostic)}
+                    variant="outline"
+                    className="flex items-center"
+                  >
+                    <Wrench className="h-4 w-4 mr-1" />
+                    {showDiagnostic ? "Hide Diagnostic" : "Collaboration Diagnostic"}
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => setCreateListOpen(true)}
+                  className="flex items-center"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  New List
+                </Button>
+              </div>
             </div>
+            
+            {/* Collaboration Diagnostic Tool */}
+            {showDiagnostic && (
+              <Card className="mb-6 border-dashed border-yellow-400">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wrench className="h-5 w-5 text-yellow-500" />
+                    Collaboration Diagnostic Tool
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Current user: <span className="font-semibold">{user?.username}</span> (ID: {user?.id})
+                      </p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        This tool helps diagnose collaboration permission issues by manually adding you as a collaborator to a packing list.
+                      </p>
+                    </div>
+                    
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-1 block">Packing List ID</label>
+                        <Input 
+                          value={packingListIdForDiagnostic} 
+                          onChange={(e) => setPackingListIdForDiagnostic(e.target.value)}
+                          placeholder="Enter the packing list ID"
+                          type="number"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-sm font-medium mb-1 block">Invitation Token (optional)</label>
+                        <Input 
+                          value={tokenForDiagnostic} 
+                          onChange={(e) => setTokenForDiagnostic(e.target.value)}
+                          placeholder="Enter the invitation token"
+                        />
+                      </div>
+                    </div>
+                    
+                    <Button
+                      onClick={handleManualAccept}
+                      variant="secondary"
+                      className="w-full mt-2"
+                    >
+                      Run Diagnostic
+                    </Button>
+                    
+                    {diagnosticResult && (
+                      <div className="mt-4 p-4 bg-muted rounded-md overflow-auto max-h-80">
+                        <h3 className="text-sm font-semibold mb-2">Diagnostic Result:</h3>
+                        <pre className="text-xs overflow-auto whitespace-pre-wrap">
+                          {JSON.stringify(diagnosticResult, null, 2)}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

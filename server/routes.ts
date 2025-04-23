@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { z } from "zod";
 import passport from "passport";
 import { isAuthenticated, hashPassword } from "./auth";
+import { db } from "./db";
+import { eq, and, inArray, sql } from "drizzle-orm";
 import { 
   insertUserSchema,
   insertPackingListSchema, 
@@ -14,6 +16,8 @@ import {
   insertTemplateSchema,
   insertCollaboratorSchema,
   insertInvitationSchema,
+  collaborationInvitations,
+  packingListCollaborators,
   type User
 } from "@shared/schema";
 
@@ -1782,6 +1786,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       return res.status(500).json({ message: "Internal server error accepting invitation" });
+    }
+  });
+  
+  // Manual invitation acceptance (for debugging purposes)
+  app.post("/api/invitations/manual-accept", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as User;
+      const { packingListId, token } = req.body;
+      
+      if (!packingListId) {
+        return res.status(400).json({ message: "packingListId is required" });
+      }
+      
+      // Check if user already has access to this list
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingListId);
+      if (hasAccess) {
+        return res.status(200).json({ message: "User already has access to this list" });
+      }
+      
+      console.log(`[DEBUG] Manual invitation acceptance for user ${user.id} to list ${packingListId}`);
+      
+      // Add user as a collaborator directly
+      const newCollaborator = await storage.addCollaborator({
+        packingListId,
+        userId: user.id,
+        permissionLevel: 'editor'
+      });
+      
+      console.log(`[DEBUG] Manually added collaborator:`, newCollaborator);
+      
+      // If token was provided, also mark the invitation as accepted
+      if (token) {
+        const invitation = await storage.getInvitation(token);
+        if (invitation) {
+          await db
+            .update(collaborationInvitations)
+            .set({ accepted: true })
+            .where(eq(collaborationInvitations.token, token));
+          
+          console.log(`[DEBUG] Marked invitation ${token} as accepted`);
+        }
+      }
+      
+      // Force a refresh of collaborators
+      const collaborators = await storage.getCollaborators(packingListId);
+      console.log(`[DEBUG] Current collaborators for list ${packingListId}:`, collaborators);
+      
+      // Force a refresh of shared lists for this user
+      const sharedLists = await storage.getSharedPackingLists(user.id);
+      console.log(`[DEBUG] Current shared lists for user ${user.id}:`, sharedLists);
+      
+      return res.status(200).json({ 
+        message: "Manually added as collaborator",
+        collaborator: newCollaborator,
+        allCollaborators: collaborators,
+        sharedLists: sharedLists
+      });
+    } catch (error) {
+      console.error("Error in manual invitation acceptance:", error);
+      
+      if (error instanceof Error) {
+        return res.status(400).json({ message: error.message });
+      }
+      
+      return res.status(500).json({ message: "Internal server error processing manual invitation" });
     }
   });
   
