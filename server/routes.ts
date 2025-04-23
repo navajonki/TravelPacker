@@ -155,9 +155,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const user = req.user as User;
     const userId = user.id;
     
+    console.log(`[DEBUG] GET /api/packing-lists for user ID: ${userId}`);
+    
     // Get both owned and shared lists
     const ownedLists = await storage.getPackingLists(userId);
+    console.log(`[DEBUG] Owned lists for user ${userId}:`, ownedLists.map(l => l.id));
+    
     const sharedLists = await storage.getSharedPackingLists(userId);
+    console.log(`[DEBUG] Shared lists for user ${userId}:`, sharedLists.map(l => l.id));
+    
+    // Double-check collaborator access for packing list 2 (for debugging)
+    const hasAccessToList2 = await storage.canUserAccessPackingList(userId, 2);
+    console.log(`[DEBUG] User ${userId} access to list 2: ${hasAccessToList2}`);
+    
+    // Check for collaborator records
+    const collaboratorRecords = await db
+      .select()
+      .from(packingListCollaborators)
+      .where(eq(packingListCollaborators.userId, userId));
+    console.log(`[DEBUG] Raw collaborator records for user ${userId}:`, collaboratorRecords);
     
     // Combine all lists, marking shared ones
     const allPackingLists = [
@@ -1786,6 +1802,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       return res.status(500).json({ message: "Internal server error accepting invitation" });
+    }
+  });
+  
+  // Collaboration diagnostics endpoint
+  app.post("/api/collaboration/diagnostic", isAuthenticated, async (req, res) => {
+    try {
+      const user = req.user as User;
+      
+      // Get all packing lists
+      const ownedLists = await storage.getPackingLists(user.id);
+      
+      // Get all collaborator entries for the user
+      const collaboratorEntries = await db
+        .select()
+        .from(packingListCollaborators)
+        .where(eq(packingListCollaborators.userId, user.id));
+      
+      // Get all pending invitations for the user
+      const pendingInvitations = await storage.getPendingInvitationsByEmail(user.username);
+      
+      // Get shared lists
+      const sharedLists = await storage.getSharedPackingLists(user.id);
+      
+      // Return all diagnostic data
+      return res.status(200).json({
+        user: {
+          id: user.id,
+          username: user.username
+        },
+        ownedLists: ownedLists.map(list => ({ id: list.id, name: list.name })),
+        collaboratorEntries,
+        pendingInvitations,
+        sharedLists: sharedLists.map(list => ({ id: list.id, name: list.name }))
+      });
+    } catch (error) {
+      console.error("Error in collaboration diagnostic:", error);
+      return res.status(500).json({ message: "Error running collaboration diagnostic" });
     }
   });
   

@@ -150,6 +150,31 @@ export default function Dashboard() {
       token: tokenForDiagnostic || undefined
     });
   };
+  
+  // Comprehensive collaboration diagnostic mutation
+  const collaborationDiagnosticMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('POST', '/api/collaboration/diagnostic');
+    },
+    onSuccess: (data) => {
+      setDiagnosticResult(data);
+      toast({
+        title: "Collaboration Diagnostic",
+        description: "Diagnostic completed successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to run diagnostic: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  const handleRunDiagnostic = () => {
+    collaborationDiagnosticMutation.mutate();
+  };
 
   return (
     <div className="flex flex-col h-screen">
@@ -222,13 +247,23 @@ export default function Dashboard() {
                       </div>
                     </div>
                     
-                    <Button
-                      onClick={handleManualAccept}
-                      variant="secondary"
-                      className="w-full mt-2"
-                    >
-                      Run Diagnostic
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleRunDiagnostic}
+                        variant="outline"
+                        className="w-1/2 mt-2"
+                      >
+                        Comprehensive Diagnostic
+                      </Button>
+                      
+                      <Button
+                        onClick={handleManualAccept}
+                        variant="secondary"
+                        className="w-1/2 mt-2"
+                      >
+                        Manual Add Collaborator
+                      </Button>
+                    </div>
                     
                     {diagnosticResult && (
                       <div className="mt-4 p-4 bg-muted rounded-md overflow-auto max-h-80">
