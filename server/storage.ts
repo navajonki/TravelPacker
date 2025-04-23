@@ -1059,11 +1059,40 @@ export class DatabaseStorage implements IStorage {
   }
   
   async addCollaborator(collaborator: InsertCollaborator): Promise<PackingListCollaborator> {
-    const [newCollaborator] = await db
-      .insert(packingListCollaborators)
-      .values(collaborator)
-      .returning();
-    return newCollaborator;
+    console.log(`[DEBUG] In addCollaborator with data:`, collaborator);
+    
+    // Check if a collaborator with the same packingListId and userId already exists
+    const [existingCollaborator] = await db
+      .select()
+      .from(packingListCollaborators)
+      .where(
+        and(
+          eq(packingListCollaborators.packingListId, collaborator.packingListId),
+          eq(packingListCollaborators.userId, collaborator.userId)
+        )
+      );
+    
+    console.log(`[DEBUG] Existing collaborator check:`, existingCollaborator);
+    
+    if (existingCollaborator) {
+      console.log(`[DEBUG] Collaborator already exists, returning existing one`);
+      return existingCollaborator;
+    }
+    
+    console.log(`[DEBUG] No existing collaborator found, creating new one`);
+    
+    try {
+      const [newCollaborator] = await db
+        .insert(packingListCollaborators)
+        .values(collaborator)
+        .returning();
+      
+      console.log(`[DEBUG] Successfully created new collaborator:`, newCollaborator);
+      return newCollaborator;
+    } catch (error) {
+      console.error(`[ERROR] Failed to create collaborator:`, error);
+      throw error;
+    }
   }
   
   async removeCollaborator(packingListId: number, userId: number): Promise<void> {
@@ -1084,15 +1113,21 @@ export class DatabaseStorage implements IStorage {
       .from(packingListCollaborators)
       .where(eq(packingListCollaborators.userId, userId));
     
+    console.log(`[DEBUG] getSharedPackingLists for userId ${userId}:`, collaborations);
+    
     if (collaborations.length === 0) return [];
     
     const packingListIds = collaborations.map(collab => collab.packingListId);
+    console.log(`[DEBUG] packingListIds for shared lists:`, packingListIds);
     
     // Get all these packing lists
-    return await db
+    const sharedLists = await db
       .select()
       .from(packingLists)
       .where(inArray(packingLists.id, packingListIds));
+    
+    console.log(`[DEBUG] returning shared lists:`, sharedLists);
+    return sharedLists;
   }
   
   async createInvitation(invitation: InsertInvitation): Promise<CollaborationInvitation> {
@@ -1133,10 +1168,16 @@ export class DatabaseStorage implements IStorage {
   }
   
   async acceptInvitation(token: string, userId: number): Promise<void> {
+    console.log(`[DEBUG] Accepting invitation with token ${token} for user ${userId}`);
+    
     const invitation = await this.getInvitation(token);
+    console.log(`[DEBUG] Found invitation:`, invitation);
+    
     if (!invitation) throw new Error("Invitation not found");
     if (invitation.accepted) throw new Error("Invitation already accepted");
     if (invitation.expires < new Date()) throw new Error("Invitation expired");
+    
+    console.log(`[DEBUG] Invitation is valid, accepting it`);
     
     // Mark invitation as accepted
     await db
@@ -1144,12 +1185,24 @@ export class DatabaseStorage implements IStorage {
       .set({ accepted: true })
       .where(eq(collaborationInvitations.token, token));
     
+    console.log(`[DEBUG] Marked invitation as accepted in the database`);
+    
     // Add the user as a collaborator
-    await this.addCollaborator({
+    const collaboratorData = {
       packingListId: invitation.packingListId,
       userId,
       permissionLevel: invitation.permissionLevel
-    });
+    };
+    
+    console.log(`[DEBUG] Adding user as collaborator with data:`, collaboratorData);
+    
+    try {
+      await this.addCollaborator(collaboratorData);
+      console.log(`[DEBUG] Successfully added collaborator`);
+    } catch (error) {
+      console.error(`[ERROR] Failed to add collaborator:`, error);
+      throw error;
+    }
   }
   
   async getInvitationsByPackingList(packingListId: number): Promise<CollaborationInvitation[]> {
