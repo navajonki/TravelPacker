@@ -765,32 +765,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/categories/:id", isAuthenticated, async (req, res) => {
-    const id = parseInt(req.params.id);
-    
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid id parameter" });
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid id parameter" });
+      }
+      
+      const category = await storage.getCategory(id);
+      
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(category.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership or collaborator access
+      const user = req.user as User;
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to delete this category" });
+      }
+      
+      // Check if this category has items
+      const items = await storage.getItems(id);
+      
+      if (items.length > 0) {
+        // Find other categories in this packing list
+        const otherCategories = (await storage.getCategories(category.packingListId))
+          .filter(c => c.id !== id);
+        
+        if (otherCategories.length === 0) {
+          // If this is the only category, we can't delete it
+          return res.status(400).json({ 
+            message: "Cannot delete the only category. Create another category first or move all items to another category." 
+          });
+        }
+        
+        // Move items to another category
+        const targetCategoryId = otherCategories[0].id;
+        
+        for (const item of items) {
+          await storage.updateItem(item.id, { categoryId: targetCategoryId });
+        }
+      }
+      
+      // Now that all items have been moved, delete the category
+      await storage.deleteCategory(id);
+      return res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      return res.status(500).json({ 
+        message: "Failed to delete category. Make sure all items are moved to a different category first." 
+      });
     }
-    
-    const category = await storage.getCategory(id);
-    
-    if (!category) {
-      return res.status(404).json({ message: "Category not found" });
-    }
-    
-    // Check if the packing list belongs to the authenticated user
-    const packingList = await storage.getPackingList(category.packingListId);
-    if (!packingList) {
-      return res.status(404).json({ message: "Associated packing list not found" });
-    }
-    
-    // Verify ownership
-    const user = req.user as User;
-    if (packingList.userId !== user.id) {
-      return res.status(403).json({ message: "You don't have permission to delete this category" });
-    }
-    
-    await storage.deleteCategory(id);
-    return res.status(204).end();
   });
 
   // Items routes

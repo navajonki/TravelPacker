@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, ne } from "drizzle-orm";
 import { 
   users, type User, type InsertUser,
   packingLists, type PackingList, type InsertPackingList,
@@ -161,47 +161,8 @@ export class PgStorage implements IStorage {
   }
 
   async deleteCategory(id: number): Promise<void> {
-    // Rather than delete items, move them to the first available category
-    // or create a new "Uncategorized" category
-    const category = await this.getCategory(id);
-    
-    if (category) {
-      // Check if there are items in this category
-      const itemsInCategory = await db.select().from(items).where(eq(items.categoryId, id));
-      
-      if (itemsInCategory.length > 0) {
-        // Find another category in the same packing list
-        const otherCategories = await db
-          .select()
-          .from(categories)
-          .where(and(
-            eq(categories.packingListId, category.packingListId),
-            not(eq(categories.id, id))
-          ));
-        
-        if (otherCategories.length > 0) {
-          // Move items to the first available category
-          await db.update(items)
-            .set({ categoryId: otherCategories[0].id })
-            .where(eq(items.categoryId, id));
-        } else {
-          // Create a new "Uncategorized" category and move items there
-          const [newCategory] = await db.insert(categories)
-            .values({
-              name: "Uncategorized", 
-              packingListId: category.packingListId,
-              position: 0
-            })
-            .returning();
-            
-          await db.update(items)
-            .set({ categoryId: newCategory.id })
-            .where(eq(items.categoryId, id));
-        }
-      }
-    }
-    
-    // Now that items have been moved, delete the category
+    // We don't delete the items - just delete the category
+    // The calling code must handle moving items first
     await db.delete(categories).where(eq(categories.id, id));
   }
 
