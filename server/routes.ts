@@ -803,27 +803,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      try {
-        // First, move all items to the first available alternative category
+      // Get all items in this category
+      const itemsToMove = await storage.getItems(id);
+      
+      if (itemsToMove.length > 0) {
+        // If there are items, move them to the first available category
         const targetCategoryId = otherCategories[0].id;
         
-        // Get all items in this category
-        const itemsToMove = await storage.getItems(id);
-        
-        // Move each item to the target category
+        // Update each item one by one
         for (const item of itemsToMove) {
-          await storage.updateItem(item.id, { 
-            categoryId: targetCategoryId,
-            lastModifiedBy: user.id
-          });
+          try {
+            await storage.updateItem(item.id, { 
+              categoryId: targetCategoryId,
+              lastModifiedBy: user.id 
+            });
+          } catch (itemError) {
+            console.error("Error moving item:", itemError);
+            return res.status(500).json({
+              message: "Failed to move items to a different category."
+            });
+          }
         }
-        
-        // Now that items have been moved, delete the category
+      }
+      
+      // Now safely delete the category after items have been moved
+      try {
         await storage.deleteCategory(id);
-      } catch (innerError) {
-        console.error("Error during category deletion transaction:", innerError);
+      } catch (deleteError) {
+        console.error("Error deleting category:", deleteError);
         return res.status(500).json({
-          message: "Error deleting category. Items may have been partially moved."
+          message: "Failed to delete category. Make sure all items are moved to a different category first."
         });
       }
       return res.status(204).end();
