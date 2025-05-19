@@ -792,31 +792,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to delete this category" });
       }
       
-      // Check if this category has items
-      const items = await storage.getItems(id);
+      // Check if there are any other categories to move items to
+      const otherCategories = (await storage.getCategories(category.packingListId))
+        .filter(c => c.id !== id);
       
-      if (items.length > 0) {
-        // Find other categories in this packing list
-        const otherCategories = (await storage.getCategories(category.packingListId))
-          .filter(c => c.id !== id);
+      if (otherCategories.length === 0) {
+        // If this is the only category, we can't delete it
+        return res.status(400).json({ 
+          message: "Cannot delete the only category. Create another category first or move all items to another category." 
+        });
+      }
+      
+      try {
+        // First, move all items to the first available alternative category
+        const targetCategoryId = otherCategories[0].id;
         
-        if (otherCategories.length === 0) {
-          // If this is the only category, we can't delete it
-          return res.status(400).json({ 
-            message: "Cannot delete the only category. Create another category first or move all items to another category." 
+        // Get all items in this category
+        const itemsToMove = await storage.getItems(id);
+        
+        // Move each item to the target category
+        for (const item of itemsToMove) {
+          await storage.updateItem(item.id, { 
+            categoryId: targetCategoryId,
+            lastModifiedBy: user.id
           });
         }
         
-        // Move items to another category
-        const targetCategoryId = otherCategories[0].id;
-        
-        for (const item of items) {
-          await storage.updateItem(item.id, { categoryId: targetCategoryId });
-        }
+        // Now that items have been moved, delete the category
+        await storage.deleteCategory(id);
+      } catch (innerError) {
+        console.error("Error during category deletion transaction:", innerError);
+        return res.status(500).json({
+          message: "Error deleting category. Items may have been partially moved."
+        });
       }
-      
-      // Now that all items have been moved, delete the category
-      await storage.deleteCategory(id);
       return res.status(204).end();
     } catch (error) {
       console.error("Error deleting category:", error);
