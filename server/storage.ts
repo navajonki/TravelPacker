@@ -1230,7 +1230,8 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPendingInvitationsByEmail(email: string): Promise<CollaborationInvitation[]> {
-    const now = new Date();
+    // Use ISO string format for date comparison to avoid type issues
+    const now = new Date().toISOString();
     
     return await db
       .select()

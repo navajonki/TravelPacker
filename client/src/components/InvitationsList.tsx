@@ -32,8 +32,17 @@ export default function InvitationsList() {
   const { toast } = useToast();
 
   // Fetch pending invitations for the current user
-  const { data: invitations = [], isLoading } = useQuery<Invitation[]>({
+  const { 
+    data: invitations = [], 
+    isLoading,
+    isError,
+    error
+  } = useQuery<Invitation[]>({
     queryKey: ['/api/invitations'],
+    // If the query fails, log the error but don't prevent the UI from rendering
+    onError: (err) => {
+      console.error('Error fetching invitations:', err);
+    }
   });
 
   // Accept invitation mutation
