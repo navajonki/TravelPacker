@@ -1155,14 +1155,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          // Verify ownership
-          if (packingList.userId !== user.id) {
+          // Verify ownership or collaborator access
+          const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+          
+          if (!hasAccess) {
             results.push({ id: numericId, success: false, message: "Not authorized to modify this item" });
             continue;
           }
           
+          // Add lastModifiedBy field to track who made the changes
+          const itemUpdateData = {
+            ...parsedUpdates,
+            lastModifiedBy: user.id
+          };
+          
           // Apply the updates to the item
-          const updatedItem = await storage.updateItem(numericId, parsedUpdates);
+          const updatedItem = await storage.updateItem(numericId, itemUpdateData);
           
           if (updatedItem) {
             results.push({ id: numericId, success: true });
@@ -1270,13 +1278,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Associated packing list not found" });
       }
       
-      // Verify ownership
+      // Verify ownership or collaborator access
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify items in this bag" });
       }
       
-      const parsedData = insertItemSchema.partial().parse(req.body);
+      // Add lastModifiedBy field to track who made the changes
+      const updateData = {
+        ...req.body,
+        lastModifiedBy: user.id
+      };
+      
+      const parsedData = insertItemSchema.partial().parse(updateData);
       
       if (parsedData.dueDate) {
         const dueDateObj = new Date(parsedData.dueDate);
@@ -1314,13 +1330,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Associated packing list not found" });
       }
       
-      // Verify ownership
+      // Verify ownership or collaborator access
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify items for this traveler" });
       }
       
-      const parsedData = insertItemSchema.partial().parse(req.body);
+      // Add lastModifiedBy field to track who made the changes
+      const updateData = {
+        ...req.body,
+        lastModifiedBy: user.id
+      };
+      
+      const parsedData = insertItemSchema.partial().parse(updateData);
       
       if (parsedData.dueDate) {
         const dueDateObj = new Date(parsedData.dueDate);
