@@ -672,6 +672,18 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
+                    {/* Unassigned Items Card for Traveler View */}
+                    {itemsWithoutTraveler.length > 0 && (
+                      <UnassignedItemsCard
+                        items={itemsWithoutTraveler}
+                        packingListId={packingListId}
+                        title="Unassigned Items"
+                        field="travelerId"
+                        onAddItem={() => setAdvancedAddOpen(true)}
+                        onEditItem={handleEditItem}
+                        viewContext="traveler"
+                      />
+                    )}
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>
                 )}
