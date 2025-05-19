@@ -997,10 +997,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logMessage = `[DELETION DEBUG] Category ID ${id} being deleted, found ${itemsToMove.length} items to unassign`;
       console.log(logMessage);
       
-      // Log to file as well
+      // Log to file as well - using import/export style for ES modules
       const timestamp = new Date().toISOString();
       const fileLog = `[${timestamp}] ${logMessage}\n`;
-      require('fs').appendFileSync('./logs/deletion-debug.log', fileLog);
+      
+      // Import fs using dynamic import for ES modules
+      try {
+        const fs = await import('fs');
+        fs.appendFileSync('./logs/deletion-debug.log', fileLog);
+      } catch (err) {
+        console.error('Error writing to log file:', err);
+      }
       
       if (itemsToMove.length > 0) {
         console.log(`[DELETION DEBUG] Items to move: ${JSON.stringify(itemsToMove.map(item => ({ id: item.id, name: item.name })))}`);

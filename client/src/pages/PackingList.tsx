@@ -556,10 +556,11 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
-                    {/* Always display the uncategorized items section */}
+                    {/* Use the same component style as other views */}
                     <UncategorizedItemsDisplay
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
+                      viewContext="category"
                     />
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
                   </>
@@ -615,21 +616,11 @@ export default function PackingList() {
                       </div>
                     ))}
                     {/* Unassigned Items Card for Bag View */}
-                    {itemsWithoutBag.length > 0 && (
-                      <UnassignedItemsCard
-                        items={itemsWithoutBag}
-                        packingListId={packingListId}
-                        title="Unassigned Items"
-                        field="bagId"
-                        onAddItem={() => setAdvancedAddOpen(true)}
-                        onEditItem={handleEditItem}
-                        viewContext="bag"
-                      />
-                    )}
-                    {/* Always display the uncategorized items section */}
+                    {/* Use only one component for unassigned bag items */}
                     <UncategorizedItemsDisplay
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
+                      viewContext="bag"
                     />
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
                   </>
@@ -685,21 +676,11 @@ export default function PackingList() {
                       </div>
                     ))}
                     {/* Unassigned Items Card for Traveler View */}
-                    {itemsWithoutTraveler.length > 0 && (
-                      <UnassignedItemsCard
-                        items={itemsWithoutTraveler}
-                        packingListId={packingListId}
-                        title="Unassigned Items"
-                        field="travelerId"
-                        onAddItem={() => setAdvancedAddOpen(true)}
-                        onEditItem={handleEditItem}
-                        viewContext="traveler"
-                      />
-                    )}
-                    {/* Always display the uncategorized items section */}
+                    {/* Use only one component for unassigned traveler items */}
                     <UncategorizedItemsDisplay
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
+                      viewContext="traveler"
                     />
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>
