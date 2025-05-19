@@ -880,13 +880,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Associated packing list not found" });
       }
       
-      // Verify ownership
+      // Verify ownership or collaborator access
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to create items in this category" });
       }
       
-      const item = await storage.createItem(data);
+      // Set the createdBy field to track who created this item
+      const itemData = {
+        ...data,
+        createdBy: user.id,
+        lastModifiedBy: user.id
+      };
+      
+      const item = await storage.createItem(itemData);
       return res.status(201).json(item);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -922,13 +931,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Associated packing list not found" });
       }
       
-      // Verify ownership
+      // Verify ownership or collaborator access
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to update this item" });
       }
       
       const data = insertItemSchema.partial().parse(req.body);
+      
+      // Add the lastModifiedBy field to track who updated this item
+      data.lastModifiedBy = user.id;
       
       if (data.dueDate) {
         const dueDateObj = new Date(data.dueDate);
@@ -972,9 +986,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Associated packing list not found" });
     }
     
-    // Verify ownership
+    // Verify ownership or collaborator access
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+    
+    if (!hasAccess) {
       return res.status(403).json({ message: "You don't have permission to delete this item" });
     }
     
@@ -1202,13 +1218,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Associated packing list not found" });
       }
       
-      // Verify ownership
+      // Verify ownership or collaborator access
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify items in this category" });
       }
       
-      const parsedData = insertItemSchema.partial().parse(req.body);
+      // Add lastModifiedBy field to track who made the changes
+      const updateData = {
+        ...req.body,
+        lastModifiedBy: user.id
+      };
+      
+      const parsedData = insertItemSchema.partial().parse(updateData);
       
       if (parsedData.dueDate) {
         const dueDateObj = new Date(parsedData.dueDate);
