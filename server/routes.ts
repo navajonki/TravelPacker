@@ -422,20 +422,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         - Null categoryId: ${nullCategoryCount}
         - Null bagId: ${nullBagCount}
         - Null travelerId: ${nullTravelerCount}`);
-        
-        // Log to file system
-        try {
-          const fileLogger = require('./fileLogger');
-          fileLogger.logDebug('UNASSIGNED_ITEMS', `Counts for packing list ${packingListId}`, {
-            nullCategory: nullCategoryCount,
-            nullBag: nullBagCount,
-            nullTraveler: nullTravelerCount,
-            requestedType: type,
-            itemsReturned: unassignedItems.length
-          });
-        } catch (err) {
-          console.error('Error using file logger:', err);
-        }
       } catch (err) {
         console.error('Error counting null references:', err);
       }
@@ -1065,11 +1051,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`[DELETION DEBUG] Applying direct SQL update to set categoryId to NULL for all items in category ${id}`);
           
-          // Import the file logger
-          const fileLogger = require('./fileLogger');
-          fileLogger.logDeletion('category', id, `Setting categoryId to NULL for ${itemsToMove.length} items`, 
+          // Log to console instead of using file logger to avoid import issues
+          console.log(`[DELETION DEBUG] Setting categoryId to NULL for ${itemsToMove.length} items: ${JSON.stringify(
             itemsToMove.map(item => ({ id: item.id, name: item.name }))
-          );
+          )}`);
+          
+          // Also write to logs folder directly
+          try {
+            const fs = await import('fs');
+            const path = await import('path');
+            const logsDir = path.join(process.cwd(), 'logs');
+            
+            if (!fs.existsSync(logsDir)) {
+              fs.mkdirSync(logsDir, { recursive: true });
+            }
+            
+            const timestamp = new Date().toISOString();
+            const logMessage = `[${timestamp}] [CATEGORY-DELETE] ID ${id}: Setting categoryId to NULL for ${itemsToMove.length} items\n`;
+            fs.appendFileSync(path.join(logsDir, 'deletion-debug.log'), logMessage);
+          } catch (err) {
+            console.error('Error writing to log file:', err);
+          }
           
           const result = await db.execute(sql`
             UPDATE items 
@@ -1080,8 +1082,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`[DELETION DEBUG] SQL update result:`, result);
           
-          // Log the result to file
-          fileLogger.logDeletion('category', id, 'SQL update completed', { result });
+          // Log the SQL result to file
+          try {
+            const fs = await import('fs');
+            const path = await import('path');
+            const logsDir = path.join(process.cwd(), 'logs');
+            
+            const timestamp = new Date().toISOString();
+            const logEntry = `[${timestamp}] [DELETION-CATEGORY] ID ${id}: SQL update completed\n`;
+            fs.appendFileSync(path.join(logsDir, 'deletion-debug.log'), logEntry);
+          } catch (err) {
+            console.error('Error writing SQL result to log file:', err);
+          }
           
           // Verify the update worked by checking if items still reference this category
           const checkResult = await db.select().from(items).where(sql`category_id = ${id}`);

@@ -7,6 +7,7 @@ import Dashboard from "@/pages/Dashboard";
 import PackingList from "@/pages/PackingList";
 import AuthPage from "@/pages/AuthPage";
 import InvitationPage from "@/pages/InvitationPage";
+import UnassignedItemsTest from "@/pages/UnassignedItemsTest";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SyncStatusProvider } from "@/hooks/use-sync-status";
@@ -17,6 +18,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
       <ProtectedRoute path="/list/:id" component={PackingList} />
+      <ProtectedRoute path="/list/:id/unassigned" component={UnassignedItemsTest} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/invitation/:token" component={InvitationPage} />
       <Route component={NotFound} />
