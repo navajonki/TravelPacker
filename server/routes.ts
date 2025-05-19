@@ -807,20 +807,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemsToMove = await storage.getItems(id);
       
       if (itemsToMove.length > 0) {
-        // If there are items, move them to the first available category
-        const targetCategoryId = otherCategories[0].id;
-        
-        // Update each item one by one
+        // Update each item to have null categoryId (uncategorized)
         for (const item of itemsToMove) {
           try {
             await storage.updateItem(item.id, { 
-              categoryId: targetCategoryId,
+              categoryId: null,  // Set to null to mark as uncategorized
               lastModifiedBy: user.id 
             });
           } catch (itemError) {
-            console.error("Error moving item:", itemError);
+            console.error("Error moving item to uncategorized:", itemError);
             return res.status(500).json({
-              message: "Failed to move items to a different category."
+              message: "Failed to move items to the uncategorized section."
             });
           }
         }

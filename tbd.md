@@ -25,7 +25,7 @@
 - [x] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] In search dropdown, order should be person, category, bag
 - [ ] Invitations shouldn't expire
-- [ ] 
+- [ ] Bulk edit the stuff in unassigned
 
 ## Features
 - [x] Searching within the given packing list
