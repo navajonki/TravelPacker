@@ -150,6 +150,21 @@ export default function PackingList() {
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
   });
   
+  // Calculate unassigned items for each view
+  const allItems = useMemo(() => {
+    return categories?.flatMap(category => category.items || []) || [];
+  }, [categories]);
+  
+  // For bag view: find items without a bag assignment
+  const itemsWithoutBag = useMemo(() => {
+    return allItems.filter(item => item.bagId === null || item.bagId === undefined);
+  }, [allItems]);
+  
+  // For traveler view: find items without a traveler assignment
+  const itemsWithoutTraveler = useMemo(() => {
+    return allItems.filter(item => item.travelerId === null || item.travelerId === undefined);
+  }, [allItems]);
+  
   const addItemMutation = useMutation({
     mutationFn: async (item: any) => {
       return await apiRequest('POST', '/api/items', item);
@@ -592,6 +607,18 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
+                    {/* Unassigned Items Card for Bag View */}
+                    {itemsWithoutBag.length > 0 && (
+                      <UnassignedItemsCard
+                        items={itemsWithoutBag}
+                        packingListId={packingListId}
+                        title="Unassigned Items"
+                        field="bagId"
+                        onAddItem={() => setAdvancedAddOpen(true)}
+                        onEditItem={handleEditItem}
+                        viewContext="bag"
+                      />
+                    )}
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
                   </>
                 )}
