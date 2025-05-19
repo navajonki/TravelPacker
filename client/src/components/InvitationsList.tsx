@@ -33,7 +33,7 @@ export default function InvitationsList() {
 
   // Fetch pending invitations for the current user
   const { data: invitations = [], isLoading } = useQuery<Invitation[]>({
-    queryKey: ['/api/my-invitations'],
+    queryKey: ['/api/invitations'],
   });
 
   // Accept invitation mutation
@@ -42,7 +42,7 @@ export default function InvitationsList() {
       return apiRequest('POST', `/api/invitations/${token}/accept`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/my-invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/invitations'] });
       queryClient.invalidateQueries({ queryKey: ['/api/packing-lists'] });
       
       toast({
@@ -65,7 +65,7 @@ export default function InvitationsList() {
       return apiRequest('DELETE', `/api/invitations/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/my-invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/invitations'] });
       
       toast({
         title: "Invitation Declined",
@@ -91,12 +91,22 @@ export default function InvitationsList() {
 
   // Format date for display
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    }).format(date);
+    if (!dateString) return 'Not specified';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return new Intl.DateTimeFormat('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      }).format(date);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
   };
 
   if (isLoading) {

@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
 import CreateListModal from "@/components/modals/CreateListModal";
+import InvitationsList from "@/components/InvitationsList";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Luggage, Trash2, Plus, Wrench, Users } from "lucide-react";
+import { Luggage, Trash2, Plus, Wrench, Users, Mail } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -207,6 +208,11 @@ export default function Dashboard() {
               </div>
             </div>
             
+            {/* Pending Invitations Section */}
+            <div className="mb-6">
+              <InvitationsList />
+            </div>
+
             {/* Collaboration Diagnostic Tool */}
             {showDiagnostic && (
               <Card className="mb-6 border-dashed border-yellow-400">
