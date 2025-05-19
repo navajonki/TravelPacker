@@ -18,7 +18,7 @@ import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import UnassignedItemsCard from "@/components/UnassignedItemsCard";
-import UncategorizedItems from "@/components/UncategorizedItems";
+import DirectUncategorizedItems from "@/components/DirectUncategorizedItems";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
@@ -555,10 +555,9 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
-                    {/* UncategorizedItems Component for Category View */}
-                    <UncategorizedItems
+                    {/* DirectUncategorizedItems Component for Category View */}
+                    <DirectUncategorizedItems
                       packingListId={packingListId}
-                      viewMode="category"
                       onEditItem={handleEditItem}
                     />
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
