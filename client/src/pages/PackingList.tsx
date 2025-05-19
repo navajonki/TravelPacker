@@ -18,7 +18,7 @@ import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import UnassignedItemsCard from "@/components/UnassignedItemsCard";
-import NullCategoryItems from "@/components/NullCategoryItems";
+import UncategorizedItemsDisplay from "@/components/UncategorizedItemsDisplay";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
@@ -555,8 +555,8 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
-                    {/* Display items with null categoryId */}
-                    <NullCategoryItems
+                    {/* Always display the uncategorized items section */}
+                    <UncategorizedItemsDisplay
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                     />
@@ -625,8 +625,8 @@ export default function PackingList() {
                         viewContext="bag"
                       />
                     )}
-                    {/* Display items with null categoryId for Bag View */}
-                    <NullCategoryItems
+                    {/* Always display the uncategorized items section */}
+                    <UncategorizedItemsDisplay
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                     />
@@ -695,8 +695,8 @@ export default function PackingList() {
                         viewContext="traveler"
                       />
                     )}
-                    {/* Display items with null categoryId for Traveler View */}
-                    <NullCategoryItems
+                    {/* Always display the uncategorized items section */}
+                    <UncategorizedItemsDisplay
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                     />
