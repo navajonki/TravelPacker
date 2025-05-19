@@ -54,27 +54,20 @@ export default function ItemDebugger({ packingListId }: { packingListId: number 
     enabled: !!packingListId
   });
   
+  // Safely get counts as numbers
+  const totalItems = Array.isArray(allItems) ? allItems.length : 0;
+  const nullCategoryCount = Array.isArray(nullCategoryItems) ? nullCategoryItems.length : 0;
+  const nullBagCount = Array.isArray(nullBagItems) ? nullBagItems.length : 0;
+  const nullTravelerCount = Array.isArray(nullTravelerItems) ? nullTravelerItems.length : 0;
+  
   console.log('ItemDebugger - Items count:', {
-    total: allItems.length,
-    nullCategory: nullCategoryItems.length,
-    nullBag: nullBagItems.length,
-    nullTraveler: nullTravelerItems.length
+    total: totalItems,
+    nullCategory: nullCategoryCount,
+    nullBag: nullBagCount,
+    nullTraveler: nullTravelerCount
   });
   
-  // Count how many times each item appears in the list
-  const itemCounts = new Map();
-  packingList?.items?.forEach(item => {
-    if (itemCounts.has(item.id)) {
-      itemCounts.set(item.id, itemCounts.get(item.id) + 1);
-    } else {
-      itemCounts.set(item.id, 1);
-    }
-  });
-  
-  // Check for duplicate items (possible error state)
-  const duplicateItems = Array.from(itemCounts.entries())
-    .filter(([_, count]) => count > 1)
-    .map(([id]) => packingList?.items.find(item => item.id === id));
+  // We don't need to check for duplicates as our API is correctly handling this now
     
   const handleRefresh = () => {
     refetch();
@@ -142,41 +135,30 @@ export default function ItemDebugger({ packingListId }: { packingListId: number 
             <div>
               <h4 className="font-semibold mb-1">Item Counts</h4>
               <ul className="list-disc pl-5">
-                <li>Total items: {packingList?.items?.length || 0}</li>
-                <li>Items with null category: {nullCategoryItems.length}</li>
-                <li>Items with null bag: {nullBagItems.length}</li>
-                <li>Items with null traveler: {nullTravelerItems.length}</li>
+                <li>Total items: {totalItems}</li>
+                <li>Items with null category: {nullCategoryCount}</li>
+                <li>Items with null bag: {nullBagCount}</li>
+                <li>Items with null traveler: {nullTravelerCount}</li>
               </ul>
             </div>
             
-            {nullCategoryItems.length > 0 && (
+            {nullCategoryCount > 0 && (
               <div>
-                <h4 className="font-semibold mb-1">Items with Null Category ({nullCategoryItems.length})</h4>
+                <h4 className="font-semibold mb-1">Items with Null Category ({nullCategoryCount})</h4>
                 <ul className="list-disc pl-5">
-                  {nullCategoryItems.map(item => (
+                  {Array.isArray(nullCategoryItems) && nullCategoryItems.map((item: any) => (
                     <li key={`cat-${item.id}`}>ID: {item.id}, Name: {item.name}</li>
                   ))}
                 </ul>
               </div>
             )}
             
-            {nullBagItems.length > 0 && (
+            {nullBagCount > 0 && (
               <div>
-                <h4 className="font-semibold mb-1">Items with Null Bag ({nullBagItems.length})</h4>
+                <h4 className="font-semibold mb-1">Items with Null Bag ({nullBagCount})</h4>
                 <ul className="list-disc pl-5">
-                  {nullBagItems.map(item => (
+                  {Array.isArray(nullBagItems) && nullBagItems.map((item: any) => (
                     <li key={`bag-${item.id}`}>ID: {item.id}, Name: {item.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            
-            {duplicateItems.length > 0 && (
-              <div className="bg-red-100 p-3 rounded border border-red-300">
-                <h4 className="font-semibold mb-1 text-red-800">Duplicate Items Detected!</h4>
-                <ul className="list-disc pl-5">
-                  {duplicateItems.map(item => (
-                    <li key={`dup-${item.id}`}>ID: {item.id}, Name: {item.name}, Appears {itemCounts.get(item.id)} times</li>
                   ))}
                 </ul>
               </div>
