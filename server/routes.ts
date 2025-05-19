@@ -1710,13 +1710,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Check for pending invitations by email
   app.get("/api/invitations", isAuthenticated, async (req, res) => {
-    const user = req.user as User;
-    
-    // Try to find invitations by email
-    // This is useful for users to check if they have any pending invitations
-    const pendingInvitations = await storage.getPendingInvitationsByEmail(user.username);
-    
-    return res.json(pendingInvitations);
+    try {
+      const user = req.user as User;
+      
+      // Try to find invitations by email
+      // This is useful for users to check if they have any pending invitations
+      const pendingInvitations = await storage.getPendingInvitationsByEmail(user.username);
+      
+      // Enhance the invitation data with additional information
+      const enhancedInvitations = await Promise.all(
+        pendingInvitations.map(async (invitation) => {
+          // Get the packing list details
+          const packingList = await storage.getPackingList(invitation.packingListId);
+          
+          // Get the inviter's user information
+          const inviter = await storage.getUser(invitation.invitedByUserId);
+          
+          return {
+            ...invitation,
+            packingList: packingList ? {
+              id: packingList.id,
+              name: packingList.name,
+              theme: packingList.theme,
+              dateRange: packingList.dateRange
+            } : undefined,
+            inviterName: inviter ? inviter.username : undefined
+          };
+        })
+      );
+      
+      return res.json(enhancedInvitations);
+    } catch (error) {
+      console.error("Error fetching pending invitations:", error);
+      return res.status(500).json({ message: "Failed to fetch pending invitations" });
+    }
   });
   
   // Get a specific invitation by token

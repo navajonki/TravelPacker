@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Mail, Calendar } from "lucide-react";
+import { Check, X, Mail, Calendar, User } from "lucide-react";
 
 interface PackingListInfo {
   id: number;
@@ -25,6 +25,8 @@ interface Invitation {
   expires: string;
   createdAt: string;
   accepted: boolean;
+  invitedByUserId: number;
+  inviterName?: string; // Username of the person who sent the invitation
 }
 
 export default function InvitationsList() {
@@ -169,8 +171,12 @@ export default function InvitationsList() {
             <CardContent>
               <div className="text-sm text-gray-500 space-y-2">
                 <div className="flex items-center">
+                  <User className="h-4 w-4 mr-2" />
+                  <span>Invited by: {invitation.inviterName || `User #${invitation.invitedByUserId}`}</span>
+                </div>
+                <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-2" />
-                  <span>Invitation expires: {formatDate(invitation.expires)}</span>
+                  <span>Expires: {formatDate(invitation.expires)}</span>
                 </div>
               </div>
             </CardContent>
