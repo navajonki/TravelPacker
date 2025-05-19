@@ -488,11 +488,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to delete this bag" });
       }
       
-      // First, unassign all items in this bag
-      await storage.bulkUpdateItemsByBag(id, {
-        bagId: null,
-        lastModifiedBy: user.id
-      });
+      // Get all items assigned to this bag for better control and debugging
+      const allItems = await storage.getAllItemsByPackingList(packingList.id);
+      const itemsInBag = allItems.filter(item => item.bagId === id);
+      
+      console.log(`[DEBUG] Deleting bag ${id}, found ${itemsInBag.length} items to unassign`);
+      
+      // Update each item individually instead of bulk update for better reliability
+      for (const item of itemsInBag) {
+        try {
+          console.log(`[DEBUG] Unassigning item ${item.id} from bag ${id}`);
+          await storage.updateItem(item.id, {
+            bagId: null,
+            lastModifiedBy: user.id
+          });
+        } catch (updateError) {
+          console.error(`[ERROR] Failed to unassign item ${item.id} from bag ${id}:`, updateError);
+          // Continue with other items even if one fails
+        }
+      }
       
       // Now safely delete the bag
       await storage.deleteBag(id);
@@ -503,6 +517,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: "Failed to delete the bag. Make sure all items are properly unassigned."
       });
     }
+    
+    // Refresh the client after deletion to ensure proper UI update
+    res.set('Cache-Control', 'no-cache, no-store');
   });
 
   // Travelers routes
@@ -655,11 +672,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to delete this traveler" });
       }
       
-      // First, unassign all items assigned to this traveler
-      await storage.bulkUpdateItemsByTraveler(id, {
-        travelerId: null,
-        lastModifiedBy: user.id
-      });
+      // Get all items assigned to this traveler for better control
+      const allItems = await storage.getAllItemsByPackingList(packingList.id);
+      const itemsWithTraveler = allItems.filter(item => item.travelerId === id);
+      
+      console.log(`[DEBUG] Deleting traveler ${id}, found ${itemsWithTraveler.length} items to unassign`);
+      
+      // Update each item individually for better reliability
+      for (const item of itemsWithTraveler) {
+        try {
+          console.log(`[DEBUG] Unassigning item ${item.id} from traveler ${id}`);
+          await storage.updateItem(item.id, {
+            travelerId: null,
+            lastModifiedBy: user.id
+          });
+        } catch (updateError) {
+          console.error(`[ERROR] Failed to unassign item ${item.id} from traveler ${id}:`, updateError);
+          // Continue with other items even if one fails
+        }
+      }
       
       // Now safely delete the traveler
       await storage.deleteTraveler(id);
