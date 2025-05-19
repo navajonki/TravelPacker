@@ -554,6 +554,32 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
+                    {/* Special Category for "Uncategorized" Items */}
+                    <div className="bg-white rounded-lg shadow border-dashed border-2 border-gray-300">
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <h3 className="font-medium">Uncategorized</h3>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <span className="text-sm text-gray-500 italic">For items that need a category</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 flex flex-col items-center justify-center text-center space-y-2">
+                        <p className="text-gray-500 text-sm">
+                          Create a new item and select a category to get started
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => setAdvancedAddOpen(true)}
+                        >
+                          Add New Item
+                        </Button>
+                      </div>
+                    </div>
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
                   </>
                 )}
