@@ -960,6 +960,11 @@ export default function PackingList() {
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
       />
+      
+      {/* Add Item Debugger component to help diagnose issues */}
+      <div className="mt-8 mb-4 max-w-6xl mx-auto px-4">
+        <ItemDebugger packingListId={packingListId} />
+      </div>
     </div>
   );
 }
