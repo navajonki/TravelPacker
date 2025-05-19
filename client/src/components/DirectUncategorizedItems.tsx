@@ -19,22 +19,22 @@ export default function DirectUncategorizedItems({
     enabled: !!packingListId
   });
 
-  // Get all uncategorized items 
+  // Find uncategorized items from the main packing list data
   const uncategorizedItems = useMemo(() => {
-    // Safely handle null or undefined packingList
-    if (!packingList) return [];
-    
-    // Access items array safely with optional chaining
-    const items = packingList.items || [];
-    
-    // Add extra logging to debug the data structure
-    console.log("PackingList items total count:", items.length);
+    if (!packingList || !Array.isArray(packingList.items)) return [];
     
     // Filter for items with null categoryId
-    const result = items.filter((item: any) => item.categoryId === null);
-    console.log("Found uncategorized items:", result.length);
+    const items = packingList.items;
     
-    return result;
+    console.log(`Total items in packing list: ${items.length}`);
+    
+    const uncategorized = items.filter((item) => 
+      item.categoryId === null
+    );
+    
+    console.log(`Found ${uncategorized.length} uncategorized items`);
+    
+    return uncategorized;
   }, [packingList]);
   
   if (isLoading) {
@@ -44,8 +44,6 @@ export default function DirectUncategorizedItems({
   if (!uncategorizedItems || uncategorizedItems.length === 0) {
     return null;
   }
-  
-  console.log(`Rendering ${uncategorizedItems.length} uncategorized items`);
   
   // Show a simple card with the uncategorized items
   return (
@@ -60,7 +58,7 @@ export default function DirectUncategorizedItems({
       
       <CardContent className="p-0">
         <ul className="divide-y divide-gray-100">
-          {uncategorizedItems.map((item: any) => (
+          {uncategorizedItems.map((item) => (
             <ItemRow
               key={item.id}
               item={item}
