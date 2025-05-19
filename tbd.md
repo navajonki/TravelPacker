@@ -26,6 +26,7 @@
 - [ ] In search dropdown, order should be person, category, bag
 - [ ] Invitations shouldn't expire
 - [ ] Bulk edit the stuff in unassigned
+- [ ] When adding a new item, Cateogry should also be able to be none
 
 ## Features
 - [x] Searching within the given packing list

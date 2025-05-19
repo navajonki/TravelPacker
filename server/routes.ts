@@ -490,20 +490,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
+        // First, get the list of all items currently in this bag
+        const allItems = await storage.getAllItemsByPackingList(packingList.id);
+        const itemsInBag = allItems.filter(item => item.bagId === id);
+        
+        console.log(`[DELETION DEBUG] Bag ID ${id} being deleted, found ${itemsInBag.length} items to unassign`);
+        if (itemsInBag.length > 0) {
+          console.log(`[DELETION DEBUG] Items in bag: ${JSON.stringify(itemsInBag.map(item => ({ id: item.id, name: item.name })))}`);
+        }
+        
         // Use a direct SQL query to unlink all items from this bag 
         // This is more reliable than individually updating items
-        console.log(`[DEBUG] Unlinking all items from bag ${id} using direct SQL`);
-        await db.execute(sql`
+        console.log(`[DELETION DEBUG] Unlinking all items from bag ${id} using direct SQL`);
+        const result = await db.execute(sql`
           UPDATE items 
           SET bag_id = NULL, 
               last_modified_by = ${user.id} 
           WHERE bag_id = ${id}
         `);
         
+        console.log(`[DELETION DEBUG] SQL update result:`, result);
+        
         // Verify no items are still linked to this bag
         const checkItems = await db.select().from(items).where(
           sql`bag_id = ${id}`
         );
+        
+        console.log(`[DELETION DEBUG] After update, found ${checkItems.length} items still referencing bag ${id}`);
         
         if (checkItems.length > 0) {
           console.error(`[ERROR] Some items (${checkItems.length}) are still linked to bag ${id} after update`);
@@ -683,20 +696,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
+        // First get the list of all items currently assigned to this traveler
+        const allItems = await storage.getAllItemsByPackingList(packingList.id);
+        const itemsWithTraveler = allItems.filter(item => item.travelerId === id);
+        
+        console.log(`[DELETION DEBUG] Traveler ID ${id} being deleted, found ${itemsWithTraveler.length} items to unassign`);
+        if (itemsWithTraveler.length > 0) {
+          console.log(`[DELETION DEBUG] Items with traveler: ${JSON.stringify(itemsWithTraveler.map(item => ({ id: item.id, name: item.name })))}`);
+        }
+        
         // Use a direct SQL query to unlink all items from this traveler
         // This is more reliable than individually updating items
-        console.log(`[DEBUG] Unlinking all items from traveler ${id} using direct SQL`);
-        await db.execute(sql`
+        console.log(`[DELETION DEBUG] Unlinking all items from traveler ${id} using direct SQL`);
+        const result = await db.execute(sql`
           UPDATE items 
           SET traveler_id = NULL, 
               last_modified_by = ${user.id} 
           WHERE traveler_id = ${id}
         `);
         
+        console.log(`[DELETION DEBUG] SQL update result:`, result);
+        
         // Verify no items are still linked to this traveler
         const checkItems = await db.select().from(items).where(
           sql`traveler_id = ${id}`
         );
+        
+        console.log(`[DELETION DEBUG] After update, found ${checkItems.length} items still referencing traveler ${id}`);
         
         if (checkItems.length > 0) {
           console.error(`[ERROR] Some items (${checkItems.length}) are still linked to traveler ${id} after update`);
@@ -888,19 +914,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all items in this category
       const itemsToMove = await storage.getItems(id);
       
+      console.log(`[DELETION DEBUG] Category ID ${id} being deleted, found ${itemsToMove.length} items to unassign`);
+      
       if (itemsToMove.length > 0) {
-        // Set all items to have null categoryId (uncategorized)
-        for (const item of itemsToMove) {
-          try {
-            await storage.updateItem(item.id, { 
-              categoryId: null, // Set to null to mark as uncategorized
-              lastModifiedBy: user.id 
-            });
-          } catch (itemError) {
-            console.error("Error moving item to uncategorized:", itemError);
-            return res.status(500).json({
-              message: "Failed to move items to the uncategorized section."
-            });
+        console.log(`[DELETION DEBUG] Items to move: ${JSON.stringify(itemsToMove.map(item => ({ id: item.id, name: item.name })))}`);
+        
+        // Try direct SQL approach first for better reliability
+        try {
+          console.log(`[DELETION DEBUG] Applying direct SQL update to set categoryId to NULL for all items in category ${id}`);
+          
+          const result = await db.execute(sql`
+            UPDATE items 
+            SET category_id = NULL, 
+                last_modified_by = ${user.id}
+            WHERE category_id = ${id}
+          `);
+          
+          console.log(`[DELETION DEBUG] SQL update result:`, result);
+          
+          // Verify the update worked by checking if items still reference this category
+          const checkResult = await db.select().from(items).where(sql`category_id = ${id}`);
+          console.log(`[DELETION DEBUG] After update, found ${checkResult.length} items still referencing category ${id}`);
+          
+          if (checkResult.length > 0) {
+            console.log(`[DELETION DEBUG] WARNING: Some items still reference the category after SQL update`);
+          }
+        } catch (sqlError) {
+          console.error(`[DELETION DEBUG] Error in direct SQL update:`, sqlError);
+          
+          // Fall back to individual updates if SQL approach fails
+          console.log(`[DELETION DEBUG] Falling back to individual item updates`);
+          for (const item of itemsToMove) {
+            try {
+              console.log(`[DELETION DEBUG] Setting categoryId to NULL for item ${item.id} (${item.name})`);
+              await storage.updateItem(item.id, { 
+                categoryId: null,
+                lastModifiedBy: user.id 
+              });
+              
+              // Verify the update worked
+              const updatedItem = await storage.getItem(item.id);
+              console.log(`[DELETION DEBUG] Item ${item.id} after update: categoryId = ${updatedItem?.categoryId}`);
+            } catch (itemError) {
+              console.error(`[DELETION DEBUG] Error moving item ${item.id} to uncategorized:`, itemError);
+              return res.status(500).json({
+                message: `Failed to move item ${item.id} (${item.name}) to the uncategorized section.`
+              });
+            }
           }
         }
       }
