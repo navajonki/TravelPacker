@@ -24,6 +24,7 @@
 - [x] After an item is selected from the dropdown, it should stay open so people can check / uncheck multiple ones at the same time
 - [x] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] In search dropdown, order should be person, category, bag
+- [ ] Invitations shouldn't expire
 
 ## Features
 - [x] Searching within the given packing list
