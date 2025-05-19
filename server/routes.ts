@@ -461,32 +461,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/bags/:id", isAuthenticated, async (req, res) => {
-    const id = parseInt(req.params.id);
-    
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid id parameter" });
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid id parameter" });
+      }
+      
+      const bag = await storage.getBag(id);
+      
+      if (!bag) {
+        return res.status(404).json({ message: "Bag not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(bag.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership or collaborator access
+      const user = req.user as User;
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to delete this bag" });
+      }
+      
+      // First, unassign all items in this bag
+      await storage.bulkUpdateItemsByBag(id, {
+        bagId: null,
+        lastModifiedBy: user.id
+      });
+      
+      // Now safely delete the bag
+      await storage.deleteBag(id);
+      return res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting bag:", error);
+      return res.status(500).json({
+        message: "Failed to delete the bag. Make sure all items are properly unassigned."
+      });
     }
-    
-    const bag = await storage.getBag(id);
-    
-    if (!bag) {
-      return res.status(404).json({ message: "Bag not found" });
-    }
-    
-    // Check if the packing list belongs to the authenticated user
-    const packingList = await storage.getPackingList(bag.packingListId);
-    if (!packingList) {
-      return res.status(404).json({ message: "Associated packing list not found" });
-    }
-    
-    // Verify ownership
-    const user = req.user as User;
-    if (packingList.userId !== user.id) {
-      return res.status(403).json({ message: "You don't have permission to delete this bag" });
-    }
-    
-    await storage.deleteBag(id);
-    return res.status(204).end();
   });
 
   // Travelers routes
@@ -612,32 +628,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.delete("/api/travelers/:id", isAuthenticated, async (req, res) => {
-    const id = parseInt(req.params.id);
-    
-    if (isNaN(id)) {
-      return res.status(400).json({ message: "Invalid id parameter" });
+    try {
+      const id = parseInt(req.params.id);
+      
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid id parameter" });
+      }
+      
+      const traveler = await storage.getTraveler(id);
+      
+      if (!traveler) {
+        return res.status(404).json({ message: "Traveler not found" });
+      }
+      
+      // Check if the packing list belongs to the authenticated user
+      const packingList = await storage.getPackingList(traveler.packingListId);
+      if (!packingList) {
+        return res.status(404).json({ message: "Associated packing list not found" });
+      }
+      
+      // Verify ownership or collaborator access
+      const user = req.user as User;
+      const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to delete this traveler" });
+      }
+      
+      // First, unassign all items assigned to this traveler
+      await storage.bulkUpdateItemsByTraveler(id, {
+        travelerId: null,
+        lastModifiedBy: user.id
+      });
+      
+      // Now safely delete the traveler
+      await storage.deleteTraveler(id);
+      return res.status(204).end();
+    } catch (error) {
+      console.error("Error deleting traveler:", error);
+      return res.status(500).json({
+        message: "Failed to delete the traveler. Make sure all items are properly unassigned."
+      });
     }
-    
-    const traveler = await storage.getTraveler(id);
-    
-    if (!traveler) {
-      return res.status(404).json({ message: "Traveler not found" });
-    }
-    
-    // Check if the packing list belongs to the authenticated user
-    const packingList = await storage.getPackingList(traveler.packingListId);
-    if (!packingList) {
-      return res.status(404).json({ message: "Associated packing list not found" });
-    }
-    
-    // Verify ownership
-    const user = req.user as User;
-    if (packingList.userId !== user.id) {
-      return res.status(403).json({ message: "You don't have permission to delete this traveler" });
-    }
-    
-    await storage.deleteTraveler(id);
-    return res.status(204).end();
   });
 
   // Categories routes
@@ -807,17 +839,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemsToMove = await storage.getItems(id);
       
       if (itemsToMove.length > 0) {
-        // Update each item to have null categoryId (uncategorized)
+        // First, check if we have an "Uncategorized" category
+        let uncategorizedCategory = (await storage.getCategories(category.packingListId))
+          .find(c => c.name.toLowerCase() === "uncategorized" && c.id !== id);
+          
+        // If not, create one
+        if (!uncategorizedCategory) {
+          uncategorizedCategory = await storage.createCategory({
+            name: "Uncategorized",
+            packingListId: category.packingListId,
+            position: 9999 // Set to a high position to put it at the end
+          });
+        }
+
+        // Move all items to the uncategorized category
         for (const item of itemsToMove) {
           try {
             await storage.updateItem(item.id, { 
-              categoryId: null,  // Set to null to mark as uncategorized
+              categoryId: uncategorizedCategory.id,
               lastModifiedBy: user.id 
             });
           } catch (itemError) {
             console.error("Error moving item to uncategorized:", itemError);
             return res.status(500).json({
-              message: "Failed to move items to the uncategorized section."
+              message: "Failed to move items to the Uncategorized category."
             });
           }
         }
