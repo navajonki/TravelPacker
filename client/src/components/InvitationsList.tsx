@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
@@ -7,18 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, Mail, Calendar, ArrowRight } from "lucide-react";
+import { Check, X, Mail, Calendar } from "lucide-react";
+
+interface PackingListInfo {
+  id: number;
+  name: string;
+  theme?: string;
+  dateRange?: string;
+}
 
 interface Invitation {
   id: number;
   token: string;
   packingListId: number;
-  packingList: {
-    id: number;
-    name: string;
-    theme?: string;
-    dateRange?: string;
-  };
+  packingList?: PackingListInfo;
   email: string;
   permissionLevel: string;
   expires: string;
@@ -33,16 +34,10 @@ export default function InvitationsList() {
 
   // Fetch pending invitations for the current user
   const { 
-    data: invitations = [], 
-    isLoading,
-    isError,
-    error
+    data: invitations = [] as Invitation[], 
+    isLoading 
   } = useQuery<Invitation[]>({
-    queryKey: ['/api/invitations'],
-    // If the query fails, log the error but don't prevent the UI from rendering
-    onError: (err) => {
-      console.error('Error fetching invitations:', err);
-    }
+    queryKey: ['/api/invitations']
   });
 
   // Accept invitation mutation
@@ -142,70 +137,68 @@ export default function InvitationsList() {
     );
   }
 
-  if (invitations.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <Mail className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium">No Pending Invitations</h3>
-        <p className="text-sm text-gray-500 mt-2">
-          When someone invites you to collaborate on a packing list, you'll see it here.
-        </p>
-      </div>
-    );
+  if (!invitations || invitations.length === 0) {
+    return null; // Don't show the empty state if there are no invitations
   }
 
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Pending Invitations</h2>
       
-      {invitations.map((invitation) => (
-        <Card key={invitation.id} className="w-full hover:shadow-sm transition-shadow">
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle>{invitation.packingList.name}</CardTitle>
-                <CardDescription>
-                  {invitation.packingList.theme || invitation.packingList.dateRange || 'No theme/dates'}
-                </CardDescription>
+      {invitations.map((invitation: Invitation) => {
+        // Get packing list information safely
+        const packingListName = invitation.packingList?.name || `Packing List #${invitation.packingListId}`;
+        const packingListTheme = invitation.packingList?.theme || invitation.packingList?.dateRange;
+        
+        return (
+          <Card key={invitation.id} className="w-full hover:shadow-sm transition-shadow">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div>
+                  <CardTitle>{packingListName}</CardTitle>
+                  <CardDescription>
+                    {packingListTheme || 'No theme/dates'}
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="ml-2">
+                  {invitation.permissionLevel === 'editor' ? 'Can Edit' : 'View Only'}
+                </Badge>
               </div>
-              <Badge variant="outline" className="ml-2">
-                {invitation.permissionLevel === 'editor' ? 'Can Edit' : 'View Only'}
-              </Badge>
-            </div>
-          </CardHeader>
-          
-          <CardContent>
-            <div className="text-sm text-gray-500 space-y-2">
-              <div className="flex items-center">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span>Invitation expires: {formatDate(invitation.expires)}</span>
-              </div>
-            </div>
-          </CardContent>
-          
-          <CardFooter className="flex justify-end space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleDecline(invitation.id)}
-              disabled={declineInvitationMutation.isPending}
-            >
-              <X className="h-4 w-4 mr-1" />
-              Decline
-            </Button>
+            </CardHeader>
             
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => handleAccept(invitation.token)}
-              disabled={acceptInvitationMutation.isPending}
-            >
-              <Check className="h-4 w-4 mr-1" />
-              Accept
-            </Button>
-          </CardFooter>
-        </Card>
-      ))}
+            <CardContent>
+              <div className="text-sm text-gray-500 space-y-2">
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  <span>Invitation expires: {formatDate(invitation.expires)}</span>
+                </div>
+              </div>
+            </CardContent>
+            
+            <CardFooter className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleDecline(invitation.id)}
+                disabled={declineInvitationMutation.isPending}
+              >
+                <X className="h-4 w-4 mr-1" />
+                Decline
+              </Button>
+              
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => handleAccept(invitation.token)}
+                disabled={acceptInvitationMutation.isPending}
+              >
+                <Check className="h-4 w-4 mr-1" />
+                Accept
+              </Button>
+            </CardFooter>
+          </Card>
+        );
+      })}
     </div>
   );
 }

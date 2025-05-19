@@ -208,10 +208,8 @@ export default function Dashboard() {
               </div>
             </div>
             
-            {/* Pending Invitations Section */}
-            <div className="mb-6">
-              <InvitationsList />
-            </div>
+            {/* Pending Invitations Section will only show when there are pending invitations */}
+            <InvitationsList />
 
             {/* Collaboration Diagnostic Tool */}
             {showDiagnostic && (
