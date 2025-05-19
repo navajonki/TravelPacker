@@ -626,9 +626,8 @@ export default function PackingList() {
                       />
                     )}
                     {/* UncategorizedItems Component for Bag View */}
-                    <UncategorizedItems
+                    <DirectUncategorizedItems
                       packingListId={packingListId}
-                      viewMode="bag"
                       onEditItem={handleEditItem}
                     />
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
@@ -697,9 +696,8 @@ export default function PackingList() {
                       />
                     )}
                     {/* UncategorizedItems Component for Traveler View */}
-                    <UncategorizedItems
+                    <DirectUncategorizedItems
                       packingListId={packingListId}
-                      viewMode="traveler"
                       onEditItem={handleEditItem}
                     />
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />

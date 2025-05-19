@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import ItemRow from "./ItemRow";
@@ -12,55 +13,51 @@ export default function DirectUncategorizedItems({
   packingListId,
   onEditItem 
 }: DirectUncategorizedItemsProps) {
-  // Get items directly, bypassing the category structure
-  const { data: items, isLoading } = useQuery({
-    queryKey: [`/api/packing-lists/${packingListId}/directly-uncategorized`],
-    queryFn: async () => {
-      console.log("Fetching direct uncategorized items");
-      const response = await fetch(`/api/packing-lists/${packingListId}/categories`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-      
-      const categories = await response.json();
-      
-      // Also fetch all items for this packing list
-      const allItemsResponse = await fetch(`/api/packing-lists/${packingListId}`);
-      if (!allItemsResponse.ok) {
-        throw new Error('Failed to fetch packing list');
-      }
-      
-      const packingList = await allItemsResponse.json();
-      const allItemIds = new Set();
-      
-      // Collect all item IDs in categories
-      categories.forEach((category: any) => {
-        if (category.items && Array.isArray(category.items)) {
-          category.items.forEach((item: any) => {
-            allItemIds.add(item.id);
-          });
-        }
-      });
-      
-      // Find items not in any category
-      const uncategorizedItems = packingList.items?.filter((item: any) => 
-        item.categoryId === null
-      ) || [];
-      
-      console.log(`Found ${uncategorizedItems.length} uncategorized items`);
-      
-      return uncategorizedItems;
-    },
+  // Get all items for this packing list and identify those without a category
+  const { data: allItemsData, isLoading: isLoadingPacking } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}`],
     enabled: !!packingListId
   });
+  
+  // Get all items, including the direct items for this packing list
+  const { data: categories, isLoading: isLoadingCategories } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/categories`],
+    enabled: !!packingListId
+  });
+  
+  // Combined loading state
+  const isLoading = isLoadingPacking || isLoadingCategories;
+  
+  // Find uncategorized items
+  const items = useMemo(() => {
+    // Safely access items array
+    const packingListItems = allItemsData?.items || [];
+    let allItems: any[] = Array.isArray(packingListItems) ? packingListItems : [];
+    
+    if (allItems.length === 0 && Array.isArray(categories)) {
+      // Fallback: collect items from categories
+      allItems = categories.flatMap((category: any) => category.items || []);
+    }
+    
+    // Find items that have null categoryId
+    const uncategorizedItems = allItems.filter((item: any) => 
+      item.categoryId === null || item.categoryId === undefined
+    );
+    
+    console.log(`Found ${uncategorizedItems.length} uncategorized items out of ${allItems.length} total items`);
+    
+    return uncategorizedItems;
+  }, [allItemsData, categories]);
 
   if (isLoading) {
     return <Skeleton className="w-full h-24 mt-4" />;
   }
   
   if (!items || !Array.isArray(items) || items.length === 0) {
-    return null;
+    return null; // Don't render anything if there are no items
   }
+  
+  console.log("About to render uncategorized items:", items);
   
   console.log(`Rendering ${items.length} uncategorized items`);
   
