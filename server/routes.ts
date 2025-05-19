@@ -6,6 +6,7 @@ import passport from "passport";
 import { isAuthenticated, hashPassword } from "./auth";
 import { db } from "./db";
 import { eq, and, inArray, sql } from "drizzle-orm";
+import { items } from "@shared/schema";
 import { 
   insertUserSchema,
   insertPackingListSchema, 
@@ -488,28 +489,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to delete this bag" });
       }
       
-      // Get all items assigned to this bag for better control and debugging
-      const allItems = await storage.getAllItemsByPackingList(packingList.id);
-      const itemsInBag = allItems.filter(item => item.bagId === id);
-      
-      console.log(`[DEBUG] Deleting bag ${id}, found ${itemsInBag.length} items to unassign`);
-      
-      // Update each item individually instead of bulk update for better reliability
-      for (const item of itemsInBag) {
-        try {
-          console.log(`[DEBUG] Unassigning item ${item.id} from bag ${id}`);
-          await storage.updateItem(item.id, {
-            bagId: null,
-            lastModifiedBy: user.id
+      try {
+        // Use a direct SQL query to unlink all items from this bag 
+        // This is more reliable than individually updating items
+        console.log(`[DEBUG] Unlinking all items from bag ${id} using direct SQL`);
+        await db.execute(sql`
+          UPDATE items 
+          SET bag_id = NULL, 
+              last_modified_by = ${user.id} 
+          WHERE bag_id = ${id}
+        `);
+        
+        // Verify no items are still linked to this bag
+        const checkItems = await db.select().from(items).where(
+          sql`bag_id = ${id}`
+        );
+        
+        if (checkItems.length > 0) {
+          console.error(`[ERROR] Some items (${checkItems.length}) are still linked to bag ${id} after update`);
+          return res.status(500).json({
+            message: "Failed to unlink all items from the bag. Cannot delete."
           });
-        } catch (updateError) {
-          console.error(`[ERROR] Failed to unassign item ${item.id} from bag ${id}:`, updateError);
-          // Continue with other items even if one fails
         }
+        
+        // Now safely delete the bag
+        await storage.deleteBag(id);
+      } catch (innerError: any) {
+        console.error(`[ERROR] Detailed bag deletion error:`, innerError);
+        return res.status(500).json({
+          message: `Failed to delete the bag: ${innerError.message || 'Unknown error'}`
+        });
       }
-      
-      // Now safely delete the bag
-      await storage.deleteBag(id);
       return res.status(204).end();
     } catch (error) {
       console.error("Error deleting bag:", error);
@@ -672,28 +682,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to delete this traveler" });
       }
       
-      // Get all items assigned to this traveler for better control
-      const allItems = await storage.getAllItemsByPackingList(packingList.id);
-      const itemsWithTraveler = allItems.filter(item => item.travelerId === id);
-      
-      console.log(`[DEBUG] Deleting traveler ${id}, found ${itemsWithTraveler.length} items to unassign`);
-      
-      // Update each item individually for better reliability
-      for (const item of itemsWithTraveler) {
-        try {
-          console.log(`[DEBUG] Unassigning item ${item.id} from traveler ${id}`);
-          await storage.updateItem(item.id, {
-            travelerId: null,
-            lastModifiedBy: user.id
+      try {
+        // Use a direct SQL query to unlink all items from this traveler
+        // This is more reliable than individually updating items
+        console.log(`[DEBUG] Unlinking all items from traveler ${id} using direct SQL`);
+        await db.execute(sql`
+          UPDATE items 
+          SET traveler_id = NULL, 
+              last_modified_by = ${user.id} 
+          WHERE traveler_id = ${id}
+        `);
+        
+        // Verify no items are still linked to this traveler
+        const checkItems = await db.select().from(items).where(
+          sql`traveler_id = ${id}`
+        );
+        
+        if (checkItems.length > 0) {
+          console.error(`[ERROR] Some items (${checkItems.length}) are still linked to traveler ${id} after update`);
+          return res.status(500).json({
+            message: "Failed to unlink all items from the traveler. Cannot delete."
           });
-        } catch (updateError) {
-          console.error(`[ERROR] Failed to unassign item ${item.id} from traveler ${id}:`, updateError);
-          // Continue with other items even if one fails
         }
+        
+        // Now safely delete the traveler
+        await storage.deleteTraveler(id);
+      } catch (innerError: any) {
+        console.error(`[ERROR] Detailed traveler deletion error:`, innerError);
+        return res.status(500).json({
+          message: `Failed to delete the traveler: ${innerError.message || 'Unknown error'}`
+        });
       }
-      
-      // Now safely delete the traveler
-      await storage.deleteTraveler(id);
       return res.status(204).end();
     } catch (error) {
       console.error("Error deleting traveler:", error);
