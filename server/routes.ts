@@ -409,7 +409,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         unassignedItems = allItems.filter(item => item.travelerId === null);
       }
       
+      // Log to console
       console.log(`[DEBUG] Found ${unassignedItems.length} unassigned items of type '${type}' for packing list ${packingListId}`);
+      
+      // Enhanced debugging: count null references for this packing list
+      try {
+        const nullCategoryCount = allItems.filter(item => item.categoryId === null).length;
+        const nullBagCount = allItems.filter(item => item.bagId === null).length;
+        const nullTravelerCount = allItems.filter(item => item.travelerId === null).length;
+        
+        console.log(`[DEBUG] Items with null fields for packing list ${packingListId}:
+        - Null categoryId: ${nullCategoryCount}
+        - Null bagId: ${nullBagCount}
+        - Null travelerId: ${nullTravelerCount}`);
+        
+        // Log to file system
+        try {
+          const fileLogger = require('./fileLogger');
+          fileLogger.logDebug('UNASSIGNED_ITEMS', `Counts for packing list ${packingListId}`, {
+            nullCategory: nullCategoryCount,
+            nullBag: nullBagCount,
+            nullTraveler: nullTravelerCount,
+            requestedType: type,
+            itemsReturned: unassignedItems.length
+          });
+        } catch (err) {
+          console.error('Error using file logger:', err);
+        }
+      } catch (err) {
+        console.error('Error counting null references:', err);
+      }
       
       // Return the unassigned items
       res.json(unassignedItems);
@@ -575,8 +604,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const itemsInBag = allItems.filter(item => item.bagId === id);
         
         console.log(`[DELETION DEBUG] Bag ID ${id} being deleted, found ${itemsInBag.length} items to unassign`);
-        if (itemsInBag.length > 0) {
-          console.log(`[DELETION DEBUG] Items in bag: ${JSON.stringify(itemsInBag.map(item => ({ id: item.id, name: item.name })))}`);
+        
+        // Use our file logger for more detailed tracking
+        try {
+          const fileLogger = require('./fileLogger');
+          fileLogger.logDeletion('bag', id, `Found ${itemsInBag.length} items to unassign from bag`);
+          
+          if (itemsInBag.length > 0) {
+            console.log(`[DELETION DEBUG] Items in bag: ${JSON.stringify(itemsInBag.map(item => ({ id: item.id, name: item.name })))}`);
+            fileLogger.logDeletion('bag', id, 'Items to unlink from bag:', 
+              itemsInBag.map(item => ({ id: item.id, name: item.name }))
+            );
+          }
+        } catch (logError) {
+          console.error('Error with file logger:', logError);
         }
         
         // Use a direct SQL query to unlink all items from this bag 
@@ -590,6 +631,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `);
         
         console.log(`[DELETION DEBUG] SQL update result:`, result);
+        
+        // Log the SQL update to file
+        try {
+          const fileLogger = require('./fileLogger');
+          fileLogger.logDeletion('bag', id, 'SQL update completed', { result });
+        } catch (logError) {
+          console.error('Error with file logger:', logError);
+        }
         
         // Verify no items are still linked to this bag
         const checkItems = await db.select().from(items).where(
@@ -1016,6 +1065,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           console.log(`[DELETION DEBUG] Applying direct SQL update to set categoryId to NULL for all items in category ${id}`);
           
+          // Import the file logger
+          const fileLogger = require('./fileLogger');
+          fileLogger.logDeletion('category', id, `Setting categoryId to NULL for ${itemsToMove.length} items`, 
+            itemsToMove.map(item => ({ id: item.id, name: item.name }))
+          );
+          
           const result = await db.execute(sql`
             UPDATE items 
             SET category_id = NULL, 
@@ -1024,6 +1079,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           `);
           
           console.log(`[DELETION DEBUG] SQL update result:`, result);
+          
+          // Log the result to file
+          fileLogger.logDeletion('category', id, 'SQL update completed', { result });
           
           // Verify the update worked by checking if items still reference this category
           const checkResult = await db.select().from(items).where(sql`category_id = ${id}`);
