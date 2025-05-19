@@ -18,7 +18,7 @@ import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import UnassignedItemsCard from "@/components/UnassignedItemsCard";
-import DirectUncategorizedItems from "@/components/DirectUncategorizedItems";
+import NullCategoryItems from "@/components/NullCategoryItems";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
@@ -555,8 +555,8 @@ export default function PackingList() {
                         )}
                       </div>
                     ))}
-                    {/* DirectUncategorizedItems Component for Category View */}
-                    <DirectUncategorizedItems
+                    {/* Display items with null categoryId */}
+                    <NullCategoryItems
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                     />
@@ -625,8 +625,8 @@ export default function PackingList() {
                         viewContext="bag"
                       />
                     )}
-                    {/* UncategorizedItems Component for Bag View */}
-                    <DirectUncategorizedItems
+                    {/* Display items with null categoryId for Bag View */}
+                    <NullCategoryItems
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                     />
@@ -695,8 +695,8 @@ export default function PackingList() {
                         viewContext="traveler"
                       />
                     )}
-                    {/* UncategorizedItems Component for Traveler View */}
-                    <DirectUncategorizedItems
+                    {/* Display items with null categoryId for Traveler View */}
+                    <NullCategoryItems
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                     />
