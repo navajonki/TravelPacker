@@ -346,15 +346,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Invalid listId parameter" });
     }
     
-    // Check if the packing list exists and belongs to the authenticated user
+    // Check if the packing list exists
     const packingList = await storage.getPackingList(listId);
     if (!packingList) {
       return res.status(404).json({ message: "Packing list not found" });
     }
     
-    // Verify ownership
+    // Verify ownership or collaboration permission
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const canAccess = await storage.canUserAccessPackingList(user.id, listId);
+    
+    if (!canAccess) {
       return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
@@ -495,15 +497,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ message: "Invalid listId parameter" });
     }
     
-    // Check if the packing list exists and belongs to the authenticated user
+    // Check if the packing list exists
     const packingList = await storage.getPackingList(listId);
     if (!packingList) {
       return res.status(404).json({ message: "Packing list not found" });
     }
     
-    // Verify ownership
+    // Verify ownership or collaboration permission
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const canAccess = await storage.canUserAccessPackingList(user.id, listId);
+    
+    if (!canAccess) {
       return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
@@ -1352,14 +1356,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json([]);
     }
     
-    // Check if the packing list exists and belongs to the authenticated user
+    // Check if the packing list exists
     const packingList = await storage.getPackingList(listId);
     if (!packingList) {
       return res.status(404).json({ message: "Packing list not found" });
     }
     
-    // Verify ownership
-    if (packingList.userId !== userId) {
+    // Verify ownership or collaboration permission
+    const hasAccess = await storage.canUserAccessPackingList(userId, listId);
+    if (!hasAccess) {
       return res.status(403).json({ message: "You don't have permission to access this packing list" });
     }
     
