@@ -28,17 +28,15 @@ export default function NullCategoryItems({ packingListId, onEditItem }: NullCat
     (item) => item.categoryId === null
   );
   
-  // Don't render anything if there are no uncategorized items
-  if (!uncategorizedItems.length) {
-    return null;
-  }
+  // Always render the container, even if empty
+  const itemCount = uncategorizedItems.length;
   
   return (
     <Card className="bg-white rounded-lg shadow border-dashed border-2 border-gray-300 mb-4">
       <CardHeader className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <h3 className="font-medium">Uncategorized Items ({uncategorizedItems.length})</h3>
+            <h3 className="font-medium">Uncategorized Items ({itemCount})</h3>
           </div>
         </div>
       </CardHeader>
