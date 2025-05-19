@@ -18,6 +18,7 @@ import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import UnassignedItemsCard from "@/components/UnassignedItemsCard";
+import UncategorizedItems from "@/components/UncategorizedItems";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
@@ -150,7 +151,7 @@ export default function PackingList() {
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
   });
   
-  // Calculate unassigned items for each view
+  // Calculate all items from categories for the current view
   const allItems = useMemo(() => {
     return categories?.flatMap(category => category.items || []) || [];
   }, [categories]);
