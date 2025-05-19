@@ -32,10 +32,34 @@ export default function ItemDebugger({ packingListId }: { packingListId: number 
     enabled: !!packingListId
   });
   
-  // Get nulls by each association type
-  const nullCategoryItems = packingList?.items?.filter(item => item.categoryId === null) || [];
-  const nullBagItems = packingList?.items?.filter(item => item.bagId === null) || [];
-  const nullTravelerItems = packingList?.items?.filter(item => item.travelerId === null) || [];
+  // Fetch unassigned items from each specialized endpoint for accuracy
+  const { data: nullCategoryItems = [] } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`],
+    enabled: !!packingListId
+  });
+  
+  const { data: nullBagItems = [] } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`],
+    enabled: !!packingListId
+  });
+  
+  const { data: nullTravelerItems = [] } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`],
+    enabled: !!packingListId
+  });
+  
+  // Get all items for the packing list (for total count)
+  const { data: allItems = [] } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}/all-items`],
+    enabled: !!packingListId
+  });
+  
+  console.log('ItemDebugger - Items count:', {
+    total: allItems.length,
+    nullCategory: nullCategoryItems.length,
+    nullBag: nullBagItems.length,
+    nullTraveler: nullTravelerItems.length
+  });
   
   // Count how many times each item appears in the list
   const itemCounts = new Map();

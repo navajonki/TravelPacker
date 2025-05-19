@@ -27,49 +27,41 @@ export default function UncategorizedItemsDisplay({
     console.log(`UncategorizedItemsDisplay (${viewContext}) rendered at ${new Date().toISOString()}`);
   }, [viewContext]);
   
-  // Fetch all data for the packing list
+  // Use the specialized endpoint for unassigned items
   const { 
-    data: packingList, 
-    isLoading,
-    refetch,
+    data: uncategorizedItemsData, 
+    isLoading: isLoadingUnassigned,
+    refetch: refetchUnassigned,
     dataUpdatedAt,
   } = useQuery({
-    queryKey: [`/api/packing-lists/${packingListId}`],
+    queryKey: [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`],
     enabled: !!packingListId,
-    staleTime: 5000, // Reduce stale time to refresh more frequently
+    staleTime: 2000, // Reduce stale time to refresh more frequently
   });
 
-  // Also fetch specific collections for more reliable item listing
-  const { data: categoriesData } = useQuery({
-    queryKey: [`/api/packing-lists/${packingListId}/categories`],
-    enabled: !!packingListId && viewContext === "category",
+  // Also fetch specific collections for context
+  const { data: packingList, isLoading: isLoadingPackingList } = useQuery({
+    queryKey: [`/api/packing-lists/${packingListId}`],
+    enabled: !!packingListId,
   });
   
-  const { data: bagsData } = useQuery({
-    queryKey: [`/api/packing-lists/${packingListId}/bags`],
-    enabled: !!packingListId && viewContext === "bag",
-  });
+  // Log the load status
+  useEffect(() => {
+    if (uncategorizedItemsData) {
+      console.log(`UncategorizedItemsDisplay (${viewContext}) - Unassigned items loaded:`, 
+        uncategorizedItemsData.length);
+    }
+  }, [uncategorizedItemsData, viewContext]);
   
-  const { data: travelersData } = useQuery({
-    queryKey: [`/api/packing-lists/${packingListId}/travelers`],
-    enabled: !!packingListId && viewContext === "traveler",
-  });
+  // Handle overall loading state
+  const isLoading = isLoadingUnassigned || isLoadingPackingList;
   
   if (isLoading) {
     return <Skeleton className="w-full h-24 mt-4" />;
   }
   
-  // Get all items with null values for the appropriate field based on view context
-  const uncategorizedItems = packingList?.items?.filter((item: any) => {
-    if (viewContext === "category") {
-      return item.categoryId === null;
-    } else if (viewContext === "bag") {
-      return item.bagId === null;
-    } else if (viewContext === "traveler") {
-      return item.travelerId === null;
-    }
-    return false;
-  }) || [];
+  // Get unassigned items from the endpoint response (ensure it's an array)
+  const uncategorizedItems = uncategorizedItemsData || [];
   
   // Check when data was last updated
   const dataAge = (new Date().getTime() - (dataUpdatedAt || 0)) / 1000;
@@ -95,19 +87,18 @@ export default function UncategorizedItemsDisplay({
   const handleForceRefresh = async () => {
     setLastRefreshTime(new Date());
     
-    // Manually invalidate all related queries to ensure fresh data
-    queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+    // Invalidate the specialized endpoint
+    queryClient.invalidateQueries({ 
+      queryKey: [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`] 
+    });
     
-    if (viewContext === "category") {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-    } else if (viewContext === "bag") {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-    } else if (viewContext === "traveler") {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-    }
+    // Invalidate general packing list data
+    queryClient.invalidateQueries({ 
+      queryKey: [`/api/packing-lists/${packingListId}`]
+    });
     
-    // Execute the refetch
-    await refetch();
+    // Execute the refetch for unassigned items
+    await refetchUnassigned();
     
     toast({
       title: "Data Refreshed",
@@ -146,13 +137,13 @@ export default function UncategorizedItemsDisplay({
       </CardHeader>
       
       <CardContent className="p-0">
-        {uncategorizedItems.length === 0 ? (
+        {Array.isArray(uncategorizedItems) && uncategorizedItems.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
             {helperText}
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
-            {uncategorizedItems.map((item: any) => (
+            {Array.isArray(uncategorizedItems) && uncategorizedItems.map((item: any) => (
               <ItemRow
                 key={item.id}
                 item={item}
