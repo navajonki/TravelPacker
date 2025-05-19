@@ -16,6 +16,7 @@ export default function UncategorizedItemsDisplay({
   onEditItem,
   viewContext = "category"
 }: UncategorizedItemsDisplayProps) {
+  // Directly fetch all items for the packing list
   const { 
     data: packingList, 
     isLoading,
@@ -29,17 +30,40 @@ export default function UncategorizedItemsDisplay({
     return <Skeleton className="w-full h-24 mt-4" />;
   }
   
-  // Find items with null categoryId
-  const uncategorizedItems = packingList?.items?.filter(
-    (item: any) => item.categoryId === null
-  ) || [];
+  // Get all items with null values for the appropriate field based on view context
+  const uncategorizedItems = packingList?.items?.filter((item: any) => {
+    if (viewContext === "category") {
+      return item.categoryId === null;
+    } else if (viewContext === "bag") {
+      return item.bagId === null;
+    } else if (viewContext === "traveler") {
+      return item.travelerId === null;
+    }
+    return false;
+  }) || [];
   
+  // Determine what to call these items based on the current view
+  let containerTitle = "Uncategorized Items";
+  if (viewContext === "bag") {
+    containerTitle = "Unassigned to Bags";
+  } else if (viewContext === "traveler") {
+    containerTitle = "Unassigned to Travelers";
+  }
+  
+  // Determine helper text based on current view
+  let helperText = "Items will appear here when they have no category";
+  if (viewContext === "bag") {
+    helperText = "Items will appear here when they are not assigned to any bag";
+  } else if (viewContext === "traveler") {
+    helperText = "Items will appear here when they are not assigned to any traveler";
+  }
+
   return (
     <Card className="bg-white rounded-lg shadow border-dashed border-2 border-gray-300 mb-4">
       <CardHeader className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <h3 className="font-medium">Uncategorized Items ({uncategorizedItems.length})</h3>
+            <h3 className="font-medium">{containerTitle} ({uncategorizedItems.length})</h3>
           </div>
           <Button 
             variant="ghost" 
@@ -56,7 +80,7 @@ export default function UncategorizedItemsDisplay({
       <CardContent className="p-0">
         {uncategorizedItems.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
-            Items will appear here when they have no category
+            {helperText}
           </div>
         ) : (
           <ul className="divide-y divide-gray-100">
