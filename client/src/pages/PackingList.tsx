@@ -19,6 +19,7 @@ import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import UnassignedItemsCard from "@/components/UnassignedItemsCard";
 import UncategorizedItemsDisplay from "@/components/UncategorizedItemsDisplay";
+import ItemDebugger from "@/components/ItemDebugger";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
