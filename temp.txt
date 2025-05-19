@@ -1,0 +1,30 @@
+import type { Express, Request, Response, NextFunction } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { z } from "zod";
+import passport from "passport";
+import { isAuthenticated, hashPassword } from "./auth";
+import { db } from "./db";
+import { eq, and, inArray, sql } from "drizzle-orm";
+import { 
+  insertUserSchema,
+  insertPackingListSchema, 
+  insertBagSchema, 
+  insertTravelerSchema, 
+  insertCategorySchema, 
+  insertItemSchema,
+  insertTemplateSchema,
+  insertCollaboratorSchema,
+  insertInvitationSchema,
+  collaborationInvitations,
+  packingListCollaborators,
+  type User
+} from "@shared/schema";
+
+// Extend the Express Request type to include the user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User;
+    }
+  }
