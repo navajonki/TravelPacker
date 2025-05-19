@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useParams, Link } from "wouter";
@@ -17,6 +17,7 @@ import BagCard from "@/components/BagCard";
 import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
+import UnassignedItemsCard from "@/components/UnassignedItemsCard";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
