@@ -84,15 +84,21 @@ export default function AdvancedAddItemModal({
   });
   
   const onSubmit = async (data: FormValues) => {
-    await onAddItem({
+    // Create the item data object with explicit packingListId
+    const itemData = {
       name: data.name,
       categoryId: parseInt(data.categoryId),
+      packingListId: packingListId, // Add this explicitly
       bagId: data.bagId && data.bagId !== "none" ? parseInt(data.bagId) : undefined,
       travelerId: data.travelerId && data.travelerId !== "none" ? parseInt(data.travelerId) : undefined,
       quantity: data.quantity,
       isEssential: data.isEssential,
       dueDate: data.setReminder && data.dueDate ? data.dueDate : undefined
-    });
+    };
+    
+    console.log("Advanced add - Creating item with data:", itemData);
+    
+    await onAddItem(itemData);
     
     form.reset();
     onClose();

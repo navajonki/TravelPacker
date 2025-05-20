@@ -98,12 +98,18 @@ export default function QuickAddForm({
     
     if (!categoryId) return;
     
-    await onAddItem({
+    // Create item data with explicit packingListId
+    const itemData = {
       name: itemName.trim(),
       categoryId,
+      packingListId: packingListId, // Add this explicitly
       bagId: selectedBagId && selectedBagId !== "none" ? parseInt(selectedBagId) : undefined,
       travelerId: selectedTravelerId && selectedTravelerId !== "none" ? parseInt(selectedTravelerId) : undefined,
-    });
+    };
+    
+    console.log("Creating item with data:", itemData);
+    
+    await onAddItem(itemData);
     
     setItemName("");
     // Don't collapse the form to allow multiple entries
