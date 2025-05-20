@@ -216,6 +216,13 @@ export function useTravelPack(packingListId?: number) {
   
   const bulkUpdateItems = useMutation({
     mutationFn: async (data: any) => {
+      // If we're in a packing list context and setting category/bag/traveler to null,
+      // make sure to maintain the packingListId relationship
+      if (packingListId && 
+          (data.categoryId === null || data.bagId === null || data.travelerId === null)) {
+        data.packingListId = Number(packingListId);
+      }
+      
       return await apiRequest('PATCH', '/api/items/bulk-update', {
         ids: selectedItemIds,
         data
@@ -223,8 +230,13 @@ export function useTravelPack(packingListId?: number) {
     },
     onSuccess: () => {
       if (packingListId) {
+        // Invalidate all relevant queries to ensure UI is updated properly
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
       }
       toast({
         title: "Success",
