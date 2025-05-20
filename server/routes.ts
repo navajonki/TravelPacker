@@ -1016,122 +1016,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Get all items in this category
-      const itemsToMove = await storage.getItems(id);
-      
-      const logMessage = `[DELETION DEBUG] Category ID ${id} being deleted, found ${itemsToMove.length} items to unassign`;
-      console.log(logMessage);
-      
-      // Log to file as well - using import/export style for ES modules
-      const timestamp = new Date().toISOString();
-      const fileLog = `[${timestamp}] ${logMessage}\n`;
-      
-      // Import fs using dynamic import for ES modules
       try {
-        const fs = await import('fs');
-        fs.appendFileSync('./logs/deletion-debug.log', fileLog);
-      } catch (err) {
-        console.error('Error writing to log file:', err);
-      }
-      
-      if (itemsToMove.length > 0) {
-        console.log(`[DELETION DEBUG] Items to move: ${JSON.stringify(itemsToMove.map(item => ({ id: item.id, name: item.name })))}`);
+        // First get all items in this category
+        const allItems = await storage.getAllItemsByPackingList(packingList.id);
+        const itemsInCategory = allItems.filter(item => item.categoryId === id);
         
-        // Try direct SQL approach first for better reliability
-        try {
-          console.log(`[DELETION DEBUG] Applying direct SQL update to set categoryId to NULL for all items in category ${id}`);
-          
-          // Log to console instead of using file logger to avoid import issues
-          console.log(`[DELETION DEBUG] Setting categoryId to NULL for ${itemsToMove.length} items: ${JSON.stringify(
-            itemsToMove.map(item => ({ id: item.id, name: item.name }))
-          )}`);
-          
-          // Also write to logs folder directly
-          try {
-            const fs = await import('fs');
-            const path = await import('path');
-            const logsDir = path.join(process.cwd(), 'logs');
-            
-            if (!fs.existsSync(logsDir)) {
-              fs.mkdirSync(logsDir, { recursive: true });
-            }
-            
-            const timestamp = new Date().toISOString();
-            const logMessage = `[${timestamp}] [CATEGORY-DELETE] ID ${id}: Setting categoryId to NULL for ${itemsToMove.length} items\n`;
-            fs.appendFileSync(path.join(logsDir, 'deletion-debug.log'), logMessage);
-          } catch (err) {
-            console.error('Error writing to log file:', err);
-          }
-          
-          const result = await db.execute(sql`
-            UPDATE items 
-            SET category_id = NULL, 
-                last_modified_by = ${user.id}
-            WHERE category_id = ${id}
-          `);
-          
-          console.log(`[DELETION DEBUG] SQL update result:`, result);
-          
-          // Log the SQL result to file
-          try {
-            const fs = await import('fs');
-            const path = await import('path');
-            const logsDir = path.join(process.cwd(), 'logs');
-            
-            const timestamp = new Date().toISOString();
-            const logEntry = `[${timestamp}] [DELETION-CATEGORY] ID ${id}: SQL update completed\n`;
-            fs.appendFileSync(path.join(logsDir, 'deletion-debug.log'), logEntry);
-          } catch (err) {
-            console.error('Error writing SQL result to log file:', err);
-          }
-          
-          // Verify the update worked by checking if items still reference this category
-          const checkResult = await db.select().from(items).where(sql`category_id = ${id}`);
-          console.log(`[DELETION DEBUG] After update, found ${checkResult.length} items still referencing category ${id}`);
-          
-          if (checkResult.length > 0) {
-            console.log(`[DELETION DEBUG] WARNING: Some items still reference the category after SQL update`);
-          }
-        } catch (sqlError) {
-          console.error(`[DELETION DEBUG] Error in direct SQL update:`, sqlError);
-          
-          // Fall back to individual updates if SQL approach fails
-          console.log(`[DELETION DEBUG] Falling back to individual item updates`);
-          for (const item of itemsToMove) {
-            try {
-              console.log(`[DELETION DEBUG] Setting categoryId to NULL for item ${item.id} (${item.name})`);
-              await storage.updateItem(item.id, { 
-                categoryId: null,
-                lastModifiedBy: user.id 
-              });
-              
-              // Verify the update worked
-              const updatedItem = await storage.getItem(item.id);
-              console.log(`[DELETION DEBUG] Item ${item.id} after update: categoryId = ${updatedItem?.categoryId}`);
-            } catch (itemError) {
-              console.error(`[DELETION DEBUG] Error moving item ${item.id} to uncategorized:`, itemError);
-              return res.status(500).json({
-                message: `Failed to move item ${item.id} (${item.name}) to the uncategorized section.`
-              });
-            }
-          }
+        console.log(`[DELETION DEBUG] Category ID ${id} being deleted, found ${itemsInCategory.length} items to unassign`);
+        if (itemsInCategory.length > 0) {
+          console.log(`[DELETION DEBUG] Items in category: ${JSON.stringify(itemsInCategory.map(item => ({ id: item.id, name: item.name })))}`);
         }
-      }
-      
-      // Now safely delete the category after items have been moved
-      try {
+        
+        // Use a direct SQL query to unlink all items from this category
+        // This is more reliable than individually updating items
+        console.log(`[DELETION DEBUG] Unlinking all items from category ${id} using direct SQL`);
+        await db.execute(sql`
+          UPDATE items 
+          SET category_id = NULL, 
+              last_modified_by = ${user.id} 
+          WHERE category_id = ${id}
+        `);
+        
+        // Verify no items are still linked to this category
+        const checkItems = await db.select().from(items).where(
+          sql`category_id = ${id}`
+        );
+        
+        console.log(`[DELETION DEBUG] After update, found ${checkItems.length} items still referencing category ${id}`);
+        
+        if (checkItems.length > 0) {
+          console.error(`[ERROR] Some items (${checkItems.length}) are still linked to category ${id} after update`);
+          return res.status(500).json({
+            message: "Failed to unlink all items from the category. Cannot delete."
+          });
+        }
+        
+        // Now safely delete the category
         await storage.deleteCategory(id);
-      } catch (deleteError) {
-        console.error("Error deleting category:", deleteError);
+        return res.status(204).end();
+      } catch (innerError: any) {
+        console.error(`[ERROR] Detailed category deletion error:`, innerError);
         return res.status(500).json({
-          message: "Failed to delete category. Make sure all items are moved to a different category first."
+          message: `Failed to delete the category: ${innerError.message || 'Unknown error'}`
         });
       }
-      return res.status(204).end();
     } catch (error) {
       console.error("Error deleting category:", error);
       return res.status(500).json({ 
-        message: "Failed to delete category. Make sure all items are moved to a different category first." 
+        message: "Failed to delete category. Please try again." 
       });
     }
   });
