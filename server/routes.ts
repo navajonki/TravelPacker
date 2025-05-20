@@ -1064,41 +1064,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       try {
-        // First get all items in this category
-        const allItems = await storage.getAllItemsByPackingList(packingList.id);
-        const itemsInCategory = allItems.filter(item => item.categoryId === id);
+        // CRITICAL FIX: Get all items from this category directly using storage
+        const itemsInCategory = await storage.getItems(id);
         
-        console.log(`[DELETION DEBUG] Category ID ${id} being deleted, found ${itemsInCategory.length} items to unassign`);
+        console.log(`[DELETION DEBUG] Category ID ${id} being deleted, found ${itemsInCategory.length} items to preserve`);
         if (itemsInCategory.length > 0) {
-          console.log(`[DELETION DEBUG] Items in category: ${JSON.stringify(itemsInCategory.map(item => ({ id: item.id, name: item.name })))}`);
-        }
-        
-        // Use a direct SQL query to unlink all items from this category
-        // This is more reliable than individually updating items
-        console.log(`[DELETION DEBUG] Unlinking all items from category ${id} using direct SQL`);
-        await db.execute(sql`
-          UPDATE items 
-          SET category_id = NULL, 
-              last_modified_by = ${user.id} 
-          WHERE category_id = ${id}
-        `);
-        
-        // Verify no items are still linked to this category
-        const checkItems = await db.select().from(items).where(
-          sql`category_id = ${id}`
-        );
-        
-        console.log(`[DELETION DEBUG] After update, found ${checkItems.length} items still referencing category ${id}`);
-        
-        if (checkItems.length > 0) {
-          console.error(`[ERROR] Some items (${checkItems.length}) are still linked to category ${id} after update`);
-          return res.status(500).json({
-            message: "Failed to unlink all items from the category. Cannot delete."
-          });
+          // Log complete item details for debugging
+          console.log(`[DELETION DEBUG] Items in category (full details): ${JSON.stringify(itemsInCategory)}`);
+          
+          // First pass: Get IDs of all items that need to be preserved
+          const itemIds = itemsInCategory.map(item => item.id);
+          
+          if (itemIds.length > 0) {
+            console.log(`[DELETION DEBUG] Will preserve items: ${itemIds.join(', ')}`);
+            
+            // Use direct SQL to update items, setting only categoryId to NULL
+            const updateQuery = sql`
+              UPDATE items 
+              SET category_id = NULL,
+                  last_modified_by = ${user.id}
+              WHERE id IN (${itemIds})
+            `;
+            
+            console.log(`[DELETION DEBUG] Executing update query to unlink items`);
+            await db.execute(updateQuery);
+            
+            // Verify the items are properly updated
+            const updatedItems = await db.select().from(items).where(inArray(items.id, itemIds));
+            console.log(`[DELETION DEBUG] Found ${updatedItems.length} preserved items after update`);
+            
+            // Check that all items are properly uncategorized
+            const stillCategorized = updatedItems.filter(item => item.categoryId !== null);
+            if (stillCategorized.length > 0) {
+              console.error(`[ERROR] ${stillCategorized.length} items are still categorized after update`);
+              return res.status(500).json({
+                message: "Failed to unlink all items from the category. Cannot delete."
+              });
+            }
+          }
         }
         
         // Now safely delete the category
-        await storage.deleteCategory(id);
+        console.log(`[DELETION DEBUG] Deleting category ${id}`);
+        await db.delete(categories).where(eq(categories.id, id));
+        
+        // Verify the category was deleted
+        const categoryCheck = await storage.getCategory(id);
+        if (categoryCheck) {
+          console.error(`[ERROR] Category ${id} still exists after deletion attempt`);
+          return res.status(500).json({
+            message: "Failed to delete the category. Please try again."
+          });
+        }
+        
+        console.log(`[DELETION DEBUG] Category ${id} successfully deleted and all items preserved`);
         return res.status(204).end();
       } catch (innerError: any) {
         console.error(`[ERROR] Detailed category deletion error:`, innerError);
