@@ -175,11 +175,23 @@ export class PgStorage implements IStorage {
     // Simply update all items to have null categoryId
     // We don't need to assign to bag or traveler if they weren't already assigned
     if (itemsInCategory.length > 0) {
+      // First, log the IDs of items we're about to update for debugging
+      const itemIds = itemsInCategory.map(item => item.id);
+      console.log(`About to set categoryId=null for items: ${itemIds.join(', ')}`);
+      
+      // Update the items to have null categoryId
       await db.update(items)
         .set({ categoryId: null })
         .where(eq(items.categoryId, id));
       
       console.log(`Set categoryId to null for ${itemsInCategory.length} items from category ${id}`);
+      
+      // Verify the update worked by checking a few items
+      if (itemIds.length > 0) {
+        const firstItemId = itemIds[0];
+        const updatedItem = await this.getItem(firstItemId);
+        console.log(`Verification - Item ${firstItemId} after update:`, updatedItem);
+      }
     }
     
     // Now delete the category
