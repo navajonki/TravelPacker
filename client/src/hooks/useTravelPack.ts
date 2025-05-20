@@ -63,12 +63,19 @@ export function useTravelPack(packingListId?: number) {
   
   const addItemMutation = useMutation({
     mutationFn: async (item: any) => {
+      // Ensure the item has a packingListId if we're in a packing list context
+      if (packingListId && !item.packingListId) {
+        item.packingListId = Number(packingListId);
+      }
       return await apiRequest('POST', '/api/items', item);
     },
     onSuccess: () => {
       if (packingListId) {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+        // Also invalidate uncategorized items queries
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
       }
       toast({
         title: "Success",
@@ -86,12 +93,21 @@ export function useTravelPack(packingListId?: number) {
   
   const updateItemMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number, data: any }) => {
+      // Ensure the packingListId is maintained when updating an item
+      if (packingListId && !data.packingListId) {
+        data.packingListId = Number(packingListId);
+      }
       return await apiRequest('PATCH', `/api/items/${id}`, data);
     },
     onSuccess: () => {
       if (packingListId) {
+        // Invalidate all relevant queries to ensure UI is updated
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
       }
       toast({
         title: "Success",
