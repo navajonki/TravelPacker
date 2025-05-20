@@ -396,7 +396,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to access this packing list" });
       }
       
-      // Get all items for the packing list
+      // For unassigned category items, use a special direct SQL approach
+      // since the normal method misses items that were uncategorized
+      if (type === 'category') {
+        try {
+          // Get all bags and travelers for this packing list first
+          const bagsResult = await db.select().from(bags).where(eq(bags.packingListId, packingListId));
+          const bagIds = bagsResult.map(b => b.id);
+          
+          const travelersResult = await db.select().from(travelers).where(eq(travelers.packingListId, packingListId));
+          const travelerIds = travelersResult.map(t => t.id);
+          
+          let unassignedCategoryItems: any[] = [];
+          
+          // First, try to find items with null categoryId but with bag or traveler references
+          // that link them to this packing list
+          if (bagIds.length > 0 || travelerIds.length > 0) {
+            let conditions = [];
+            
+            if (bagIds.length > 0) {
+              conditions.push(`bag_id IN (${bagIds.join(',')})`);
+            }
+            
+            if (travelerIds.length > 0) {
+              conditions.push(`traveler_id IN (${travelerIds.join(',')})`);
+            }
+            
+            // Find items with null category_id AND (bag_id in bagIds OR traveler_id in travelerIds)
+            const findUncategorizedSQL = `
+              SELECT * FROM items
+              WHERE category_id IS NULL 
+              AND (${conditions.join(' OR ')})
+            `;
+            
+            console.log("[DEBUG] Using direct SQL to find uncategorized items:", findUncategorizedSQL);
+            unassignedCategoryItems = await db.execute(findUncategorizedSQL);
+          }
+          
+          console.log(`[DEBUG] Found ${unassignedCategoryItems.length} unassigned items by type 'category' for packing list ${packingListId} using direct SQL`);
+          return res.json(unassignedCategoryItems);
+        } catch (sqlError) {
+          console.error("Error with direct SQL query for uncategorized items:", sqlError);
+          // Fall back to the normal method if SQL approach fails
+        }
+      }
+      
+      // For bags and travelers, or if the direct SQL approach failed for categories,
+      // use the standard method
       const allItems = await storage.getAllItemsByPackingList(packingListId);
       
       // Filter based on the type

@@ -188,39 +188,112 @@ export class PgStorage implements IStorage {
     const travelersResult = await db.select().from(travelers).where(eq(travelers.packingListId, packingListId));
     const travelerIds = travelersResult.map(t => t.id);
     
-    // Get all items that:
-    // 1. Have a category in this packing list, OR
-    // 2. Have a bag in this packing list, OR
-    // 3. Have a traveler in this packing list
-    // This ensures we get ALL items associated with the packing list, including those with null references
+    // We need to query directly from the database to get ALL items that belong to this packing list,
+    // including items with null references (uncategorized, unassigned to bags/travelers)
+    // Use a raw SQL query to handle this properly
     
-    // First get items with categories in this packing list
-    const itemsWithCategories = await db.select().from(items).where(inArray(items.categoryId, categoryIds));
-    
-    // Then get items with bags in this packing list (if any)
-    let itemsWithBags: typeof itemsWithCategories = [];
-    if (bagIds.length > 0) {
-      itemsWithBags = await db.select().from(items).where(inArray(items.bagId, bagIds));
-    }
-    
-    // Then get items with travelers in this packing list (if any)
-    let itemsWithTravelers: typeof itemsWithCategories = [];
-    if (travelerIds.length > 0) {
-      itemsWithTravelers = await db.select().from(items).where(inArray(items.travelerId, travelerIds));
-    }
-    
-    // Combine all items and remove duplicates by item ID
-    const allItemsWithDuplicates = [...itemsWithCategories, ...itemsWithBags, ...itemsWithTravelers];
-    const uniqueItemIds = new Set();
-    const uniqueItems = allItemsWithDuplicates.filter(item => {
-      if (uniqueItemIds.has(item.id)) {
-        return false;
+    try {
+      // First, directly query all items associated with categories in this packing list
+      const categoryItemsSQL = `
+        SELECT * FROM items
+        WHERE category_id IN (${categoryIds.join(',')})
+      `;
+      const categoryItems = await db.execute(categoryItemsSQL);
+      
+      // Also directly query all items associated with bags in this packing list
+      let bagItems: any[] = [];
+      if (bagIds.length > 0) {
+        const bagItemsSQL = `
+          SELECT * FROM items
+          WHERE bag_id IN (${bagIds.join(',')})
+        `;
+        bagItems = await db.execute(bagItemsSQL);
       }
-      uniqueItemIds.add(item.id);
-      return true;
-    });
-    
-    return uniqueItems;
+      
+      // And directly query all items associated with travelers in this packing list
+      let travelerItems: any[] = [];
+      if (travelerIds.length > 0) {
+        const travelerItemsSQL = `
+          SELECT * FROM items
+          WHERE traveler_id IN (${travelerIds.join(',')})
+        `;
+        travelerItems = await db.execute(travelerItemsSQL);
+      }
+      
+      // Additionally, query for items where:
+      // - categoryId is NULL AND (bag_id is in bagIds OR traveler_id is in travelerIds)
+      // This finds items that have been uncategorized but still belong to this packing list via bags/travelers
+      let uncategorizedItems: any[] = [];
+      if (bagIds.length > 0 || travelerIds.length > 0) {
+        let conditions = [];
+        
+        if (bagIds.length > 0) {
+          conditions.push(`bag_id IN (${bagIds.join(',')})`);
+        }
+        
+        if (travelerIds.length > 0) {
+          conditions.push(`traveler_id IN (${travelerIds.join(',')})`);
+        }
+        
+        const uncategorizedSQL = `
+          SELECT * FROM items
+          WHERE category_id IS NULL 
+          AND (${conditions.join(' OR ')})
+        `;
+        uncategorizedItems = await db.execute(uncategorizedSQL);
+      }
+      
+      // Combine all results and remove duplicates by item ID
+      const allItems = [
+        ...categoryItems, 
+        ...bagItems, 
+        ...travelerItems,
+        ...uncategorizedItems
+      ];
+      
+      // Remove duplicates by item ID
+      const uniqueItemIds = new Set();
+      const uniqueItems = allItems.filter(item => {
+        if (!item.id || uniqueItemIds.has(item.id)) {
+          return false;
+        }
+        uniqueItemIds.add(item.id);
+        return true;
+      });
+      
+      return uniqueItems;
+    } catch (error) {
+      console.error('Error fetching items for packing list:', error);
+      
+      // Fall back to the original approach if the SQL approach fails
+      // First get items with categories in this packing list
+      const itemsWithCategories = await db.select().from(items).where(inArray(items.categoryId, categoryIds));
+      
+      // Then get items with bags in this packing list (if any)
+      let itemsWithBags: typeof itemsWithCategories = [];
+      if (bagIds.length > 0) {
+        itemsWithBags = await db.select().from(items).where(inArray(items.bagId, bagIds));
+      }
+      
+      // Then get items with travelers in this packing list (if any)
+      let itemsWithTravelers: typeof itemsWithCategories = [];
+      if (travelerIds.length > 0) {
+        itemsWithTravelers = await db.select().from(items).where(inArray(items.travelerId, travelerIds));
+      }
+      
+      // Combine all items and remove duplicates by item ID
+      const allItemsWithDuplicates = [...itemsWithCategories, ...itemsWithBags, ...itemsWithTravelers];
+      const uniqueItemIds = new Set();
+      const uniqueItems = allItemsWithDuplicates.filter(item => {
+        if (uniqueItemIds.has(item.id)) {
+          return false;
+        }
+        uniqueItemIds.add(item.id);
+        return true;
+      });
+      
+      return uniqueItems;
+    }
   }
 
   async getItem(id: number): Promise<Item | undefined> {
