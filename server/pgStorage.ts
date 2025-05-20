@@ -168,36 +168,56 @@ export class PgStorage implements IStorage {
       return;
     }
     
-    // Get all items currently in this category
-    const itemsInCategory = await this.getItems(id);
-    console.log(`Found ${itemsInCategory.length} items in category ${id} before deletion`);
+    console.log(`[DELETE CATEGORY] Starting deletion of category ID ${id} from packing list ${category.packingListId}`);
     
-    // Simply update all items to have null categoryId
-    // We don't need to assign to bag or traveler if they weren't already assigned
-    if (itemsInCategory.length > 0) {
-      // First, log the IDs of items we're about to update for debugging
-      const itemIds = itemsInCategory.map(item => item.id);
-      console.log(`About to set categoryId=null for items: ${itemIds.join(', ')}`);
-      
-      // Update the items to have null categoryId
-      await db.update(items)
-        .set({ categoryId: null })
+    try {
+      // STEP 1: Find all items that need to be updated
+      const itemsInCategory = await db.select().from(items)
         .where(eq(items.categoryId, id));
       
-      console.log(`Set categoryId to null for ${itemsInCategory.length} items from category ${id}`);
+      console.log(`[DELETE CATEGORY] Found ${itemsInCategory.length} items in category ${id}`);
       
-      // Verify the update worked by checking a few items
-      if (itemIds.length > 0) {
-        const firstItemId = itemIds[0];
-        const updatedItem = await this.getItem(firstItemId);
-        console.log(`Verification - Item ${firstItemId} after update:`, updatedItem);
+      // STEP 2: For any items in this category, update them to have null categoryId
+      // BUT KEEP their packingListId so they can be found later as "uncategorized"
+      if (itemsInCategory.length > 0) {
+        // First try a direct drizzle update
+        const updateResult = await db.update(items)
+          .set({ 
+            categoryId: null, 
+            // Don't change the packingListId!
+          })
+          .where(eq(items.categoryId, id));
+        
+        console.log(`[DELETE CATEGORY] Updated ${itemsInCategory.length} items - set categoryId to NULL`);
+        
+        // Verify that the update worked by checking for any remaining items with this categoryId
+        const checkItems = await db.select().from(items)
+          .where(eq(items.categoryId, id));
+          
+        if (checkItems.length > 0) {
+          // If there are still items with this categoryId, the update failed
+          console.error(`[DELETE CATEGORY] ERROR: ${checkItems.length} items still linked to category ${id}`);
+          throw new Error(`Failed to unlink items from category ${id}`);
+        }
+        
+        console.log(`[DELETE CATEGORY] All items successfully unlinked from category ${id}`);
       }
+      
+      // STEP 3: Now that all items are unlinked, we can safely delete the category
+      await db.delete(categories).where(eq(categories.id, id));
+      
+      // Verify the category was deleted
+      const verifyCategory = await this.getCategory(id);
+      if (verifyCategory) {
+        console.error(`[DELETE CATEGORY] ERROR: Category ${id} still exists after deletion attempt`);
+        throw new Error(`Failed to delete category ${id}`);
+      }
+      
+      console.log(`[DELETE CATEGORY] Successfully deleted category ${id}`);
+    } catch (error) {
+      console.error(`[DELETE CATEGORY] Error during category deletion:`, error);
+      throw error; // Re-throw to let the caller handle it
     }
-    
-    // Now delete the category
-    await db.delete(categories).where(eq(categories.id, id));
-    
-    console.log(`Completed category deletion for ID ${id}`);
   }
 
   // Item methods
