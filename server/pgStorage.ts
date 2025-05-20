@@ -168,34 +168,18 @@ export class PgStorage implements IStorage {
       return;
     }
     
-    // Get a bag from this packing list to ensure items don't become orphaned
-    const packingListBags = await this.getBags(category.packingListId);
-    const defaultBag = packingListBags.length > 0 ? packingListBags[0] : null;
-    
     // Get all items currently in this category
     const itemsInCategory = await this.getItems(id);
     console.log(`Found ${itemsInCategory.length} items in category ${id} before deletion`);
     
-    // For each item, make sure it has at least one connection to the packing list
-    for (const item of itemsInCategory) {
-      // Check if this item would become completely orphaned (no bag or traveler)
-      const wouldBeOrphaned = !item.bagId && !item.travelerId;
+    // Simply update all items to have null categoryId
+    // We don't need to assign to bag or traveler if they weren't already assigned
+    if (itemsInCategory.length > 0) {
+      await db.update(items)
+        .set({ categoryId: null })
+        .where(eq(items.categoryId, id));
       
-      if (wouldBeOrphaned && defaultBag) {
-        // Link to default bag to prevent orphaning
-        await db.update(items)
-          .set({ 
-            categoryId: null,
-            bagId: defaultBag.id 
-          })
-          .where(eq(items.id, item.id));
-        console.log(`Linked item ${item.id} (${item.name}) to bag ${defaultBag.id} to prevent orphaning`);
-      } else {
-        // Just set categoryId to null
-        await db.update(items)
-          .set({ categoryId: null })
-          .where(eq(items.id, item.id));
-      }
+      console.log(`Set categoryId to null for ${itemsInCategory.length} items from category ${id}`);
     }
     
     // Now delete the category
