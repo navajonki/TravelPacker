@@ -1078,7 +1078,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Now safely delete the category RECORD only (the items were already unlinked above)
         console.log(`[DELETION DEBUG] Deleting category ${id}`);
-        await db.delete(categories).where(eq(categories.id, id));
+        // Import the categories table from schema to avoid variable name conflicts
+        const { categories: categoriesTable } = await import("@shared/schema");
+        await db.delete(categoriesTable).where(eq(categoriesTable.id, id));
         
         // Verify the category was deleted
         const categoryCheck = await storage.getCategory(id);
@@ -1249,10 +1251,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         packingList = await storage.getPackingList(traveler.packingListId);
       }
       
+      // Try to use direct packingListId from the request if available
+      if (!packingList && data.packingListId) {
+        packingList = await storage.getPackingList(data.packingListId);
+        if (!packingList) {
+          return res.status(404).json({ 
+            message: `Cannot create item with non-existent packing list ID ${data.packingListId}` 
+          });
+        }
+      }
+      
       // If we still don't have a packing list, we can't create the item
       if (!packingList) {
         return res.status(400).json({ 
-          message: "Could not determine which packing list this item belongs to. Please provide at least one of: categoryId, bagId, or travelerId." 
+          message: "Could not determine which packing list this item belongs to. Please provide either packingListId or at least one of: categoryId, bagId, or travelerId." 
         });
       }
       
