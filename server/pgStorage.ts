@@ -161,9 +161,15 @@ export class PgStorage implements IStorage {
   }
 
   async deleteCategory(id: number): Promise<void> {
-    // We don't delete the items - just delete the category
-    // The calling code must handle moving items first
+    // First, update any items that reference this category to have NULL categoryId
+    await db.update(items)
+      .set({ categoryId: null })
+      .where(eq(items.categoryId, id));
+    
+    // Now delete the category
     await db.delete(categories).where(eq(categories.id, id));
+    
+    console.log(`[INFO] Completed category deletion for ID ${id} - set categoryId to NULL for all referenced items`);
   }
 
   // Item methods
