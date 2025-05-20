@@ -118,6 +118,7 @@ export const items = pgTable("items", {
   packed: boolean("packed").notNull().default(false),
   isEssential: boolean("is_essential").notNull().default(false),
   dueDate: timestamp("due_date"),
+  packingListId: integer("packing_list_id").notNull().references(() => packingLists.id),
   categoryId: integer("category_id").references(() => categories.id),
   bagId: integer("bag_id").references(() => bags.id),
   travelerId: integer("traveler_id").references(() => travelers.id),
