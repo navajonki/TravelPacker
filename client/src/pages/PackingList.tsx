@@ -384,7 +384,17 @@ export default function PackingList() {
   const handleDeleteCategory = async (categoryId: number) => {
     try {
       await apiRequest('DELETE', `/api/categories/${categoryId}`);
+      
+      // Invalidate all relevant queries to ensure UI is properly updated
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      
+      console.log("Invalidated all queries after category deletion");
+      
       toast({
         title: "Success",
         description: "Category deleted successfully",
@@ -401,7 +411,17 @@ export default function PackingList() {
   const handleDeleteBag = async (bagId: number) => {
     try {
       await apiRequest('DELETE', `/api/bags/${bagId}`);
+      
+      // Invalidate all relevant queries to ensure UI is properly updated
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      
+      console.log("Invalidated all queries after bag deletion");
+      
       toast({
         title: "Success",
         description: "Bag deleted successfully",
@@ -418,7 +438,17 @@ export default function PackingList() {
   const handleDeleteTraveler = async (travelerId: number) => {
     try {
       await apiRequest('DELETE', `/api/travelers/${travelerId}`);
+      
+      // Invalidate all relevant queries to ensure UI is properly updated
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      
+      console.log("Invalidated all queries after traveler deletion");
+      
       toast({
         title: "Success",
         description: "Traveler deleted successfully",
