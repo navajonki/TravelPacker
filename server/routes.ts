@@ -396,49 +396,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to access this packing list" });
       }
       
-      // For unassigned category items, use a direct database approach
+      // For unassigned category items, use a simple approach without direct SQL
       if (type === 'category') {
         try {
-          // First, get all categories, bags and travelers for this packing list
-          const categoriesList = await storage.getCategories(packingListId);
-          const bagsList = await storage.getBags(packingListId);
-          const travelersList = await storage.getTravelers(packingListId);
+          // For simplicity, get all items for this packing list first
+          const allItems = await storage.getAllItemsByPackingList(packingListId);
           
-          // Execute direct SQL to find all items that have packing list connections but no category
-          // This query gets all items associated with this packing list that have NULL categoryId
-          const uncategorizedItemsQuery = await db.execute(sql`
-            SELECT * FROM items 
-            WHERE category_id IS NULL
-            AND (
-              (
-                bag_id IN (${bagsList.map(b => b.id)}) 
-                OR traveler_id IN (${travelersList.map(t => t.id)})
-              )
-              OR id IN (
-                SELECT i.id FROM items i
-                LEFT JOIN categories c ON i.category_id = c.id
-                WHERE c.packing_list_id = ${packingListId}
-                  AND i.category_id IS NULL
-              )
-            )
-          `);
+          // Just filter out the items that don't have a category assigned
+          const uncategorizedItems = allItems.filter(item => item.categoryId === null);
           
-          console.log(`[DEBUG] Direct SQL found ${uncategorizedItemsQuery.length} uncategorized items for packing list ${packingListId}`);
+          console.log(`[DEBUG] Found ${uncategorizedItems.length} items with null categoryId for packing list ${packingListId}`);
           
-          // Also directly look up the specific item we just uncategorized (debugging)
-          try {
-            const recentlyUncategorizedItems = await db.execute(sql`
-              SELECT * FROM items WHERE name = 'tolll4'
-            `);
-            console.log(`[DEBUG] Direct query for item 'tolll4': ${JSON.stringify(recentlyUncategorizedItems)}`);
-          } catch (err) {
-            console.error("Error querying for test item:", err);
-          }
-          
-          return res.json(uncategorizedItemsQuery);
+          return res.json(uncategorizedItems);
         } catch (error) {
-          console.error("Error with direct query for uncategorized items:", error);
-          // Continue to the standard method if this fails
+          console.error("Error finding uncategorized items:", error);
+          // Continue to the standard method if this approach fails
         }
       }
       
