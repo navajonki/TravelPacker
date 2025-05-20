@@ -1264,9 +1264,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to create items in this packing list" });
       }
       
-      // Set the createdBy field to track who created this item
+      // Set the createdBy field and packingListId to track who created this item and which list it belongs to
       const itemData = {
         ...data,
+        packingListId: packingList.id, // Add the direct packingListId reference
         createdBy: user.id,
         lastModifiedBy: user.id
       };
