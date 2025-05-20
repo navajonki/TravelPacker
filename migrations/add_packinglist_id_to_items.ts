@@ -45,14 +45,54 @@ async function migrateItems() {
 
     // Check if any items are missing packing_list_id
     const orphanedItems = await db.execute(sql`
+      SELECT * 
+      FROM items 
+      WHERE packing_list_id IS NULL
+    `);
+    
+    console.log(`Found ${orphanedItems.length} items without packing_list_id`);
+
+    // For orphaned items, we have two options:
+    // 1. Assign them to a default packing list (if one exists)
+    // 2. Delete them since they're orphaned and not connected to anything
+    
+    if (orphanedItems.length > 0) {
+      console.log("Handling orphaned items...");
+      
+      // Get the first packing list to use as a default (if any exist)
+      const packingLists = await db.execute(sql`SELECT id FROM packing_lists LIMIT 1`);
+      
+      if (packingLists.length > 0) {
+        const defaultPackingListId = packingLists[0].id;
+        console.log(`Assigning orphaned items to packing list ${defaultPackingListId}`);
+        
+        // Update orphaned items to use the default packing list
+        await db.execute(sql`
+          UPDATE items
+          SET packing_list_id = ${defaultPackingListId}
+          WHERE packing_list_id IS NULL
+        `);
+      } else {
+        console.log("No packing lists found to assign orphaned items - deleting orphaned items");
+        
+        // If no packing lists exist, delete the orphaned items
+        await db.execute(sql`
+          DELETE FROM items
+          WHERE packing_list_id IS NULL
+        `);
+      }
+    }
+    
+    // Verify no more orphaned items
+    const checkOrphanedItems = await db.execute(sql`
       SELECT COUNT(*) as count 
       FROM items 
       WHERE packing_list_id IS NULL
     `);
     
-    console.log(`Found ${orphanedItems[0].count} items without packing_list_id`);
-
-    // Make the column NOT NULL after migration
+    console.log(`After handling orphans, ${checkOrphanedItems[0].count} items remain without packing_list_id`);
+    
+    // Now we can safely make the column NOT NULL
     await db.execute(sql`
       ALTER TABLE items 
       ALTER COLUMN packing_list_id SET NOT NULL
