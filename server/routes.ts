@@ -1106,7 +1106,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Now safely delete the category
         console.log(`[DELETION DEBUG] Deleting category ${id}`);
-        await db.delete(categories).where(eq(categories.id, id));
+        await storage.deleteCategory(id);
         
         // Verify the category was deleted
         const categoryCheck = await storage.getCategory(id);
