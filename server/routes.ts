@@ -591,19 +591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         console.log(`[DELETION DEBUG] Bag ID ${id} being deleted, found ${itemsInBag.length} items to unassign`);
         
-        // Use our file logger for more detailed tracking
-        try {
-          const fileLogger = require('./fileLogger');
-          fileLogger.logDeletion('bag', id, `Found ${itemsInBag.length} items to unassign from bag`);
-          
-          if (itemsInBag.length > 0) {
-            console.log(`[DELETION DEBUG] Items in bag: ${JSON.stringify(itemsInBag.map(item => ({ id: item.id, name: item.name })))}`);
-            fileLogger.logDeletion('bag', id, 'Items to unlink from bag:', 
-              itemsInBag.map(item => ({ id: item.id, name: item.name }))
-            );
-          }
-        } catch (logError) {
-          console.error('Error with file logger:', logError);
+        // Log items to be unassigned
+        if (itemsInBag.length > 0) {
+          console.log(`[DELETION DEBUG] Items in bag: ${JSON.stringify(itemsInBag.map(item => ({ id: item.id, name: item.name })))}`);
         }
         
         // Use a direct SQL query to unlink all items from this bag 

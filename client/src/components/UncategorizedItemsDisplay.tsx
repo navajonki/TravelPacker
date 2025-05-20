@@ -31,6 +31,7 @@ export default function UncategorizedItemsDisplay({
     queryKey: [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`],
     enabled: !!packingListId,
     staleTime: 0, // Always refetch to ensure fresh data
+    refetchInterval: 1500, // Automatically refresh every 1.5 seconds
   });
   
   if (isLoading) {
