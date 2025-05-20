@@ -1238,16 +1238,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Verify that the category belongs to a packing list owned by the user
-      const category = await storage.getCategory(data.categoryId);
-      if (!category) {
-        return res.status(404).json({ message: "Category not found" });
+      // Figure out which packing list this item belongs to
+      let packingList = null;
+      
+      // Verify that if a categoryId is provided, the category exists
+      if (data.categoryId) {
+        const category = await storage.getCategory(data.categoryId);
+        if (!category) {
+          return res.status(404).json({ 
+            message: `Cannot create item with non-existent category ID ${data.categoryId}. The category may have been deleted.` 
+          });
+        }
+        
+        // Get the packing list from the category
+        packingList = await storage.getPackingList(category.packingListId);
+      } 
+      
+      // If we still don't have a packing list, try to get it from the bag
+      if (!packingList && data.bagId) {
+        const bag = await storage.getBag(data.bagId);
+        if (!bag) {
+          return res.status(404).json({ 
+            message: `Cannot create item with non-existent bag ID ${data.bagId}. The bag may have been deleted.` 
+          });
+        }
+        
+        // Get the packing list from the bag
+        packingList = await storage.getPackingList(bag.packingListId);
       }
       
-      // Check if the packing list belongs to the authenticated user
-      const packingList = await storage.getPackingList(category.packingListId);
+      // If we still don't have a packing list, try to get it from the traveler
+      if (!packingList && data.travelerId) {
+        const traveler = await storage.getTraveler(data.travelerId);
+        if (!traveler) {
+          return res.status(404).json({ 
+            message: `Cannot create item with non-existent traveler ID ${data.travelerId}. The traveler may have been deleted.` 
+          });
+        }
+        
+        // Get the packing list from the traveler
+        packingList = await storage.getPackingList(traveler.packingListId);
+      }
+      
+      // If we still don't have a packing list, we can't create the item
       if (!packingList) {
-        return res.status(404).json({ message: "Associated packing list not found" });
+        return res.status(400).json({ 
+          message: "Could not determine which packing list this item belongs to. Please provide at least one of: categoryId, bagId, or travelerId." 
+        });
       }
       
       // Verify ownership or collaborator access
@@ -1255,7 +1292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
       
       if (!hasAccess) {
-        return res.status(403).json({ message: "You don't have permission to create items in this category" });
+        return res.status(403).json({ message: "You don't have permission to create items in this packing list" });
       }
       
       // Set the createdBy field to track who created this item
@@ -1344,6 +1381,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const dueDateObj = new Date(data.dueDate);
         if (isNaN(dueDateObj.getTime())) {
           return res.status(400).json({ message: "Invalid dueDate format" });
+        }
+      }
+      
+      // Validate that if a travelerId is provided, the traveler exists
+      if (data.travelerId !== undefined && data.travelerId !== null) {
+        const traveler = await storage.getTraveler(data.travelerId);
+        if (!traveler) {
+          return res.status(400).json({ 
+            message: `Cannot assign item to non-existent traveler with ID ${data.travelerId}. The traveler may have been deleted.` 
+          });
+        }
+      }
+      
+      // Validate that if a bagId is provided, the bag exists
+      if (data.bagId !== undefined && data.bagId !== null) {
+        const bag = await storage.getBag(data.bagId);
+        if (!bag) {
+          return res.status(400).json({ 
+            message: `Cannot assign item to non-existent bag with ID ${data.bagId}. The bag may have been deleted.` 
+          });
+        }
+      }
+      
+      // Validate that if a categoryId is provided, the category exists
+      if (data.categoryId !== undefined && data.categoryId !== null) {
+        const category = await storage.getCategory(data.categoryId);
+        if (!category) {
+          return res.status(400).json({ 
+            message: `Cannot assign item to non-existent category with ID ${data.categoryId}. The category may have been deleted.` 
+          });
         }
       }
       
