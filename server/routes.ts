@@ -396,26 +396,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to access this packing list" });
       }
       
-      // For unassigned category items, use a simple approach without direct SQL
+      // For unassigned category items, use direct SQL to avoid ORM issues with NULL references
       if (type === 'category') {
         try {
-          // For simplicity, get all items for this packing list first
-          const allItems = await storage.getAllItemsByPackingList(packingListId);
+          // Use direct SQL with parameters for safety
+          const rawQuery = await db.execute(sql`
+            SELECT * FROM items 
+            WHERE packing_list_id = ${packingListId} 
+            AND category_id IS NULL
+          `);
           
-          // Log all items before filtering
-          console.log(`[UNASSIGNED DEBUG] Before filtering: All items for packing list ${packingListId}:`, 
-            allItems.map(item => ({ id: item.id, name: item.name, categoryId: item.categoryId })));
+          // Convert the raw SQL results to a properly formatted response
+          // Need to convert column_name to camelCase for frontend compatibility
+          const uncategorizedItems = rawQuery.map(row => ({
+            id: row.id,
+            name: row.name,
+            quantity: row.quantity,
+            packed: row.packed,
+            isEssential: row.is_essential,
+            dueDate: row.due_date,
+            packingListId: row.packing_list_id,
+            categoryId: row.category_id,
+            bagId: row.bag_id,
+            travelerId: row.traveler_id,
+            createdBy: row.created_by,
+            lastModifiedBy: row.last_modified_by,
+            createdAt: row.created_at
+          }));
           
-          // Just filter out the items that don't have a category assigned
-          const uncategorizedItems = allItems.filter(item => item.categoryId === null);
+          console.log(`[FIXED QUERY] Direct SQL found ${uncategorizedItems.length} truly uncategorized items`);
           
-          console.log(`[UNASSIGNED DEBUG] Found ${uncategorizedItems.length} items with null categoryId for packing list ${packingListId}`);
-          console.log(`[UNASSIGNED DEBUG] Uncategorized items:`, 
-            uncategorizedItems.map(item => ({ id: item.id, name: item.name })));
+          if (uncategorizedItems.length > 0) {
+            console.log(`[FIXED QUERY] First 2 uncategorized items:`, 
+              uncategorizedItems.slice(0, 2).map(i => ({ id: i.id, name: i.name })));
+          }
           
           return res.json(uncategorizedItems);
         } catch (error) {
-          console.error("Error finding uncategorized items:", error);
+          console.error("Error finding uncategorized items with direct SQL:", error);
           // Continue to the standard method if this approach fails
         }
       }
