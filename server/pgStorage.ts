@@ -172,7 +172,7 @@ export class PgStorage implements IStorage {
   }
 
   async getAllItemsByPackingList(packingListId: number): Promise<Item[]> {
-    // Get all categories for this packing list
+    // First, get all categories for this packing list
     const categoriesResult = await db.select().from(categories).where(eq(categories.packingListId, packingListId));
     const categoryIds = categoriesResult.map(c => c.id);
     
@@ -180,8 +180,47 @@ export class PgStorage implements IStorage {
       return [];
     }
     
-    // Get all items in these categories
-    return await db.select().from(items).where(inArray(items.categoryId, categoryIds));
+    // Get all bags for this packing list
+    const bagsResult = await db.select().from(bags).where(eq(bags.packingListId, packingListId));
+    const bagIds = bagsResult.map(b => b.id);
+    
+    // Get all travelers for this packing list
+    const travelersResult = await db.select().from(travelers).where(eq(travelers.packingListId, packingListId));
+    const travelerIds = travelersResult.map(t => t.id);
+    
+    // Get all items that:
+    // 1. Have a category in this packing list, OR
+    // 2. Have a bag in this packing list, OR
+    // 3. Have a traveler in this packing list
+    // This ensures we get ALL items associated with the packing list, including those with null references
+    
+    // First get items with categories in this packing list
+    const itemsWithCategories = await db.select().from(items).where(inArray(items.categoryId, categoryIds));
+    
+    // Then get items with bags in this packing list (if any)
+    let itemsWithBags: typeof itemsWithCategories = [];
+    if (bagIds.length > 0) {
+      itemsWithBags = await db.select().from(items).where(inArray(items.bagId, bagIds));
+    }
+    
+    // Then get items with travelers in this packing list (if any)
+    let itemsWithTravelers: typeof itemsWithCategories = [];
+    if (travelerIds.length > 0) {
+      itemsWithTravelers = await db.select().from(items).where(inArray(items.travelerId, travelerIds));
+    }
+    
+    // Combine all items and remove duplicates by item ID
+    const allItemsWithDuplicates = [...itemsWithCategories, ...itemsWithBags, ...itemsWithTravelers];
+    const uniqueItemIds = new Set();
+    const uniqueItems = allItemsWithDuplicates.filter(item => {
+      if (uniqueItemIds.has(item.id)) {
+        return false;
+      }
+      uniqueItemIds.add(item.id);
+      return true;
+    });
+    
+    return uniqueItems;
   }
 
   async getItem(id: number): Promise<Item | undefined> {
