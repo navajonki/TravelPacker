@@ -5,7 +5,7 @@ import ItemRow from "./ItemRow";
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface UncategorizedItemsDisplayProps {
   packingListId: number;
@@ -26,13 +26,23 @@ export default function UncategorizedItemsDisplay({
   const { 
     data, 
     isLoading,
-    refetch
+    refetch,
+    isFetched
   } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`],
     enabled: !!packingListId,
     staleTime: 0, // Always refetch to ensure fresh data
     refetchInterval: 1500, // Automatically refresh every 1.5 seconds
+    refetchOnWindowFocus: true, // Refresh when tab gets focus
   });
+  
+  // Log data for debugging
+  useEffect(() => {
+    if (isFetched) {
+      console.log(`UncategorizedItemsDisplay - ${viewContext} items:`, 
+        Array.isArray(data) ? data : []);
+    }
+  }, [data, isFetched, viewContext]);
   
   if (isLoading) {
     return <Skeleton className="w-full h-24 mt-4" />;

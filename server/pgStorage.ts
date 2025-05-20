@@ -208,40 +208,37 @@ export class PgStorage implements IStorage {
   async getAllItemsByPackingList(packingListId: number): Promise<Item[]> {
     // Now we can simply query by packingListId since we added the direct relationship
     try {
-      // Import specific schema items to avoid variable name conflicts
-      const { items: itemsTable } = await import("@shared/schema");
+      console.log(`[STORAGE DEBUG] Getting all items for packing list ${packingListId}`);
       
-      // Get all items by packing list ID (simple, direct query)
-      const allItems = await db.select()
-        .from(itemsTable)
-        .where(eq(itemsTable.packingListId, packingListId));
+      // Use db.query instead of db.select to ensure proper typing
+      const allItems = await db.query.items.findMany({
+        where: eq(items.packingListId, packingListId)
+      });
       
       // Count items with NULL fields for debugging
       const nullCategoryCount = allItems.filter(item => item.categoryId === null).length;
       const nullBagCount = allItems.filter(item => item.bagId === null).length;
       const nullTravelerCount = allItems.filter(item => item.travelerId === null).length;
       
+      console.log(`[STORAGE DEBUG] Found ${allItems.length} total items`);
       console.log(`[DEBUG] Items with null fields for packing list ${packingListId}:
         - Null categoryId: ${nullCategoryCount}
         - Null bagId: ${nullBagCount}
         - Null travelerId: ${nullTravelerCount}`);
       
+      // Log each item with null categoryId for deep debugging
+      if (nullCategoryCount > 0) {
+        console.log(`[STORAGE DEBUG] Items with null categoryId:`, 
+          allItems.filter(item => item.categoryId === null)
+            .map(i => ({ id: i.id, name: i.name, packingListId: i.packingListId }))
+        );
+      }
+      
       return allItems;
     } catch (error) {
       console.error('Error fetching items by packingListId:', error);
-      
-      // Try a different approach using direct SQL if needed
-      try {
-        const allItemsSQL = `
-          SELECT * FROM items
-          WHERE packing_list_id = ${packingListId}
-        `;
-        const result = await db.execute(allItemsSQL);
-        return result as Item[];
-      } catch (fallbackError) {
-        console.error('Fallback query failed too:', fallbackError);
-        return [];
-      }
+      console.log('[STORAGE DEBUG] Returning empty array due to error');
+      return [];
     }
   }
 

@@ -402,10 +402,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // For simplicity, get all items for this packing list first
           const allItems = await storage.getAllItemsByPackingList(packingListId);
           
+          // Log all items before filtering
+          console.log(`[UNASSIGNED DEBUG] Before filtering: All items for packing list ${packingListId}:`, 
+            allItems.map(item => ({ id: item.id, name: item.name, categoryId: item.categoryId })));
+          
           // Just filter out the items that don't have a category assigned
           const uncategorizedItems = allItems.filter(item => item.categoryId === null);
           
-          console.log(`[DEBUG] Found ${uncategorizedItems.length} items with null categoryId for packing list ${packingListId}`);
+          console.log(`[UNASSIGNED DEBUG] Found ${uncategorizedItems.length} items with null categoryId for packing list ${packingListId}`);
+          console.log(`[UNASSIGNED DEBUG] Uncategorized items:`, 
+            uncategorizedItems.map(item => ({ id: item.id, name: item.name })));
           
           return res.json(uncategorizedItems);
         } catch (error) {
@@ -1050,6 +1056,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (itemIds.length > 0) {
             console.log(`[DELETION DEBUG] Will preserve items: ${itemIds.join(', ')}`);
             
+            // Log the original items first
+            const originalItems = await db.select().from(items).where(inArray(items.id, itemIds));
+            console.log(`[DELETION DEBUG] Original items before update:`, 
+                        originalItems.map(i => ({ 
+                          id: i.id, 
+                          name: i.name, 
+                          packingListId: i.packingListId, 
+                          categoryId: i.categoryId 
+                        }))
+            );
+            
             // Use direct SQL to update items, setting only categoryId to NULL
             const updateQuery = sql`
               UPDATE items 
@@ -1058,12 +1075,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
               WHERE id IN (${itemIds})
             `;
             
-            console.log(`[DELETION DEBUG] Executing update query to unlink items`);
-            await db.execute(updateQuery);
+            console.log(`[DELETION DEBUG] Executing update query to unlink items from category ${id}`);
+            const result = await db.execute(updateQuery);
+            console.log(`[DELETION DEBUG] SQL update result:`, result);
             
             // Verify the items are properly updated
             const updatedItems = await db.select().from(items).where(inArray(items.id, itemIds));
             console.log(`[DELETION DEBUG] Found ${updatedItems.length} preserved items after update`);
+            console.log(`[DELETION DEBUG] Updated items:`, 
+                        updatedItems.map(i => ({ 
+                          id: i.id, 
+                          name: i.name, 
+                          packingListId: i.packingListId, 
+                          categoryId: i.categoryId 
+                        }))
+            );
             
             // Check that all items are properly uncategorized
             const stillCategorized = updatedItems.filter(item => item.categoryId !== null);
