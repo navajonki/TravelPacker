@@ -161,15 +161,47 @@ export class PgStorage implements IStorage {
   }
 
   async deleteCategory(id: number): Promise<void> {
-    // First, update any items that reference this category to have NULL categoryId
-    await db.update(items)
-      .set({ categoryId: null })
-      .where(eq(items.categoryId, id));
+    // First, get the category to find its packing list
+    const category = await this.getCategory(id);
+    if (!category) {
+      console.error(`Cannot delete category ${id} - not found`);
+      return;
+    }
+    
+    // Get a bag from this packing list to ensure items don't become orphaned
+    const packingListBags = await this.getBags(category.packingListId);
+    const defaultBag = packingListBags.length > 0 ? packingListBags[0] : null;
+    
+    // Get all items currently in this category
+    const itemsInCategory = await this.getItems(id);
+    console.log(`Found ${itemsInCategory.length} items in category ${id} before deletion`);
+    
+    // For each item, make sure it has at least one connection to the packing list
+    for (const item of itemsInCategory) {
+      // Check if this item would become completely orphaned (no bag or traveler)
+      const wouldBeOrphaned = !item.bagId && !item.travelerId;
+      
+      if (wouldBeOrphaned && defaultBag) {
+        // Link to default bag to prevent orphaning
+        await db.update(items)
+          .set({ 
+            categoryId: null,
+            bagId: defaultBag.id 
+          })
+          .where(eq(items.id, item.id));
+        console.log(`Linked item ${item.id} (${item.name}) to bag ${defaultBag.id} to prevent orphaning`);
+      } else {
+        // Just set categoryId to null
+        await db.update(items)
+          .set({ categoryId: null })
+          .where(eq(items.id, item.id));
+      }
+    }
     
     // Now delete the category
     await db.delete(categories).where(eq(categories.id, id));
     
-    console.log(`[INFO] Completed category deletion for ID ${id} - set categoryId to NULL for all referenced items`);
+    console.log(`Completed category deletion for ID ${id}`);
   }
 
   // Item methods
