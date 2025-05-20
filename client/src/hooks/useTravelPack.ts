@@ -183,7 +183,16 @@ export function useTravelPack(packingListId?: number) {
     },
     onSuccess: () => {
       if (packingListId) {
+        // Invalidate all relevant queries to refresh data
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+        
+        // Invalidate all-items and unassigned items queries to show formerly categorized items
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+        
+        console.log('Invalidated all queries after category deletion');
       }
       toast({
         title: "Success",
