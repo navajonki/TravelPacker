@@ -1150,21 +1150,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Item not found" });
     }
     
-    // Get the category to find the packing list
-    const category = await storage.getCategory(item.categoryId);
-    if (!category) {
-      return res.status(404).json({ message: "Associated category not found" });
+    // Try to determine the packing list from any reference (category, bag, or traveler)
+    let packingListId = null;
+    
+    // Try category reference first
+    if (item.categoryId) {
+      const category = await storage.getCategory(item.categoryId);
+      if (category) {
+        packingListId = category.packingListId;
+      }
+    }
+    
+    // Try bag reference if no category or category lookup failed
+    if (!packingListId && item.bagId) {
+      const bag = await storage.getBag(item.bagId);
+      if (bag) {
+        packingListId = bag.packingListId;
+      }
+    }
+    
+    // Try traveler reference as last resort
+    if (!packingListId && item.travelerId) {
+      const traveler = await storage.getTraveler(item.travelerId);
+      if (traveler) {
+        packingListId = traveler.packingListId;
+      }
+    }
+    
+    if (!packingListId) {
+      return res.status(404).json({ message: "Could not determine item's packing list" });
     }
     
     // Check if the packing list belongs to the authenticated user
-    const packingList = await storage.getPackingList(category.packingListId);
+    const packingList = await storage.getPackingList(packingListId);
     if (!packingList) {
       return res.status(404).json({ message: "Associated packing list not found" });
     }
     
-    // Verify ownership
+    // Verify ownership or collaborator access
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+    
+    if (!hasAccess) {
       return res.status(403).json({ message: "You don't have permission to view this item" });
     }
     
@@ -1262,14 +1289,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Item not found" });
       }
       
-      // Get the category to find the packing list
-      const category = await storage.getCategory(existingItem.categoryId);
-      if (!category) {
-        return res.status(404).json({ message: "Associated category not found" });
+      // Get the packing list ID from either the category, bag, or traveler reference
+      let packingListId = null;
+      
+      if (existingItem.categoryId) {
+        // Try to get the packing list through the category
+        const category = await storage.getCategory(existingItem.categoryId);
+        if (category) {
+          packingListId = category.packingListId;
+        }
       }
       
-      // Check if the packing list belongs to the authenticated user
-      const packingList = await storage.getPackingList(category.packingListId);
+      // If the category lookup failed, try bag reference
+      if (!packingListId && existingItem.bagId) {
+        const bag = await storage.getBag(existingItem.bagId);
+        if (bag) {
+          packingListId = bag.packingListId;
+        }
+      }
+      
+      // If both category and bag lookups failed, try traveler reference
+      if (!packingListId && existingItem.travelerId) {
+        const traveler = await storage.getTraveler(existingItem.travelerId);
+        if (traveler) {
+          packingListId = traveler.packingListId;
+        }
+      }
+      
+      // If we couldn't determine the packing list ID through any reference, return an error
+      if (!packingListId) {
+        return res.status(404).json({ message: "Could not determine associated packing list" });
+      }
+      
+      // Get the packing list
+      const packingList = await storage.getPackingList(packingListId);
       if (!packingList) {
         return res.status(404).json({ message: "Associated packing list not found" });
       }
