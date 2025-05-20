@@ -1199,12 +1199,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/items", isAuthenticated, async (req, res) => {
+    // Add detailed logging for item creation
+    console.log("[ITEM DEBUG] Request to create item:", JSON.stringify(req.body, null, 2));
+    
     try {
+      console.log("[ITEM DEBUG] Parsing request data with Zod schema");
       const data = insertItemSchema.parse(req.body);
+      console.log("[ITEM DEBUG] After Zod parsing:", JSON.stringify(data, null, 2));
       
       if (data.dueDate) {
         const dueDateObj = new Date(data.dueDate);
         if (isNaN(dueDateObj.getTime())) {
+          console.log("[ITEM DEBUG] Invalid dueDate format:", data.dueDate);
           return res.status(400).json({ message: "Invalid dueDate format" });
         }
       }
