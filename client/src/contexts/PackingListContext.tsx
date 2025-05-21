@@ -48,24 +48,22 @@ export const PackingListProvider: React.FC<PackingListProviderProps> = ({ childr
     data: activeList,
     isLoading,
     isError
-  } = useQuery<PackingListInfo>(
-    [`/api/packing-lists/${activeListId}`],
-    () => apiRequest('GET', `/api/packing-lists/${activeListId}`),
-    {
-      enabled: !!activeListId,
-      onSuccess: (data) => {
-        addRecentList(data);
-      },
-      onError: (error) => {
-        logger.error('Failed to fetch active packing list', error, { listId: activeListId });
-        toast({
-          title: 'Error',
-          description: 'Failed to load packing list details',
-          variant: 'destructive'
-        });
-      }
+  } = useQuery<PackingListInfo>({
+    queryKey: [`/api/packing-lists/${activeListId}`],
+    queryFn: () => apiRequest('GET', `/api/packing-lists/${activeListId}`),
+    enabled: !!activeListId,
+    onSuccess: (data) => {
+      addRecentList(data);
+    },
+    onError: (error) => {
+      logger.error('Failed to fetch active packing list', error, { listId: activeListId });
+      toast({
+        title: 'Error',
+        description: 'Failed to load packing list details',
+        variant: 'destructive'
+      });
     }
-  );
+  });
 
   // Save recent lists to local storage
   useEffect(() => {
