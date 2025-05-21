@@ -33,17 +33,33 @@ export default function SelectableItemRow({
   // Mutation for toggling the packed status
   const { mutate: togglePacked } = useMutation({
     mutationFn: async () => {
+      console.log(`[DEBUG] SelectableItemRow: Updating packed status for item ${item.id} to ${!item.packed}`);
       const response = await apiRequest(
         "PATCH", 
         `/api/items/${item.id}`, 
-        { packed: !item.packed }
+        { 
+          packed: !item.packed,
+          // Include packingListId to ensure proper item association
+          packingListId: packingListId
+        }
       );
       return response;
     },
     onSuccess: () => {
+      // Invalidate ALL related queries to ensure consistency
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('item-packed-status-changed', {
+        detail: { itemId: item.id, newState: !item.packed }
+      }));
     },
-    onError: () => {
+    onError: (error) => {
+      console.error(`[ERROR] Failed to update packed status for item ${item.id}:`, error);
       toast({
         title: "Error",
         description: "Failed to update item status",

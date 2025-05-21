@@ -82,12 +82,18 @@ export default function ItemRow({
       const newPackedState = !isItemPacked;
       incrementPending();
       
+      console.log(`[DEBUG] Sending PATCH request to update item ${item.id} packed status to ${newPackedState}`);
       try {
+        // Make sure we're sending a direct boolean value, not a string
         const updatedItem = await apiRequest('PATCH', `/api/items/${item.id}`, {
-          packed: newPackedState
+          packed: newPackedState,
+          // Add the packingListId to ensure the item stays connected to its list
+          packingListId: packingListId
         });
+        console.log(`[DEBUG] Server response for packed status update:`, updatedItem);
         return updatedItem;
       } catch (error) {
+        console.error(`[ERROR] Failed to update packed status for item ${item.id}:`, error);
         throw error;
       } finally {
         decrementPending();
