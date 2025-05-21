@@ -396,37 +396,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to access this packing list" });
       }
       
-      // For unassigned items (category, bag, traveler), use direct SQL to avoid ORM issues with NULL values
+      // Use a direct SQL query approach for all types to properly handle NULL values
+      // This is cleaner than the ORM approach for this specific case
+      let sqlQuery;
+      
+      if (type === 'category') {
+        sqlQuery = sql`
+          SELECT * FROM items 
+          WHERE packing_list_id = ${packingListId} 
+          AND category_id IS NULL
+        `;
+      } else if (type === 'bag') {
+        sqlQuery = sql`
+          SELECT * FROM items 
+          WHERE packing_list_id = ${packingListId} 
+          AND bag_id IS NULL
+        `;
+      } else if (type === 'traveler') {
+        sqlQuery = sql`
+          SELECT * FROM items 
+          WHERE packing_list_id = ${packingListId} 
+          AND traveler_id IS NULL
+        `;
+      }
+      
       try {
-        // Execute the appropriate query based on the type parameter
-        let rawItems: any[] = [];
+        // Execute the SQL query
+        const rawItems = await db.execute(sqlQuery!);
         
-        if (type === 'category') {
-          rawItems = await db.execute(sql`
-            SELECT * FROM items 
-            WHERE packing_list_id = ${packingListId} 
-            AND category_id IS NULL
-          `);
-          console.log(`[UNASSIGNED] Direct SQL found ${rawItems.length} items with NULL category_id`);
-        } 
-        else if (type === 'bag') {
-          rawItems = await db.execute(sql`
-            SELECT * FROM items 
-            WHERE packing_list_id = ${packingListId} 
-            AND bag_id IS NULL
-          `);
-          console.log(`[UNASSIGNED] Direct SQL found ${rawItems.length} items with NULL bag_id`);
-        } 
-        else if (type === 'traveler') {
-          rawItems = await db.execute(sql`
-            SELECT * FROM items 
-            WHERE packing_list_id = ${packingListId} 
-            AND traveler_id IS NULL
-          `);
-          console.log(`[UNASSIGNED] Direct SQL found ${rawItems.length} items with NULL traveler_id`);
-        }
-        
-        console.log(`[UNASSIGNED] Found ${rawItems.length} items with NULL ${nullColumnName} via direct SQL`);
+        console.log(`[UNASSIGNED] Direct SQL found ${rawItems.length} unassigned ${type} items for packing list ${packingListId}`);
         
         if (rawItems.length > 0) {
           // Convert the raw SQL results to a properly formatted response
