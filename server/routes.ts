@@ -1389,13 +1389,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[DEBUG] Found existing item for update:`, existingItem);
       
-      // Get the packing list ID from either the category, bag, or traveler reference
+      // Get the packing list ID from various possible sources
       let packingListId = null;
       
-      if (existingItem.categoryId) {
+      // First, check if the item has a direct packingListId reference
+      if (existingItem.packingListId) {
+        console.log(`[DEBUG] Item ${id} has a direct packingListId reference: ${existingItem.packingListId}`);
+        packingListId = existingItem.packingListId;
+      }
+      
+      // If no direct packingListId, check if there's one in the request body
+      if (!packingListId && req.body.packingListId) {
+        console.log(`[DEBUG] Using packingListId from request body: ${req.body.packingListId}`);
+        packingListId = req.body.packingListId;
+      }
+      
+      // If still no packingListId, try to get it from category, bag, or traveler references
+      if (!packingListId && existingItem.categoryId) {
         // Try to get the packing list through the category
         const category = await storage.getCategory(existingItem.categoryId);
         if (category) {
+          console.log(`[DEBUG] Got packingListId ${category.packingListId} from category ${existingItem.categoryId}`);
           packingListId = category.packingListId;
         }
       }
@@ -1404,6 +1418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!packingListId && existingItem.bagId) {
         const bag = await storage.getBag(existingItem.bagId);
         if (bag) {
+          console.log(`[DEBUG] Got packingListId ${bag.packingListId} from bag ${existingItem.bagId}`);
           packingListId = bag.packingListId;
         }
       }
@@ -1412,12 +1427,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!packingListId && existingItem.travelerId) {
         const traveler = await storage.getTraveler(existingItem.travelerId);
         if (traveler) {
+          console.log(`[DEBUG] Got packingListId ${traveler.packingListId} from traveler ${existingItem.travelerId}`);
           packingListId = traveler.packingListId;
         }
       }
       
-      // If we couldn't determine the packing list ID through any reference, return an error
+      // If we still couldn't determine the packing list ID through any reference, return an error
       if (!packingListId) {
+        console.error(`[ERROR] Could not determine packing list ID for item ${id}`);
         return res.status(404).json({ message: "Could not determine associated packing list" });
       }
       
@@ -1437,11 +1454,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`[DEBUG] About to parse update data:`, req.body);
       
+      // If the packed field is being updated, make sure it's received as a boolean
+      if (req.body.packed !== undefined) {
+        if (typeof req.body.packed === 'string') {
+          req.body.packed = req.body.packed.toLowerCase() === 'true';
+          console.log(`[DEBUG] Converted packed string to boolean: ${req.body.packed}`);
+        }
+      }
+      
       const data = insertItemSchema.partial().parse(req.body);
       console.log(`[DEBUG] Parsed update data:`, data);
       
       // Add the lastModifiedBy field to track who updated this item
       data.lastModifiedBy = user.id;
+      
+      // If packingListId was sent in request body and it matches our resolved packingListId,
+      // include it in the update to ensure the association is maintained
+      if (req.body.packingListId && req.body.packingListId === packingListId) {
+        data.packingListId = packingListId;
+      }
+      
       console.log(`[DEBUG] Final update data with lastModifiedBy:`, data);
       
       if (data.dueDate) {
@@ -1481,8 +1513,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const item = await storage.updateItem(id, data);
-      return res.json(item);
+      // Log the final data we're sending to the database
+      console.log(`[DEBUG] Sending final update to database for item ${id}:`, data);
+      
+      try {
+        const item = await storage.updateItem(id, data);
+        console.log(`[DEBUG] Successfully updated item ${id}:`, item);
+        return res.json(item);
+      } catch (error) {
+        console.error(`[ERROR] Failed to update item ${id}:`, error);
+        return res.status(500).json({ message: `Failed to update item: ${error.message}` });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
