@@ -94,42 +94,166 @@ export default function ItemRow({
       }
     },
     onMutate: async () => {
-      // Cancel any outgoing refetches 
-      await queryClient.cancelQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      // Cancel any outgoing refetches for ALL relevant query keys
+      await queryClient.cancelQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
       
-      // Store the current data for potential rollback
-      const previousData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/categories`]);
+      // Store all current data for potential rollback
+      const previousCategoryData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/categories`]);
+      const previousBagData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/bags`]);
+      const previousTravelerData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/travelers`]);
+      const previousUnassignedCategoryData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/unassigned/category`]);
+      const previousUnassignedBagData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/unassigned/bag`]);
+      const previousUnassignedTravelerData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/unassigned/traveler`]);
+      const previousAllItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/all-items`]);
       
-      // Set optimistic state
+      // Set local optimistic state
       setOptimisticPacked(!isItemPacked);
+      const newPackedState = !isItemPacked;
       
-      // Update the query data with our optimistic result
-      queryClient.setQueryData(
-        [`/api/packing-lists/${packingListId}/categories`],
-        (oldData: any) => {
-          if (!oldData) return oldData;
-          
-          return oldData.map((category: any) => {
-            if (category.id === item.categoryId) {
-              return {
-                ...category,
-                items: category.items.map((i: any) => 
-                  i.id === item.id ? { ...i, packed: !isItemPacked } : i
-                ),
-                packedItems: !isItemPacked 
-                  ? category.packedItems + 1 
-                  : Math.max(0, category.packedItems - 1)
-              };
-            }
-            return category;
-          });
-        }
-      );
+      // 1. Update CATEGORY view if data exists
+      if (previousCategoryData) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/categories`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((category: any) => {
+              // Only update categories that contain this item
+              if (category.id === item.categoryId) {
+                return {
+                  ...category,
+                  items: category.items.map((i: any) => 
+                    i.id === item.id ? { ...i, packed: newPackedState } : i
+                  ),
+                  packedItems: newPackedState
+                    ? category.packedItems + 1 
+                    : Math.max(0, category.packedItems - 1)
+                };
+              }
+              return category;
+            });
+          }
+        );
+      }
       
-      // Return context with the previous state and data
+      // 2. Update BAG view if data exists
+      if (previousBagData) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/bags`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((bag: any) => {
+              // Only update bags that contain this item
+              if (bag.id === item.bagId) {
+                return {
+                  ...bag,
+                  items: bag.items?.map((i: any) => 
+                    i.id === item.id ? { ...i, packed: newPackedState } : i
+                  ) || [],
+                  packedItems: newPackedState && bag.packedItems !== undefined
+                    ? bag.packedItems + 1 
+                    : bag.packedItems !== undefined ? Math.max(0, bag.packedItems - 1) : 0
+                };
+              }
+              return bag;
+            });
+          }
+        );
+      }
+      
+      // 3. Update TRAVELER view if data exists
+      if (previousTravelerData) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/travelers`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((traveler: any) => {
+              // Only update travelers that are assigned this item
+              if (traveler.id === item.travelerId) {
+                return {
+                  ...traveler,
+                  items: traveler.items?.map((i: any) => 
+                    i.id === item.id ? { ...i, packed: newPackedState } : i
+                  ) || [],
+                  packedItems: newPackedState && traveler.packedItems !== undefined
+                    ? traveler.packedItems + 1 
+                    : traveler.packedItems !== undefined ? Math.max(0, traveler.packedItems - 1) : 0
+                };
+              }
+              return traveler;
+            });
+          }
+        );
+      }
+      
+      // 4. Update unassigned CATEGORY items
+      if (previousUnassignedCategoryData && item.categoryId === null) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/unassigned/category`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((i: any) => 
+              i.id === item.id ? { ...i, packed: newPackedState } : i
+            );
+          }
+        );
+      }
+      
+      // 5. Update unassigned BAG items
+      if (previousUnassignedBagData && item.bagId === null) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/unassigned/bag`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((i: any) => 
+              i.id === item.id ? { ...i, packed: newPackedState } : i
+            );
+          }
+        );
+      }
+      
+      // 6. Update unassigned TRAVELER items
+      if (previousUnassignedTravelerData && item.travelerId === null) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/unassigned/traveler`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((i: any) => 
+              i.id === item.id ? { ...i, packed: newPackedState } : i
+            );
+          }
+        );
+      }
+      
+      // 7. Update all-items view
+      if (previousAllItemsData) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/all-items`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((i: any) => 
+              i.id === item.id ? { ...i, packed: newPackedState } : i
+            );
+          }
+        );
+      }
+      
+      // Return context with all previous data for potential rollback
       return { 
         previousState: isItemPacked,
-        previousData
+        previousCategoryData,
+        previousBagData,
+        previousTravelerData,
+        previousUnassignedCategoryData,
+        previousUnassignedBagData,
+        previousUnassignedTravelerData,
+        previousAllItemsData
       };
     },
     onSuccess: (newItem) => {
@@ -139,13 +263,56 @@ export default function ItemRow({
     onError: (_, __, context: any) => {
       // Reset to the previous state if there was an error
       if (context) {
+        // Reset the UI state
         setOptimisticPacked(context.previousState);
         
-        // Restore the previous data
-        if (context.previousData) {
+        // Restore all previous data
+        if (context.previousCategoryData) {
           queryClient.setQueryData(
             [`/api/packing-lists/${packingListId}/categories`],
-            context.previousData
+            context.previousCategoryData
+          );
+        }
+        
+        if (context.previousBagData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/bags`],
+            context.previousBagData
+          );
+        }
+        
+        if (context.previousTravelerData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/travelers`],
+            context.previousTravelerData
+          );
+        }
+        
+        if (context.previousUnassignedCategoryData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/unassigned/category`],
+            context.previousUnassignedCategoryData
+          );
+        }
+        
+        if (context.previousUnassignedBagData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/unassigned/bag`],
+            context.previousUnassignedBagData
+          );
+        }
+        
+        if (context.previousUnassignedTravelerData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/unassigned/traveler`],
+            context.previousUnassignedTravelerData
+          );
+        }
+        
+        if (context.previousAllItemsData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/all-items`],
+            context.previousAllItemsData
           );
         }
       }
@@ -154,16 +321,23 @@ export default function ItemRow({
       // We want to keep our manual updates and NOT fetch from the server
       // which would reorder the items
       
-      // Only invalidate the summary data
+      // Always invalidate ALL related queries to ensure consistency across views
+      
+      // Summary data
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
       
-      if (item.bagId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      }
+      // Always invalidate all view types, regardless of current item's associations
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       
-      if (item.travelerId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      }
+      // Invalidate unassigned queries for all view types
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+      
+      // Also invalidate the all-items query
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
     }
   });
   
