@@ -24,6 +24,10 @@ export default function useUnassignedItems(
     enabled: !!packingListId,
     staleTime: 0, // Always refetch to ensure fresh data
     refetchOnWindowFocus: true,
+    // IMPORTANT: Set a shorter cache time to ensure data is fresh
+    cacheTime: 30 * 1000, // 30 seconds cache
+    // Listen to global cache invalidation events
+    refetchOnMount: true,
   });
   
   // Force a refresh when component mounts or when deletion events occur
@@ -45,6 +49,9 @@ export default function useUnassignedItems(
         queryKey: [`/api/packing-lists/${packingListId}/items`] 
       });
       
+      // Also listen for item updates related to packed status
+      window.addEventListener('item-packed-status-changed', refreshData, { once: true });
+      
       // Trigger an immediate refetch since we know the data has changed
       queryResult.refetch();
     };
@@ -55,9 +62,10 @@ export default function useUnassignedItems(
     // Register for the custom item-container-deleted event
     window.addEventListener('item-container-deleted', refreshData);
     
-    // Cleanup event listener on unmount
+    // Cleanup event listeners on unmount
     return () => {
       window.removeEventListener('item-container-deleted', refreshData);
+      window.removeEventListener('item-packed-status-changed', refreshData);
     };
   }, [packingListId, viewContext, queryClient, queryKey, queryResult]);
   
@@ -67,6 +75,11 @@ export default function useUnassignedItems(
   const forceRefresh = async () => {
     // Invalidate all related queries to ensure we get fresh data
     queryClient.invalidateQueries({ queryKey });
+    
+    // Also invalidate main items list
+    queryClient.invalidateQueries({ 
+      queryKey: [`/api/packing-lists/${packingListId}/items`] 
+    });
     
     // Also invalidate other related queries for consistency
     queryClient.invalidateQueries({ 

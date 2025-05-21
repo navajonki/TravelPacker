@@ -105,10 +105,19 @@ export default function ItemRow({
       const previousUnassignedBagData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/unassigned/bag`]);
       const previousUnassignedTravelerData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/unassigned/traveler`]);
       const previousAllItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/all-items`]);
+      const previousItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/items`]);
       
       // Set local optimistic state
       setOptimisticPacked(!isItemPacked);
       const newPackedState = !isItemPacked;
+      
+      // Notify other components that an item's packed status has changed
+      // This will help with synchronization across views
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('item-packed-status-changed', {
+          detail: { itemId: item.id, newState: newPackedState }
+        }));
+      }, 0);
       
       // 1. Update CATEGORY view if data exists
       if (previousCategoryData) {
@@ -244,6 +253,20 @@ export default function ItemRow({
         );
       }
       
+      // Also update the /items endpoint data if available
+      if (previousItemsData) {
+        queryClient.setQueryData(
+          [`/api/packing-lists/${packingListId}/items`],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((i: any) => 
+              i.id === item.id ? { ...i, packed: newPackedState } : i
+            );
+          }
+        );
+      }
+      
       // Return context with all previous data for potential rollback
       return { 
         previousState: isItemPacked,
@@ -253,7 +276,8 @@ export default function ItemRow({
         previousUnassignedCategoryData,
         previousUnassignedBagData,
         previousUnassignedTravelerData,
-        previousAllItemsData
+        previousAllItemsData,
+        previousItemsData
       };
     },
     onSuccess: (newItem) => {
@@ -315,6 +339,13 @@ export default function ItemRow({
             context.previousAllItemsData
           );
         }
+        
+        if (context.previousItemsData) {
+          queryClient.setQueryData(
+            [`/api/packing-lists/${packingListId}/items`],
+            context.previousItemsData
+          );
+        }
       }
     },
     onSettled: () => {
@@ -322,6 +353,10 @@ export default function ItemRow({
       // which would reorder the items
       
       // Always invalidate ALL related queries to ensure consistency across views
+      console.log(`[DEBUG] Item ${item.id} packed state updated, invalidating all related queries`);
+      
+      // CRITICAL: Invalidate the main items list that's used by UnassignedItemsSection
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
       
       // Summary data
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });

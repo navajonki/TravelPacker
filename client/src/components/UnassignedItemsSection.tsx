@@ -16,7 +16,13 @@ export default function UnassignedItemsSection({
   // Get all items for the packing list
   const { data: allItems, isLoading } = useQuery({
     queryKey: [`/api/packing-lists/${packingListId}/items`],
-    enabled: !!packingListId
+    enabled: !!packingListId,
+    // Decrease cache time to ensure frequent refreshes
+    cacheTime: 30 * 1000, // 30 seconds
+    // Always refetch on window focus to ensure data is fresh
+    refetchOnWindowFocus: true,
+    // Ensure we get fresh data when component remounts
+    refetchOnMount: true
   });
 
   if (isLoading) {
