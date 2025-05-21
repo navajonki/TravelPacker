@@ -37,7 +37,7 @@ This document outlines various opportunities to improve the organization, clarit
        - hooks/
        - services/
      ```
-   - **IN PROGRESS: Started with items feature; need to continue with other features**
+   - **IN PROGRESS: Migrated items and categories features; need to continue with other features**
 
 ## State Management
 
@@ -117,7 +117,7 @@ This document outlines various opportunities to improve the organization, clarit
    - Extract data transformation logic from components
    - Separate business logic from UI rendering
    - Use custom hooks to encapsulate complex behaviors
-   - **IN PROGRESS: Created useUnassignedItems hook; more needed**
+   - **IN PROGRESS: Created useUnassignedItems, useCategories, useBags, and useTravelers hooks; need to add useCollaborators and useInvitations**
 
 3. **Eliminate code duplication** 🟡
    - Create shared utility functions for common operations
@@ -151,7 +151,7 @@ This document outlines various opportunities to improve the organization, clarit
 4. 🟡 Create standardized error handling - **PARTIAL: Improved in apiClient**
 
 ### Medium Priority
-1. 🟡 Restructure folders by feature - **IN PROGRESS**
+1. 🟡 Restructure folders by feature - **IN PROGRESS (80% COMPLETE)**
 2. ✅ Create an API abstraction layer - **DONE**
 3. 🟡 Improve component composition - **IN PROGRESS**
 4. 🟠 Add basic testing for critical paths - **NOT STARTED**
@@ -170,17 +170,28 @@ This document outlines various opportunities to improve the organization, clarit
 - Built centralized API client with domain-specific methods
 - Created centralized query invalidation service
 - Implemented consistent logging system with module-specific loggers
-- Started migration to feature-based folder structure
+- Migration to feature-based folder structure (in progress)
+  - Completed items feature with `UnassignedItemsContainer` and `useUnassignedItems`
+  - Completed categories feature with `CategoryCard` and `useCategories`
+  - Completed bags feature with `BagCard` and `useBags`
+  - Completed travelers feature with `TravelerCard` and `useTravelers`
 
 ## Next Steps
 
-1. ✅ Create a proof-of-concept implementation for one feature using the improved patterns - **DONE: Items feature**
+1. ✅ Create a proof-of-concept implementation for one feature using the improved patterns - **DONE: Items, Categories, Bags, and Travelers features**
 2. 🟡 Establish coding standards documentation - **PARTIALLY DONE VIA TYPES**
-3. 🟡 Plan incremental refactoring to minimize disruption - **STARTED WITH ITEMS FEATURE**
-4. 🟠 Define metrics to measure improvement success - **NOT STARTED**
+3. 🟡 Plan incremental refactoring to minimize disruption - **IMPLEMENTED FOR ITEMS, CATEGORIES, BAGS, AND TRAVELERS**
+4. 🟡 Complete collaboration components migration:
+   - Create useCollaborators and useInvitations hooks
+   - Migrate collaboration UI components
+   - Update imports in application to use new components
+5. 🟠 Define metrics to measure improvement success - **NOT STARTED**
 
 ### Future Work
-1. Continue migrating components to the feature-based structure
+1. After completing the collaboration feature migration:
+   - Update all imports throughout the application to use the new feature-based components
+   - Refactor the main page components to use the new hooks and components
+   - Consider adding a shared context for managing active packing list ID
 2. Add comprehensive error handling throughout the application
 3. Add proper loading states and skeleton components
 4. Implement basic tests for critical functionality

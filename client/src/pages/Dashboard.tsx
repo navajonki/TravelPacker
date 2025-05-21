@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import Header from "@/components/Header";
 import CreateListModal from "@/components/modals/CreateListModal";
-import InvitationsList from "@/components/InvitationsList";
+import { InvitationsList } from "@/features/collaboration";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { DashboardSkeleton } from "@/components/skeletons";
+import { useLoadingState } from "@/hooks/use-loading-state";
 import { Luggage, Trash2, Plus, Wrench, Users, Mail } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -47,8 +48,15 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { user } = useAuth();
   
-  const { data: packingLists = [], isLoading } = useQuery<ListData[]>({
+  const { data: packingLists = [], isLoading: isLoadingData, isError } = useQuery<ListData[]>({
     queryKey: ['/api/packing-lists'],
+  });
+  
+  const { isLoading } = useLoadingState({
+    isLoading: isLoadingData,
+    isError,
+    delay: 300,
+    minDuration: 600
   });
   
   const createPackingListMutation = useMutation({
@@ -283,21 +291,7 @@ export default function Dashboard() {
             )}
             
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <CardContent className="p-6">
-                      <Skeleton className="h-6 w-3/4 mb-4" />
-                      <Skeleton className="h-4 w-1/2 mb-6" />
-                      <Skeleton className="h-2 w-full mb-2" />
-                      <div className="flex justify-between">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-4 w-10" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <DashboardSkeleton />
             ) : packingLists?.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {packingLists.map((list) => (

@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
+import { usePackingList } from "@/contexts/PackingListContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useParams, Link } from "wouter";
@@ -7,7 +8,7 @@ import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
 
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
-import CollaborationView from "@/components/CollaborationView";
+import { CollaborationView } from "@/features/collaboration";
 import QuickAddForm from "@/components/QuickAddForm";
 import SearchBar from "@/components/SearchBar";
 import ActionBar from "@/components/ActionBar";
@@ -32,9 +33,10 @@ import EditTravelerModal from "@/components/modals/EditTravelerModal";
 import EditItemModal from "@/components/modals/EditItemModal";
 import CreateListModal from "@/components/modals/CreateListModal";
 import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
-import InviteDialog from "@/components/modals/InviteDialog";
+import { InviteDialog } from "@/features/collaboration";
 import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PackingListHeaderSkeleton, CategoryCardSkeleton } from "@/components/skeletons";
+import { useLoadingState } from "@/hooks/use-loading-state";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -51,6 +53,7 @@ import { Loader2, CheckCircle, ChevronDown } from "lucide-react";
 export default function PackingList() {
   const { id } = useParams<{ id: string }>();
   const packingListId = parseInt(id);
+  const { activeList } = usePackingList();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
@@ -480,7 +483,13 @@ export default function PackingList() {
     }
   };
 
-  const isLoading = isLoadingList || isLoadingCategories || isLoadingBags || isLoadingTravelers;
+  const isLoadingAny = isLoadingList || isLoadingCategories || isLoadingBags || isLoadingTravelers;
+  
+  const { isLoading } = useLoadingState({
+    isLoading: isLoadingAny,
+    delay: 200,
+    minDuration: 600
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -490,15 +499,7 @@ export default function PackingList() {
         
         <div className="flex-1 flex flex-col">
           {isLoadingList ? (
-            <div className="bg-white p-4 border-b border-gray-200">
-              <Skeleton className="h-8 w-64 mb-2" />
-              <Skeleton className="h-4 w-48 mb-4" />
-              <Skeleton className="h-2 w-full mb-2" />
-              <div className="flex justify-between">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-            </div>
+            <PackingListHeaderSkeleton />
           ) : packingList ? (
             <PackingListHeader 
               packingList={{
@@ -544,19 +545,7 @@ export default function PackingList() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-lg shadow">
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <Skeleton className="h-6 w-32" />
-                        <Skeleton className="h-4 w-16" />
-                      </div>
-                    </div>
-                    <div className="p-2">
-                      <Skeleton className="h-12 w-full mb-2" />
-                      <Skeleton className="h-12 w-full mb-2" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  </div>
+                  <CategoryCardSkeleton key={i} />
                 ))}
               </div>
             ) : (

@@ -4,49 +4,23 @@
 import { 
   ApiResponse, ApiError, UpdateItemRequest, BulkUpdateItemsRequest,
   MoveItemsRequest, AssignItemsToBagRequest, AssignItemsToTravelerRequest,
-  CreateInvitationRequest
+  CreateInvitationRequest, ExtendedApiError
 } from '@shared/types';
 import { 
   Item, Category, Bag, Traveler, PackingList, User,
   InsertItem, InsertCategory, InsertBag, InsertTraveler, InsertPackingList
 } from '@shared/schema';
+import errorService, { formatApiError, retryWithBackoff, createTimeoutController } from '@/services/errorHandling';
+import { createLogger } from '@/services/logging';
+
+const logger = createLogger('api');
 
 // Error handling utility
 async function handleApiResponse<T>(response: Response): Promise<T> {
   // Handle non-2xx responses
   if (!response.ok) {
-    try {
-      // Try to parse as JSON first
-      const contentType = response.headers.get('content-type');
-      
-      if (contentType && contentType.includes('application/json')) {
-        const errorData = await response.json();
-        
-        const error: ApiError = {
-          message: errorData.message || 'Unknown error',
-          status: response.status,
-          errors: errorData.errors
-        };
-        
-        throw error;
-      } else {
-        // Fall back to text
-        const text = await response.text() || response.statusText;
-        throw {
-          message: text,
-          status: response.status
-        } as ApiError;
-      }
-    } catch (parseError) {
-      // If JSON parsing fails, use the status text
-      if (parseError instanceof Error && !('status' in parseError)) {
-        throw {
-          message: response.statusText,
-          status: response.status
-        } as ApiError;
-      }
-      throw parseError;
-    }
+    const error = await formatApiError(response);
+    throw error;
   }
 
   // If there's no content, return an empty object
@@ -55,39 +29,121 @@ async function handleApiResponse<T>(response: Response): Promise<T> {
   }
   
   // Parse the response as JSON
-  return await response.json();
+  try {
+    return await response.json();
+  } catch (error) {
+    logger.error('Failed to parse response JSON', error);
+    throw {
+      message: 'Failed to parse server response',
+      status: response.status
+    } as ApiError;
+  }
 }
+
+// Default options for API requests
+const defaultOptions = {
+  timeout: 30000, // 30 seconds default timeout
+  retries: 2,     // 2 retries by default for GET requests
+  headers: {}     // Additional headers
+};
 
 // Base API request function
 async function apiRequest<T>(
   method: string,
   url: string,
-  data?: unknown
+  data?: unknown,
+  options: {
+    timeout?: number;
+    retries?: number;
+    headers?: Record<string, string>;
+  } = {}
 ): Promise<T> {
+  // Merge options with defaults
+  const { timeout, retries, headers } = { ...defaultOptions, ...options };
+  const isGetRequest = method.toUpperCase() === 'GET';
+  const shouldRetry = isGetRequest && retries > 0;
+  
+  // Request context for logging
+  const requestContext = { method, url, timeout };
+  
+  // Use retry mechanism for GET requests
+  if (shouldRetry) {
+    return retryWithBackoff(
+      () => executeRequest<T>(method, url, data, timeout, headers),
+      {
+        maxRetries: retries,
+        shouldRetry: (error) => {
+          // Only retry server errors and timeouts, not 4xx client errors
+          const status = error?.status || 0;
+          return status === 0 || status >= 500;
+        }
+      }
+    );
+  }
+  
+  // For non-GET requests or when retries are disabled, just execute once
+  return executeRequest<T>(method, url, data, timeout, headers);
+}
+
+// Execute a single API request
+async function executeRequest<T>(
+  method: string,
+  url: string,
+  data?: unknown,
+  timeout?: number,
+  additionalHeaders: Record<string, string> = {}
+): Promise<T> {
+  // Create a timeout controller
+  const { controller, clear } = createTimeoutController(timeout);
+  
   try {
-    // Log the request in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`API Request: ${method} ${url}`, data);
+    // Generate request ID for logging
+    const requestId = Math.random().toString(36).substring(2, 10);
+    
+    // Log the request
+    logger.debug(`Request [${requestId}] ${method} ${url}`, { 
+      method, url, data: data ? JSON.stringify(data).substring(0, 100) : undefined 
+    });
+    
+    // Prepare headers
+    const headers: Record<string, string> = {
+      ...additionalHeaders
+    };
+    
+    // Add Content-Type for requests with body
+    if (data) {
+      headers['Content-Type'] = 'application/json';
     }
     
+    // Execute the fetch request with timeout
     const response = await fetch(url, {
       method,
-      headers: data ? { "Content-Type": "application/json" } : {},
+      headers,
       body: data ? JSON.stringify(data) : undefined,
-      credentials: "include",
+      credentials: 'include',
+      signal: controller.signal
     });
 
+    // Process the response
     const result = await handleApiResponse<T>(response);
     
-    // Log the response in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`API Response: ${method} ${url}`, result);
-    }
+    // Log the success response
+    logger.debug(`Response [${requestId}] ${method} ${url}`, { 
+      status: response.status,
+      data: typeof result === 'object' ? 'Object' : result 
+    });
     
     return result;
   } catch (error) {
-    console.error(`API Error: ${method} ${url}`, error);
-    throw error;
+    // Process and log the error
+    const processedError = errorService.processError(error, { method, url });
+    
+    logger.error(`API Error: ${method} ${url}`, processedError);
+    
+    throw processedError;
+  } finally {
+    // Clear the timeout to prevent memory leaks
+    clear();
   }
 }
 
@@ -274,12 +330,17 @@ export const CollaborationApi = {
 };
 
 // Export a default apiClient object with all API domains
-export default {
+const apiClient = {
   auth: AuthApi,
   packingLists: PackingListApi,
   categories: CategoryApi,
   bags: BagApi, 
   travelers: TravelerApi,
   items: ItemApi,
-  collaboration: CollaborationApi
+  collaboration: CollaborationApi,
+  // Add utilities for direct access
+  request: apiRequest,
+  errorHandler: errorService
 };
+
+export default apiClient;

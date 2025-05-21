@@ -1,6 +1,4 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { Switch, Route, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
@@ -12,8 +10,26 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SyncStatusProvider } from "@/hooks/use-sync-status";
 import SyncStatusIndicator from "@/components/SyncStatusIndicator";
+import { usePackingList } from "@/contexts/PackingListContext";
+import { useEffect } from "react";
 
 function Router() {
+  // Get the active list ID from the URL and update the context
+  const { setActiveListId } = usePackingList();
+  const [location] = useLocation();
+  
+  useEffect(() => {
+    // Extract list ID from URL if we're on a list page
+    const match = location.match(/\/list\/([0-9]+)/);
+    if (match && match[1]) {
+      const listId = parseInt(match[1], 10);
+      setActiveListId(listId);
+    } else if (!location.startsWith('/list/')) {
+      // Reset active list ID when not on a list page
+      setActiveListId(null);
+    }
+  }, [location, setActiveListId]);
+  
   return (
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
@@ -28,15 +44,13 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SyncStatusProvider>
-          <Router />
-          <SyncStatusIndicator />
-          <Toaster />
-        </SyncStatusProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <SyncStatusProvider>
+        <Router />
+        <SyncStatusIndicator />
+        <Toaster />
+      </SyncStatusProvider>
+    </AuthProvider>
   );
 }
 

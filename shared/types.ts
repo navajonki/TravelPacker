@@ -113,6 +113,28 @@ export interface ApiError {
   errors?: any[];
 }
 
+/**
+ * Network error types
+ */
+export enum NetworkErrorType {
+  TIMEOUT = 'TIMEOUT',
+  OFFLINE = 'OFFLINE',
+  SERVER_ERROR = 'SERVER_ERROR',
+  AUTH_ERROR = 'AUTH_ERROR',
+  CONNECTION_ERROR = 'CONNECTION_ERROR',
+  UNKNOWN = 'UNKNOWN'
+}
+
+/**
+ * Extended API error with additional context
+ */
+export interface ExtendedApiError extends ApiError {
+  networkErrorType?: NetworkErrorType;
+  originalError?: any;
+  componentStack?: string;
+  context?: Record<string, any>;
+}
+
 // =============================
 // Request Types
 // =============================

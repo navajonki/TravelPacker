@@ -1,6 +1,6 @@
 import { useParams } from "wouter";
 import Header from "@/components/Header";
-import InvitationHandler from "@/components/InvitationHandler";
+import { InvitationHandler } from "@/features/collaboration";
 
 export default function InvitationPage() {
   const { token } = useParams<{ token: string }>();
