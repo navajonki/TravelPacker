@@ -396,54 +396,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to access this packing list" });
       }
       
-      // For unassigned category items, use direct SQL to avoid ORM issues with NULL values
-      if (type === 'category') {
-        try {
-          // Use a more robust approach with direct SQL to find items that have NULL categoryId
-          // but still belong to the requested packing list
-          const rawItems = await db.execute(sql`
+      // For unassigned items (category, bag, traveler), use direct SQL to avoid ORM issues with NULL values
+      try {
+        // Determine which column should be NULL based on the type parameter
+        let nullColumnName = '';
+        if (type === 'category') {
+          nullColumnName = 'category_id';
+        } else if (type === 'bag') {
+          nullColumnName = 'bag_id';
+        } else if (type === 'traveler') {
+          nullColumnName = 'traveler_id';
+        }
+        
+        // Use direct SQL with parameters for safety
+        let sqlQuery; 
+        if (type === 'category') {
+          sqlQuery = sql`
             SELECT * FROM items 
             WHERE packing_list_id = ${packingListId} 
             AND category_id IS NULL
-          `);
-          
-          console.log(`[UNASSIGNED] Found ${rawItems.length} items with NULL categoryId via direct SQL`);
-          
-          if (rawItems.length > 0) {
-            // Convert the raw SQL results to a properly formatted response
-            // Need to convert snake_case column names to camelCase for frontend compatibility
-            const uncategorizedItems = rawItems.map(row => ({
-              id: row.id,
-              name: row.name,
-              quantity: row.quantity,
-              packed: row.packed,
-              isEssential: row.is_essential,
-              dueDate: row.due_date,
-              packingListId: row.packing_list_id,
-              categoryId: row.category_id, // Should be null
-              bagId: row.bag_id,
-              travelerId: row.traveler_id,
-              createdBy: row.created_by,
-              lastModifiedBy: row.last_modified_by,
-              createdAt: row.created_at
-            }));
-            
-            console.log(`[UNASSIGNED] Processed ${uncategorizedItems.length} uncategorized items`);
-            
-            if (uncategorizedItems.length > 0) {
-              console.log(`[UNASSIGNED] Sample uncategorized items:`, 
-                uncategorizedItems.slice(0, 2).map(i => ({ id: i.id, name: i.name })));
-            }
-            
-            return res.json(uncategorizedItems);
-          } else {
-            console.log(`[UNASSIGNED] No uncategorized items found for packing list ${packingListId}`);
-            return res.json([]);
-          }
-        } catch (error) {
-          console.error("[UNASSIGNED] Error with direct SQL approach:", error);
-          // Continue to the standard approach if this fails
+          `;
+        } else if (type === 'bag') {
+          sqlQuery = sql`
+            SELECT * FROM items 
+            WHERE packing_list_id = ${packingListId} 
+            AND bag_id IS NULL
+          `;
+        } else if (type === 'traveler') {
+          sqlQuery = sql`
+            SELECT * FROM items 
+            WHERE packing_list_id = ${packingListId} 
+            AND traveler_id IS NULL
+          `;
         }
+        
+        // Execute the parameterized query
+        const rawItems = await db.execute(sqlQuery);
+        
+        console.log(`[UNASSIGNED] Found ${rawItems.length} items with NULL ${nullColumnName} via direct SQL`);
+        
+        if (rawItems.length > 0) {
+          // Convert the raw SQL results to a properly formatted response
+          // Need to convert snake_case column names to camelCase for frontend compatibility
+          const unassignedItems = rawItems.map(row => ({
+            id: row.id,
+            name: row.name,
+            quantity: row.quantity,
+            packed: row.packed,
+            isEssential: row.is_essential,
+            dueDate: row.due_date,
+            packingListId: row.packing_list_id,
+            categoryId: row.category_id,
+            bagId: row.bag_id,
+            travelerId: row.traveler_id,
+            createdBy: row.created_by,
+            lastModifiedBy: row.last_modified_by,
+            createdAt: row.created_at
+          }));
+          
+          console.log(`[UNASSIGNED] Processed ${unassignedItems.length} unassigned items for ${type}`);
+          
+          if (unassignedItems.length > 0) {
+            console.log(`[UNASSIGNED] Sample ${type} unassigned items:`, 
+              unassignedItems.slice(0, 2).map(i => ({ id: i.id, name: i.name })));
+          }
+          
+          return res.json(unassignedItems);
+        } else {
+          console.log(`[UNASSIGNED] No unassigned ${type} items found for packing list ${packingListId}`);
+          return res.json([]);
+        }
+      } catch (error) {
+        console.error(`[UNASSIGNED] Error with direct SQL approach for ${type}:`, error);
+        // Continue to the standard approach if this fails
       }
       
       // For bags and travelers, or if the direct SQL approach failed for categories,
