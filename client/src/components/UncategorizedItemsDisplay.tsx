@@ -1,11 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import ItemRow from "./ItemRow";
 import { Button } from "./ui/button";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import useUnassignedItems from "@/hooks/useUnassignedItems";
 
 interface UncategorizedItemsDisplayProps {
   packingListId: number;
@@ -19,30 +19,19 @@ export default function UncategorizedItemsDisplay({
   viewContext = "category"
 }: UncategorizedItemsDisplayProps) {
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  // Use the specialized endpoint for unassigned items
+  // Use our custom hook to handle unassigned items
   const { 
     data, 
     isLoading,
-    refetch,
-    isFetched
-  } = useQuery({
-    queryKey: [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`],
-    enabled: !!packingListId,
-    staleTime: 0, // Always refetch to ensure fresh data
-    refetchInterval: 1500, // Automatically refresh every 1.5 seconds
-    refetchOnWindowFocus: true, // Refresh when tab gets focus
-  });
+    isFetched,
+    forceRefresh
+  } = useUnassignedItems(packingListId, viewContext);
   
   // Log data for debugging
-  useEffect(() => {
-    if (isFetched) {
-      console.log(`UncategorizedItemsDisplay - ${viewContext} items:`, 
-        Array.isArray(data) ? data : []);
-    }
-  }, [data, isFetched, viewContext]);
+  console.log(`UncategorizedItemsDisplay render: ${viewContext} items:`, 
+    Array.isArray(data) ? data.length : 0);
   
   if (isLoading) {
     return <Skeleton className="w-full h-24 mt-4" />;
@@ -68,15 +57,10 @@ export default function UncategorizedItemsDisplay({
     setIsRefreshing(true);
     
     try {
-      // Invalidate all related queries
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      // Use the forceRefresh function from our custom hook
+      await forceRefresh();
       
-      // Execute the refetch
-      await refetch();
-      
+      // Show a success toast
       toast({
         title: "Data Refreshed",
         description: `Refreshed ${containerTitle.toLowerCase()}`,

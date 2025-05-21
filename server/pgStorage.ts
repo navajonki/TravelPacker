@@ -226,7 +226,7 @@ export class PgStorage implements IStorage {
   }
 
   async getAllItemsByPackingList(packingListId: number): Promise<Item[]> {
-    // Now we can simply query by packingListId since we added the direct relationship
+    // Query all items that belong to this packing list
     try {
       console.log(`[STORAGE DEBUG] Getting all items for packing list ${packingListId}`);
       
@@ -252,6 +252,19 @@ export class PgStorage implements IStorage {
           allItems.filter(item => item.categoryId === null)
             .map(i => ({ id: i.id, name: i.name, packingListId: i.packingListId }))
         );
+      }
+      
+      // Double-check that we have the correct number of unassigned items
+      const directUnassignedQuery = await db.select().from(items)
+        .where(and(
+          eq(items.packingListId, packingListId),
+          eq(items.categoryId, null)
+        ));
+        
+      if (directUnassignedQuery.length !== nullCategoryCount) {
+        console.warn(`[STORAGE WARNING] Inconsistency in uncategorized item count: 
+          - Query method 1 (filter): ${nullCategoryCount}
+          - Query method 2 (direct): ${directUnassignedQuery.length}`);
       }
       
       return allItems;

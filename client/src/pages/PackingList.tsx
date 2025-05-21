@@ -392,6 +392,12 @@ export default function PackingList() {
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      
+      // Dispatch a custom event to notify components that a container was deleted
+      window.dispatchEvent(new CustomEvent('item-container-deleted', {
+        detail: { type: 'category', id: categoryId }
+      }));
       
       console.log("Invalidated all queries after category deletion");
       
@@ -419,6 +425,12 @@ export default function PackingList() {
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      
+      // Dispatch a custom event to notify components that a container was deleted
+      window.dispatchEvent(new CustomEvent('item-container-deleted', {
+        detail: { type: 'bag', id: bagId }
+      }));
       
       console.log("Invalidated all queries after bag deletion");
       
@@ -446,6 +458,12 @@ export default function PackingList() {
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      
+      // Dispatch a custom event to notify components that a container was deleted
+      window.dispatchEvent(new CustomEvent('item-container-deleted', {
+        detail: { type: 'traveler', id: travelerId }
+      }));
       
       console.log("Invalidated all queries after traveler deletion");
       

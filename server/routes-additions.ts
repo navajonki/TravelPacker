@@ -70,7 +70,42 @@ app.get("/api/packing-lists/:id/unassigned/:type", isAuthenticated, async (req, 
       unassignedItems = allItems.filter(item => item.travelerId === null);
     }
     
+    // Add an extra check to verify we're getting items with the correct field value
+    if (type === 'category' && unassignedItems.length === 0) {
+      console.warn(`[WARNING] No uncategorized items found for packing list ${packingListId} - double-checking database directly`);
+      // Try a more direct approach as fallback
+      const { db } = require('./db');
+      const { items } = require('@shared/schema');
+      const { eq, and, isNull } = require('drizzle-orm');
+      
+      // Direct query to find items with NULL categoryId for this packingList
+      const directQueryResults = await db.select().from(items).where(
+        and(
+          eq(items.packingListId, packingListId),
+          isNull(items.categoryId)
+        )
+      );
+      
+      if (directQueryResults.length > 0) {
+        console.warn(`[WARNING] Found ${directQueryResults.length} uncategorized items with direct query, but main query returned 0. Using direct results.`);
+        unassignedItems = directQueryResults;
+      }
+    }
+    
     console.log(`[DEBUG] Found ${unassignedItems.length} unassigned items of type '${type}' for packing list ${packingListId}`);
+    if (unassignedItems.length > 0) {
+      // Log the first few items to help debugging
+      console.log(`[DEBUG] Sample unassigned ${type} items:`, 
+        unassignedItems.slice(0, 3).map(i => ({ 
+          id: i.id, 
+          name: i.name, 
+          packingListId: i.packingListId, 
+          categoryId: i.categoryId,
+          bagId: i.bagId,
+          travelerId: i.travelerId
+        }))
+      );
+    }
     
     // Return the unassigned items
     res.json(unassignedItems);
