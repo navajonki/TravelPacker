@@ -84,12 +84,27 @@ export default function ItemRow({
       
       console.log(`[DEBUG] Sending PATCH request to update item ${item.id} packed status to ${newPackedState}`);
       try {
-        // Make sure we're sending a direct boolean value, not a string
-        const updatedItem = await apiRequest('PATCH', `/api/items/${item.id}`, {
-          packed: newPackedState,
-          // Add the packingListId to ensure the item stays connected to its list
-          packingListId: packingListId
+        // Use fetch directly with detailed logging to see exactly what's happening
+        const response = await fetch(`/api/items/${item.id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            packed: newPackedState,
+            packingListId: packingListId
+          })
         });
+        
+        console.log(`[DEBUG] PATCH response status: ${response.status}`);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`[ERROR] Server error on packed status update: ${errorText}`);
+          throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+        
+        const updatedItem = await response.json();
         console.log(`[DEBUG] Server response for packed status update:`, updatedItem);
         return updatedItem;
       } catch (error) {

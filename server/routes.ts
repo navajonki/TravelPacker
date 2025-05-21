@@ -1371,7 +1371,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/items/:id", isAuthenticated, async (req, res) => {
     const id = parseInt(req.params.id);
     
+    // Log the incoming PATCH request for debugging
+    console.log(`[DEBUG] Received PATCH request for item ${id}:`, req.body);
+    
     if (isNaN(id)) {
+      console.log(`[ERROR] Invalid item ID: ${req.params.id}`);
       return res.status(400).json({ message: "Invalid id parameter" });
     }
     
@@ -1379,8 +1383,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get the item first to check ownership
       const existingItem = await storage.getItem(id);
       if (!existingItem) {
+        console.log(`[ERROR] Item not found: ${id}`);
         return res.status(404).json({ message: "Item not found" });
       }
+      
+      console.log(`[DEBUG] Found existing item for update:`, existingItem);
       
       // Get the packing list ID from either the category, bag, or traveler reference
       let packingListId = null;
@@ -1428,10 +1435,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You don't have permission to update this item" });
       }
       
+      console.log(`[DEBUG] About to parse update data:`, req.body);
+      
       const data = insertItemSchema.partial().parse(req.body);
+      console.log(`[DEBUG] Parsed update data:`, data);
       
       // Add the lastModifiedBy field to track who updated this item
       data.lastModifiedBy = user.id;
+      console.log(`[DEBUG] Final update data with lastModifiedBy:`, data);
       
       if (data.dueDate) {
         const dueDateObj = new Date(data.dueDate);
