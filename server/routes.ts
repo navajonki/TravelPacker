@@ -376,14 +376,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get unassigned items (items missing a bag, category or traveler)
+  // Get unassigned items for a specific view (category/bag/traveler)
   app.get("/api/packing-lists/:id/unassigned/:type", isAuthenticated, async (req, res) => {
     try {
-      // Parse parameters
       const { id, type } = req.params;
       const packingListId = Number(id);
       
-      // Validate parameters
       if (isNaN(packingListId)) {
         return res.status(400).json({ message: "Invalid packing list ID" });
       }
@@ -392,64 +390,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid type parameter. Must be 'category', 'bag', or 'traveler'" });
       }
       
-      // Check if user has access
+      // Check if the user can access this packing list
       const hasAccess = await storage.canUserAccessPackingList(req.user!.id, packingListId);
       if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to access this packing list" });
       }
       
-      // Execute the SQL query based on the type
-      let query;
+      // Use a direct SQL query approach for all types to properly handle NULL values
+      // This is cleaner than the ORM approach for this specific case
+      let sqlQuery;
+      
       if (type === 'category') {
-        query = sql`
+        sqlQuery = sql`
           SELECT * FROM items 
           WHERE packing_list_id = ${packingListId} 
           AND category_id IS NULL
         `;
       } else if (type === 'bag') {
-        query = sql`
+        sqlQuery = sql`
           SELECT * FROM items 
           WHERE packing_list_id = ${packingListId} 
           AND bag_id IS NULL
         `;
       } else if (type === 'traveler') {
-        query = sql`
+        sqlQuery = sql`
           SELECT * FROM items 
           WHERE packing_list_id = ${packingListId} 
           AND traveler_id IS NULL
         `;
-      } else {
-        return res.status(400).json({ message: "Invalid type parameter" });
       }
       
-      // Execute the query
-      const rawItems = await db.execute(query);
-      console.log(`[SQL] Found ${rawItems.length} items without ${type} in packing list ${packingListId}`);
+      try {
+        // Execute the SQL query
+        const rawItems = await db.execute(sqlQuery!);
+        
+        console.log(`[UNASSIGNED] Direct SQL found ${rawItems.length} unassigned ${type} items for packing list ${packingListId}`);
+        
+        if (rawItems.length > 0) {
+          // Convert the raw SQL results to a properly formatted response
+          // Need to convert snake_case column names to camelCase for frontend compatibility
+          const unassignedItems = rawItems.map(row => ({
+            id: row.id,
+            name: row.name,
+            quantity: row.quantity,
+            packed: row.packed,
+            isEssential: row.is_essential,
+            dueDate: row.due_date,
+            packingListId: row.packing_list_id,
+            categoryId: row.category_id,
+            bagId: row.bag_id,
+            travelerId: row.traveler_id,
+            createdBy: row.created_by,
+            lastModifiedBy: row.last_modified_by,
+            createdAt: row.created_at
+          }));
+          
+          console.log(`[UNASSIGNED] Processed ${unassignedItems.length} unassigned items for ${type}`);
+          
+          if (unassignedItems.length > 0) {
+            console.log(`[UNASSIGNED] Sample ${type} unassigned items:`, 
+              unassignedItems.slice(0, 2).map(i => ({ id: i.id, name: i.name })));
+          }
+          
+          return res.json(unassignedItems);
+        } else {
+          console.log(`[UNASSIGNED] No unassigned ${type} items found for packing list ${packingListId}`);
+          return res.json([]);
+        }
+      } catch (error) {
+        console.error(`[UNASSIGNED] Error with direct SQL approach for ${type}:`, error);
+        // Continue to the standard approach if this fails
+      }
       
-      // Transform the raw SQL results to camelCase for the frontend
-      const items = rawItems.map(row => ({
-        id: row.id,
-        name: row.name,
-        quantity: row.quantity,
-        packed: row.packed,
-        isEssential: row.is_essential,
-        dueDate: row.due_date,
-        packingListId: row.packing_list_id,
-        categoryId: row.category_id,
-        bagId: row.bag_id,
-        travelerId: row.traveler_id,
-        createdBy: row.created_by,
-        lastModifiedBy: row.last_modified_by,
-        createdAt: row.created_at
-      }));
-      
-      // Return the unassigned items
-      return res.json(items);
-    } catch (error) {
-      console.error("Error in unassigned items route:", error);
-      return res.status(500).json({ message: "Failed to retrieve unassigned items" });
-    }
-  });
+      // For bags and travelers, or if the direct SQL approach failed for categories,
+      // use the standard method
+      const allItems = await storage.getAllItemsByPackingList(packingListId);
       
       // Filter based on the type
       let unassignedItems = [];
