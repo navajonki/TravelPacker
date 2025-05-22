@@ -11,6 +11,7 @@ import { configurePassport } from "./auth";
 import type { User } from "@shared/schema";
 import { setupUserData } from "./setup-user-data";
 import { storage } from "./storage";
+import { setupWebSocketServer } from "./websocket";
 
 const app = express();
 
@@ -109,6 +110,10 @@ async function runMigrations() {
   }
   
   const server = await registerRoutes(app);
+  
+  // Setup WebSocket server
+  const wss = setupWebSocketServer(server);
+  log("WebSocket server initialized", "websocket");
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
