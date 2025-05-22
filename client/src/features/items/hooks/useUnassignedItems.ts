@@ -28,18 +28,19 @@ export function useUnassignedItems(
   const queryResult = useQuery<Item[]>({
     queryKey,
     enabled: !!packingListId,
-    staleTime: 5000, // Consider data fresh for 5 seconds
+    staleTime: 60000, // Consider data fresh for 60 seconds (up from 5 seconds)
     cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
     refetchOnMount: false, // Don't refetch on mount
     refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchInterval: false, // Disable automatic refetching
     // Use the API client to fetch data
     queryFn: () => ItemApi.getAllUnassigned(packingListId, viewContext)
   });
   
   // Force a refresh when component mounts or when deletion events occur
   useEffect(() => {
-    // Invalidate this query and related queries
-    const refreshData = (event?: Event) => {
+    // Handler function for both events
+    const handleDataChanged = () => {
       // Always invalidate our main query
       queryClient.invalidateQueries({ queryKey });
       
@@ -51,23 +52,21 @@ export function useUnassignedItems(
         queryKey: [`/api/packing-lists/${packingListId}/items`] 
       });
       
-      // Also listen for item updates related to packed status
-      window.addEventListener('item-packed-status-changed', refreshData, { once: true });
-      
       // Trigger an immediate refetch since we know the data has changed
       queryResult.refetch();
     };
     
-    // Do an initial refresh
-    refreshData();
+    // Only do an initial data invalidation, not a full refresh on mount
+    queryClient.invalidateQueries({ queryKey });
     
-    // Register for the custom item-container-deleted event
-    window.addEventListener('item-container-deleted', refreshData);
+    // Register event listeners - only once per mount
+    window.addEventListener('item-container-deleted', handleDataChanged);
+    window.addEventListener('item-packed-status-changed', handleDataChanged);
     
     // Cleanup event listeners on unmount
     return () => {
-      window.removeEventListener('item-container-deleted', refreshData);
-      window.removeEventListener('item-packed-status-changed', refreshData);
+      window.removeEventListener('item-container-deleted', handleDataChanged);
+      window.removeEventListener('item-packed-status-changed', handleDataChanged);
     };
   }, [packingListId, viewContext, queryClient, queryKey, queryResult]);
   
