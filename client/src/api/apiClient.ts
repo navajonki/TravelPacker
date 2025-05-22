@@ -100,10 +100,13 @@ async function executeRequest<T>(
     // Generate request ID for logging
     const requestId = Math.random().toString(36).substring(2, 10);
     
-    // Log the request
-    logger.debug(`Request [${requestId}] ${method} ${url}`, { 
-      method, url, data: data ? JSON.stringify(data).substring(0, 100) : undefined 
-    });
+    // Log the request, but skip verbose logging for unassigned item endpoints
+    const isUnassignedEndpoint = url.includes('/unassigned/');
+    if (!isUnassignedEndpoint) {
+      logger.debug(`Request [${requestId}] ${method} ${url}`, { 
+        method, url, data: data ? JSON.stringify(data).substring(0, 100) : undefined 
+      });
+    }
     
     // Prepare headers
     const headers: Record<string, string> = {
@@ -127,18 +130,23 @@ async function executeRequest<T>(
     // Process the response
     const result = await handleApiResponse<T>(response);
     
-    // Log the success response
-    logger.debug(`Response [${requestId}] ${method} ${url}`, { 
-      status: response.status,
-      data: typeof result === 'object' ? 'Object' : result 
-    });
+    // Log the success response, but skip verbose logging for unassigned item endpoints
+    if (!isUnassignedEndpoint) {
+      logger.debug(`Response [${requestId}] ${method} ${url}`, { 
+        status: response.status,
+        data: typeof result === 'object' ? 'Object' : result 
+      });
+    }
     
     return result;
   } catch (error) {
     // Process and log the error
     const processedError = errorService.processError(error, { method, url });
     
-    logger.error(`API Error: ${method} ${url}`, processedError);
+    // Always log errors, but for unassigned endpoints, only log critical errors
+    if (!isUnassignedEndpoint || processedError.status >= 500) {
+      logger.error(`API Error: ${method} ${url}`, processedError);
+    }
     
     throw processedError;
   } finally {
