@@ -64,6 +64,7 @@ export interface IStorage {
   // Item methods
   getItems(categoryId: number): Promise<Item[]>;
   getAllItemsByPackingList(packingListId: number): Promise<Item[]>;
+  getAllUnassignedItems(packingListId: number, type: string): Promise<Item[]>;
   getItem(id: number): Promise<Item | undefined>;
   createItem(item: InsertItem): Promise<Item>;
   updateItem(id: number, data: Partial<InsertItem>): Promise<Item | undefined>;
@@ -361,6 +362,29 @@ export class MemStorage implements IStorage {
     return Array.from(this.items.values()).filter(
       (item) => categoryIds.includes(item.categoryId)
     );
+  }
+  
+  async getAllUnassignedItems(packingListId: number, type: string): Promise<Item[]> {
+    // Validate the type parameter
+    if (!['category', 'bag', 'traveler'].includes(type)) {
+      console.log(`[WARNING] Invalid type '${type}' passed to getAllUnassignedItems`);
+      return [];
+    }
+    
+    // Get all items for this packing list
+    const allItems = await this.getAllItemsByPackingList(packingListId);
+    
+    // Filter based on the type parameter
+    if (type === 'category') {
+      return allItems.filter(item => item.categoryId === null);
+    } else if (type === 'bag') {
+      return allItems.filter(item => item.bagId === null);
+    } else if (type === 'traveler') {
+      return allItems.filter(item => item.travelerId === null);
+    }
+    
+    // Default fallback (shouldn't reach here due to type validation)
+    return [];
   }
 
   async getItem(id: number): Promise<Item | undefined> {
@@ -845,6 +869,55 @@ export class DatabaseStorage implements IStorage {
     if (categoryIds.length === 0) return [];
     
     return await db.select().from(items).where(inArray(items.categoryId, categoryIds));
+  }
+  
+  async getAllUnassignedItems(packingListId: number, type: string): Promise<Item[]> {
+    // Validate type parameter
+    if (!['category', 'bag', 'traveler'].includes(type)) {
+      console.log(`[WARNING] Invalid type '${type}' passed to getAllUnassignedItems`);
+      return [];
+    }
+    
+    try {
+      // For better performance, use direct SQL queries with isNull
+      if (type === 'category') {
+        return await db
+          .select()
+          .from(items)
+          .where(
+            and(
+              eq(items.packingListId, packingListId),
+              isNull(items.categoryId)
+            )
+          );
+      } else if (type === 'bag') {
+        return await db
+          .select()
+          .from(items)
+          .where(
+            and(
+              eq(items.packingListId, packingListId),
+              isNull(items.bagId)
+            )
+          );
+      } else if (type === 'traveler') {
+        return await db
+          .select()
+          .from(items)
+          .where(
+            and(
+              eq(items.packingListId, packingListId),
+              isNull(items.travelerId)
+            )
+          );
+      }
+    } catch (error) {
+      console.error(`[ERROR] Failed to get unassigned ${type} items:`, error);
+      throw error;
+    }
+    
+    // Default fallback (shouldn't reach here due to type validation)
+    return [];
   }
 
   async getItem(id: number): Promise<Item | undefined> {
