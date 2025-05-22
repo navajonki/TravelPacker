@@ -44,9 +44,11 @@ export default function EditItemModal({
     notes: ""
   });
   
-  const { data: item, isLoading: isLoadingItem } = useQuery({
+  const { data: item, isLoading: isLoadingItem, refetch: refetchItem } = useQuery({
     queryKey: [`/api/items/${itemId}`],
     enabled: open && itemId > 0,
+    refetchOnMount: true,
+    staleTime: 0, // Always consider the data stale to ensure fresh data
   });
   
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
@@ -64,11 +66,27 @@ export default function EditItemModal({
     enabled: open,
   });
   
+  // Reset form when modal opens with a new item
+  useEffect(() => {
+    // Only reset the form when the modal opens (not when it closes)
+    if (open && itemId > 0) {
+      console.log(`Modal opened for item ${itemId}, forcing data refetch`);
+      
+      // Instead of resetting the form to empty values, we'll wait for the data
+      // Force a refetch of the item data to ensure we have the latest
+      queryClient.invalidateQueries({ queryKey: [`/api/items/${itemId}`] });
+      refetchItem();
+    }
+  }, [open, itemId, queryClient, refetchItem]);
+  
   // Update form when item data is loaded
   useEffect(() => {
     if (item) {
       const itemData = item as any;
-      setForm({
+      console.log(`Received item data for item ${itemId}:`, itemData);
+      
+      // Ensure we're not overwriting with undefined values
+      const updatedForm = {
         name: itemData.name || "",
         packed: itemData.packed || false,
         categoryId: itemData.categoryId !== undefined ? itemData.categoryId : null,
@@ -77,9 +95,14 @@ export default function EditItemModal({
         quantity: itemData.quantity || 1,
         weight: itemData.weight || null,
         notes: itemData.notes || ""
-      });
+      };
+      
+      console.log(`Updating form for item ${itemId} with:`, updatedForm);
+      setForm(updatedForm);
+    } else {
+      console.log(`No item data received for item ${itemId} yet`);
     }
-  }, [item]);
+  }, [item, itemId]);
   
   const isLoading = isLoadingItem || isLoadingCategories || isLoadingBags || isLoadingTravelers;
   
@@ -169,7 +192,15 @@ export default function EditItemModal({
     });
   };
   
-  console.log('EditItemModal rendering:', { open, itemId });
+  // Improved debugging logs
+  console.log('EditItemModal rendering:', { 
+    open, 
+    itemId, 
+    isLoading,
+    isLoadingItem, 
+    formName: form.name, 
+    itemData: item ? JSON.stringify(item) : 'No item data yet'
+  });
 
   return (
     <Dialog.Root open={open} onOpenChange={(open) => !open && onClose()}>
@@ -193,7 +224,8 @@ export default function EditItemModal({
                       name="name"
                       value={form.name}
                       onChange={handleInputChange}
-                      placeholder="Item name"
+                      placeholder={isLoadingItem ? "Loading item name..." : "Item name"}
+                      disabled={isLoadingItem}
                     />
                   </div>
                 
