@@ -860,15 +860,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllItemsByPackingList(packingListId: number): Promise<Item[]> {
-    const categoryList = await db
-      .select()
-      .from(categories)
-      .where(eq(categories.packingListId, packingListId));
+    // FIXED: Previously this function was only returning items with categories assigned
+    // Now we query all items directly by packingListId, regardless of category, bag, or traveler assignment
+    console.log(`[STORAGE DEBUG] Getting all items for packing list ${packingListId} (fixed version)`);
     
-    const categoryIds = categoryList.map(category => category.id);
-    if (categoryIds.length === 0) return [];
-    
-    return await db.select().from(items).where(inArray(items.categoryId, categoryIds));
+    try {
+      // Return all items that have this packingListId
+      const allItems = await db.select()
+        .from(items)
+        .where(eq(items.packingListId, packingListId));
+      
+      console.log(`[STORAGE DEBUG] Found ${allItems.length} items for packing list ${packingListId}`);
+      
+      // Log stats about null assignments
+      const nullCategoryCount = allItems.filter(item => item.categoryId === null).length;
+      const nullBagCount = allItems.filter(item => item.bagId === null).length;
+      const nullTravelerCount = allItems.filter(item => item.travelerId === null).length;
+      
+      console.log(`[STORAGE DEBUG] Items with null fields:
+        - Null categoryId: ${nullCategoryCount}
+        - Null bagId: ${nullBagCount}
+        - Null travelerId: ${nullTravelerCount}`);
+      
+      return allItems;
+    } catch (error) {
+      console.error(`[STORAGE ERROR] Failed to get items for packing list ${packingListId}:`, error);
+      return [];
+    }
   }
   
   async getAllUnassignedItems(packingListId: number, type: string): Promise<Item[]> {
