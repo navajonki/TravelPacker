@@ -28,12 +28,10 @@ export function useUnassignedItems(
   const queryResult = useQuery<Item[]>({
     queryKey,
     enabled: !!packingListId,
-    staleTime: 0, // Always refetch to ensure fresh data
-    // IMPORTANT: Set a shorter cache time to ensure data is fresh
-    cacheTime: 30 * 1000, // 30 seconds cache
-    // Listen to global cache invalidation events
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    staleTime: 5000, // Consider data fresh for 5 seconds
+    cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnMount: false, // Don't refetch on mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
     // Use the API client to fetch data
     queryFn: () => ItemApi.getAllUnassigned(packingListId, viewContext)
   });
