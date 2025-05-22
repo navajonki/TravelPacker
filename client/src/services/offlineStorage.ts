@@ -27,7 +27,7 @@ interface TravelPackDB extends DBSchema {
   entities: {
     key: string; // `${entity}:${id}`
     value: {
-      id: number;
+      id: string; // Changed to string to match the key type
       entity: string;
       data: any;
       lastModified: number;
@@ -124,20 +124,18 @@ class OfflineStorage {
     }
 
     try {
-      let operations;
-
-      if (packingListId) {
-        // Get unsynced operations for a specific packing list
-        const tx = this.db!.transaction('operations', 'readonly');
-        const index = tx.store.index('by-packing-list');
-        const allForList = await index.getAll(packingListId);
-        operations = allForList.filter(op => !op.synced);
-        await tx.done;
-      } else {
-        // Get all unsynced operations
-        operations = await this.db!.getAllFromIndex('operations', 'by-synced', false);
+      // Get all operations first
+      const allOperations = await this.db!.getAll('operations');
+      
+      // Then filter them in memory to avoid IndexedDB issues
+      let operations = allOperations.filter(op => !op.synced);
+      
+      // If packingListId is specified, filter further
+      if (packingListId !== undefined) {
+        operations = operations.filter(op => op.packingListId === packingListId);
       }
-
+      
+      // Sort by timestamp
       operations.sort((a, b) => a.timestamp - b.timestamp);
 
       logger.debug('Retrieved unsynced operations', { count: operations.length });
@@ -292,8 +290,13 @@ class OfflineStorage {
    * Get pending operation count
    */
   async getPendingOperationCount(packingListId?: number): Promise<number> {
-    const operations = await this.getUnsynced(packingListId);
-    return operations.length;
+    try {
+      const operations = await this.getUnsynced(packingListId);
+      return operations.length;
+    } catch (error) {
+      logger.error('Failed to get pending operation count', error);
+      return 0;
+    }
   }
 
   /**

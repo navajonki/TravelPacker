@@ -11,7 +11,9 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { SyncStatusProvider } from "@/hooks/use-sync-status";
 import SyncStatusIndicator from "@/components/SyncStatusIndicator";
 import { usePackingList } from "@/contexts/PackingListContext";
+import { NetworkProvider } from "@/contexts/NetworkContext";
 import { useEffect } from "react";
+import { PackingListProvider } from "@/contexts/PackingListContext";
 
 function Router() {
   // Get the active list ID from the URL and update the context
@@ -45,11 +47,15 @@ function Router() {
 function App() {
   return (
     <AuthProvider>
-      <SyncStatusProvider>
-        <Router />
-        <SyncStatusIndicator />
-        <Toaster />
-      </SyncStatusProvider>
+      <NetworkProvider>
+        <PackingListProvider>
+          <SyncStatusProvider>
+            <Router />
+            <SyncStatusIndicator />
+            <Toaster />
+          </SyncStatusProvider>
+        </PackingListProvider>
+      </NetworkProvider>
     </AuthProvider>
   );
 }

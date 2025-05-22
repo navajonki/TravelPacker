@@ -48,39 +48,41 @@ export default function SyncStatusIndicator() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            {status === 'saving' && (
-              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md shadow-sm border border-blue-200 animate-pulse">
-                <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                <span className="text-xs font-medium">Saving changes...</span>
-              </div>
-            )}
-            
-            {status === 'saved' && (
-              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-md shadow-sm border border-emerald-200 transition-opacity duration-300">
-                <Check className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">All changes saved</span>
-              </div>
-            )}
-            
-            {status === 'offline' && (
-              <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-md shadow-sm border border-orange-200">
-                <CloudOff className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">
-                  {pendingOperations > 0 
-                    ? `${pendingOperations} pending change${pendingOperations > 1 ? 's' : ''}`
-                    : 'Offline mode'}
-                </span>
-              </div>
-            )}
-            
-            {status === 'pending' && (
-              <div className="flex items-center gap-1.5 bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-md shadow-sm border border-yellow-200">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <span className="text-xs font-medium">
-                  {pendingOperations} pending change{pendingOperations > 1 ? 's' : ''}
-                </span>
-              </div>
-            )}
+            <div>
+              {status === 'saving' && (
+                <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-3 py-1.5 rounded-md shadow-sm border border-blue-200 animate-pulse">
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  <span className="text-xs font-medium">Saving changes...</span>
+                </div>
+              )}
+              
+              {status === 'saved' && (
+                <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-md shadow-sm border border-emerald-200 transition-opacity duration-300">
+                  <Check className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">All changes saved</span>
+                </div>
+              )}
+              
+              {status === 'offline' && (
+                <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-3 py-1.5 rounded-md shadow-sm border border-orange-200">
+                  <CloudOff className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">
+                    {pendingOperations > 0 
+                      ? `${pendingOperations} pending change${pendingOperations > 1 ? 's' : ''}`
+                      : 'Offline mode'}
+                  </span>
+                </div>
+              )}
+              
+              {status === 'pending' && (
+                <div className="flex items-center gap-1.5 bg-yellow-50 text-yellow-600 px-3 py-1.5 rounded-md shadow-sm border border-yellow-200">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span className="text-xs font-medium">
+                    {pendingOperations} pending change{pendingOperations > 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
+            </div>
           </TooltipTrigger>
           <TooltipContent side="left" align="center">
             {status === 'saving' && (
