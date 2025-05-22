@@ -976,11 +976,51 @@ export class DatabaseStorage implements IStorage {
     }
     
     try {
+      // For debugging, log the exact SQL that would be executed
+      const sql = db
+        .update(items)
+        .set(updateData)
+        .where(eq(items.id, id))
+        .toSQL();
+      
+      console.log(`[DEBUG] SQL for updating item ${id}:`, {
+        sql: sql.sql,
+        params: sql.params
+      });
+      
+      // Execute the update
       const [updatedItem] = await db
         .update(items)
         .set(updateData)
         .where(eq(items.id, id))
         .returning();
+      
+      // Verify if the packed status was updated correctly
+      if (updateData.packed !== undefined && updatedItem.packed !== updateData.packed) {
+        console.error(`[ERROR] Packed status mismatch after update for item ${id}:`, 
+          { expected: updateData.packed, actual: updatedItem.packed });
+          
+        // Force a direct update with raw SQL as a fallback if needed
+        if (typeof updateData.packed === 'boolean') {
+          console.log(`[DEBUG] Forcing packed status update with raw SQL for item ${id}`);
+          await db.execute(sql`
+            UPDATE items 
+            SET packed = ${updateData.packed}
+            WHERE id = ${id}
+          `);
+          
+          // Fetch the item again to confirm the update
+          const [refreshedItem] = await db
+            .select()
+            .from(items)
+            .where(eq(items.id, id));
+            
+          if (refreshedItem) {
+            console.log(`[DEBUG] Item ${id} after forced packed update:`, refreshedItem);
+            return refreshedItem;
+          }
+        }
+      }
       
       console.log(`[DEBUG] Successfully updated item ${id} in database:`, updatedItem);
       return updatedItem || undefined;
