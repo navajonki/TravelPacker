@@ -1,13 +1,19 @@
-import WebSocket from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import http from 'http';
 import { parse } from 'cookie';
 import { storage } from './storage';
-import { createLogger } from './fileLogger';
+import { logDebug } from './fileLogger';
 
-const logger = createLogger('websocket');
+// Create a simple logger object using the logDebug function
+const logger = {
+  info: (message: string, data?: any) => logDebug('websocket', message, data),
+  error: (message: string, error?: any, context?: any) => logDebug('websocket', `ERROR: ${message}`, { error, context }),
+  warn: (message: string, data?: any) => logDebug('websocket', `WARNING: ${message}`, data),
+  debug: (message: string, data?: any) => logDebug('websocket', message, data)
+};
 
 export function setupWebSocketServer(server: http.Server) {
-  const wss = new WebSocket.Server({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true });
 
   // Map to track connections by packing list ID
   const rooms = new Map<number, Set<WebSocket>>();
