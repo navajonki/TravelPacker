@@ -40,10 +40,6 @@ export function useUnassignedItems(
   useEffect(() => {
     // Invalidate this query and related queries
     const refreshData = (event?: Event) => {
-      const customEvent = event as CustomEvent;
-      console.log(`[useUnassignedItems] Refreshing ${viewContext} unassigned items`, 
-        customEvent?.detail ? `due to ${customEvent.detail.type} deletion` : 'on mount');
-      
       // Always invalidate our main query
       queryClient.invalidateQueries({ queryKey });
       

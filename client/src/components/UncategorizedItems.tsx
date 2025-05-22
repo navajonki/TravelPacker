@@ -91,8 +91,6 @@ export default function UncategorizedItems({
       return null;
     }
     
-    console.log(`Found ${uncategorizedItems.length} uncategorized items`);
-    
     return (
       <UnassignedItemsCard
         items={uncategorizedItems}
@@ -112,8 +110,6 @@ export default function UncategorizedItems({
       return null;
     }
     
-    console.log(`Found ${unassignedBagItems.length} unassigned bag items`);
-    
     return (
       <UnassignedItemsCard
         items={unassignedBagItems}
@@ -132,8 +128,6 @@ export default function UncategorizedItems({
     if (unassignedTravelerItems.length === 0) {
       return null;
     }
-    
-    console.log(`Found ${unassignedTravelerItems.length} unassigned traveler items`);
     
     return (
       <UnassignedItemsCard
