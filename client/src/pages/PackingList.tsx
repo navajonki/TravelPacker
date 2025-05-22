@@ -63,52 +63,8 @@ export default function PackingList() {
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters' | 'collaboration'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   
-  // Set up WebSocket connection for real-time collaboration
-  useEffect(() => {
-    if (packingListId && user?.id) {
-      // Connect to WebSocket server for this packing list
-      connect(packingListId);
-      
-      // Subscribe to update events
-      const unsubscribe = subscribe('update', (data) => {
-        // When an update is received from another user, invalidate the relevant queries
-        if (data.entity === 'item') {
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/items`]);
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/categories`]);
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/bags`]);
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/travelers`]);
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/unassigned`]);
-          toast({
-            title: "Collaboration update",
-            description: `Another user updated a ${data.entity}`,
-            variant: "default"
-          });
-        } else if (data.entity === 'category') {
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/categories`]);
-        } else if (data.entity === 'bag') {
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/bags`]);
-        } else if (data.entity === 'traveler') {
-          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/travelers`]);
-        }
-      });
-      
-      // Subscribe to presence events
-      const unsubscribePresence = subscribe('presence', (data) => {
-        toast({
-          title: data.status === 'online' ? "Collaborator joined" : "Collaborator left",
-          description: `User ${data.userId} is now ${data.status}`,
-          variant: "default"
-        });
-      });
-      
-      // Clean up on unmount
-      return () => {
-        unsubscribe();
-        unsubscribePresence();
-        disconnect();
-      };
-    }
-  }, [packingListId, user?.id, connect, subscribe, disconnect, queryClient, toast]);
+  // TODO: Re-implement WebSocket connection for real-time collaboration
+  // Temporarily disabled to prevent infinite loops
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
@@ -244,20 +200,8 @@ export default function PackingList() {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       }
       
-      // Send WebSocket notification to all other connected users about the new item
-      try {
-        send({
-          type: 'update',
-          entity: 'item',
-          action: 'create',
-          packingListId: packingListId,
-          userId: user?.id,
-          itemData: data
-        });
-        console.log('WebSocket notification sent for new item:', data);
-      } catch (error) {
-        console.error('Error sending WebSocket notification:', error);
-      }
+      // TODO: Re-enable WebSocket notifications for real-time collaboration
+      // Temporarily disabled to prevent infinite loops
       
       toast({
         title: "Success",
