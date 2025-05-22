@@ -79,6 +79,7 @@ export default function ItemRow({
   
   const togglePackedMutation = useMutation({
     mutationFn: async () => {
+      // Calculate the new state (opposite of current state)
       const newPackedState = !isItemPacked;
       incrementPending();
       
@@ -119,6 +120,9 @@ export default function ItemRow({
       }
     },
     onMutate: async () => {
+      // The new packed state we're trying to set (reverse of current)
+      const newPackedState = !isItemPacked;
+      
       // Cancel any outgoing refetches for ALL relevant query keys
       await queryClient.cancelQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
       
@@ -132,14 +136,14 @@ export default function ItemRow({
       const previousAllItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/all-items`]);
       const previousItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/items`]);
       
-      // Set local optimistic state
-      const newPackedState = !isItemPacked;
+      // Set local optimistic state - this will affect what isItemPacked returns immediately
       console.log(`[DEBUG] Setting optimistic state: item=${item.id}, original=${item.packed}, current=${isItemPacked}, new=${newPackedState}`);
       setOptimisticPacked(newPackedState);
       
       // Notify other components that an item's packed status has changed
       // This will help with synchronization across views
       setTimeout(() => {
+        console.log(`[DEBUG] Dispatching event for item ${item.id} packed status change to ${newPackedState}`);
         window.dispatchEvent(new CustomEvent('item-packed-status-changed', {
           detail: { itemId: item.id, newState: newPackedState }
         }));
