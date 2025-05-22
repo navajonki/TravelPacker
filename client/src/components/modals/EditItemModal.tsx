@@ -36,7 +36,7 @@ export default function EditItemModal({
   const [form, setForm] = useState({
     name: "",
     packed: false,
-    categoryId: 0,
+    categoryId: null as number | null,
     bagId: null as number | null,
     travelerId: null as number | null,
     quantity: 1,
@@ -71,7 +71,7 @@ export default function EditItemModal({
       setForm({
         name: itemData.name || "",
         packed: itemData.packed || false,
-        categoryId: itemData.categoryId || 0,
+        categoryId: itemData.categoryId !== undefined ? itemData.categoryId : null,
         bagId: itemData.bagId || null,
         travelerId: itemData.travelerId || null,
         quantity: itemData.quantity || 1,
@@ -198,15 +198,16 @@ export default function EditItemModal({
                   </div>
                 
                   <div className="space-y-2">
-                    <Label htmlFor="categoryId">Category</Label>
+                    <Label htmlFor="categoryId">Category (Optional)</Label>
                     <Select
-                      value={form.categoryId?.toString() || ""}
+                      value={form.categoryId ? form.categoryId.toString() : "none"}
                       onValueChange={(value) => handleSelectChange("categoryId", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="none">No category</SelectItem>
                         {Array.isArray(categories) && categories.map((category: any) => (
                           <SelectItem key={category.id} value={category.id.toString()}>
                             {category.name}
