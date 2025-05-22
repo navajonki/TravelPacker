@@ -77,16 +77,24 @@ export default function ItemRow({
   // Get the current packed status, considering the optimistic state
   const isItemPacked = optimisticPacked !== null ? optimisticPacked : item.packed;
   
+  // Function to handle checkbox change
+  const handlePackedChange = () => {
+    // Calculate the target state ONCE (opposite of current state)
+    const targetPackedState = !isItemPacked;
+    console.log(`[DEBUG] Toggling item ${item.id} packed status from ${isItemPacked} to ${targetPackedState}`);
+    
+    // Pass the target state to the mutation
+    togglePackedMutation.mutate(targetPackedState);
+  };
+  
   const togglePackedMutation = useMutation({
-    mutationFn: async () => {
-      // Calculate the new state (opposite of current state)
-      const newPackedState = !isItemPacked;
+    mutationFn: async (newPackedState: boolean) => {
       incrementPending();
       
-      console.log(`[DEBUG] Sending PATCH request to update item ${item.id} packed status to ${newPackedState}`);
+      console.log(`[DEBUG] MUTATION: Sending PATCH request to update item ${item.id} packed status to ${newPackedState}`);
       
       // Double-check the packed status to ensure consistency
-      console.log(`[DEBUG] Item ${item.id} current state check: original=${item.packed}, optimistic=${optimisticPacked}, computed=${isItemPacked}, new=${newPackedState}`);
+      console.log(`[DEBUG] MUTATION: Item ${item.id} current state check: original=${item.packed}, optimistic=${optimisticPacked}, computed=${isItemPacked}, new=${newPackedState}`);
       
       try {
         // Use fetch directly with detailed logging to see exactly what's happening
@@ -119,9 +127,8 @@ export default function ItemRow({
         decrementPending();
       }
     },
-    onMutate: async () => {
-      // The new packed state we're trying to set (reverse of current)
-      const newPackedState = !isItemPacked;
+    onMutate: async (newPackedState: boolean) => {
+      console.log(`[DEBUG] ONMUTATE: Setting optimistic state for item ${item.id} to ${newPackedState}`);
       
       // Cancel any outgoing refetches for ALL relevant query keys
       await queryClient.cancelQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
@@ -137,13 +144,13 @@ export default function ItemRow({
       const previousItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/items`]);
       
       // Set local optimistic state - this will affect what isItemPacked returns immediately
-      console.log(`[DEBUG] Setting optimistic state: item=${item.id}, original=${item.packed}, current=${isItemPacked}, new=${newPackedState}`);
+      console.log(`[DEBUG] ONMUTATE: Setting optimistic state: item=${item.id}, original=${item.packed}, current=${isItemPacked}, new=${newPackedState}`);
       setOptimisticPacked(newPackedState);
       
       // Notify other components that an item's packed status has changed
       // This will help with synchronization across views
       setTimeout(() => {
-        console.log(`[DEBUG] Dispatching event for item ${item.id} packed status change to ${newPackedState}`);
+        console.log(`[DEBUG] ONMUTATE: Dispatching event for item ${item.id} packed status change to ${newPackedState}`);
         window.dispatchEvent(new CustomEvent('item-packed-status-changed', {
           detail: { itemId: item.id, newState: newPackedState }
         }));
@@ -465,7 +472,7 @@ export default function ItemRow({
           <div className="flex-shrink-0">
             <Checkbox 
               checked={isItemPacked}
-              onCheckedChange={() => togglePackedMutation.mutate()}
+              onCheckedChange={handlePackedChange}
               className="w-4 h-4"
             />
           </div>
