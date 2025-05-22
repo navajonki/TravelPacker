@@ -1,10 +1,12 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { usePackingList } from "@/contexts/PackingListContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useParams, Link } from "wouter";
 import Header from "@/components/Header";
 import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
+import { useWebSocket } from "@/services/websocket";
+import { useAuth } from "@/hooks/use-auth";
 
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
@@ -55,9 +57,58 @@ export default function PackingList() {
   const { activeList } = usePackingList();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { connect, disconnect, subscribe } = useWebSocket();
+  const { user } = useAuth();
   
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters' | 'collaboration'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
+  
+  // Set up WebSocket connection for real-time collaboration
+  useEffect(() => {
+    if (packingListId && user?.id) {
+      // Connect to WebSocket server for this packing list
+      connect(packingListId);
+      
+      // Subscribe to update events
+      const unsubscribe = subscribe('update', (data) => {
+        // When an update is received from another user, invalidate the relevant queries
+        if (data.entity === 'item') {
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/items`]);
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/categories`]);
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/bags`]);
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/travelers`]);
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/unassigned`]);
+          toast({
+            title: "Collaboration update",
+            description: `Another user updated a ${data.entity}`,
+            variant: "default"
+          });
+        } else if (data.entity === 'category') {
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/categories`]);
+        } else if (data.entity === 'bag') {
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/bags`]);
+        } else if (data.entity === 'traveler') {
+          queryClient.invalidateQueries([`/api/packing-lists/${packingListId}/travelers`]);
+        }
+      });
+      
+      // Subscribe to presence events
+      const unsubscribePresence = subscribe('presence', (data) => {
+        toast({
+          title: data.status === 'online' ? "Collaborator joined" : "Collaborator left",
+          description: `User ${data.userId} is now ${data.status}`,
+          variant: "default"
+        });
+      });
+      
+      // Clean up on unmount
+      return () => {
+        unsubscribe();
+        unsubscribePresence();
+        disconnect();
+      };
+    }
+  }, [packingListId, user?.id, connect, subscribe, disconnect, queryClient, toast]);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
