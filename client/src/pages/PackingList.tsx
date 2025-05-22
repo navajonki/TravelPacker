@@ -220,14 +220,19 @@ export default function PackingList() {
     return allItems.filter(item => item.travelerId === null || item.travelerId === undefined);
   }, [allItems]);
   
+  const { send } = useWebSocket();
+
   const addItemMutation = useMutation({
     mutationFn: async (item: any) => {
-      return await apiRequest('POST', '/api/items', item);
+      const response = await apiRequest('POST', '/api/items', item);
+      return response;
     },
     onSuccess: (data, variables) => {
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
       
       // If item was assigned to a bag, invalidate bags query
       if (variables.bagId) {
@@ -237,6 +242,21 @@ export default function PackingList() {
       // If item was assigned to a traveler, invalidate travelers query
       if (variables.travelerId) {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      }
+      
+      // Send WebSocket notification to all other connected users about the new item
+      try {
+        send({
+          type: 'update',
+          entity: 'item',
+          action: 'create',
+          packingListId: packingListId,
+          userId: user?.id,
+          itemData: data
+        });
+        console.log('WebSocket notification sent for new item:', data);
+      } catch (error) {
+        console.error('Error sending WebSocket notification:', error);
       }
       
       toast({
