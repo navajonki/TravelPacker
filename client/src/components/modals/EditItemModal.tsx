@@ -44,6 +44,70 @@ export default function EditItemModal({
     notes: ""
   });
   
+  // First, try to get the item directly from any cached queries where it might exist
+  // This ensures we have data even if the direct API request fails
+  useEffect(() => {
+    if (open && itemId > 0) {
+      // Look for the item in all possible cached locations
+      const allCachedQueries = [
+        [`/api/packing-lists/${packingListId}/categories`],
+        [`/api/packing-lists/${packingListId}/bags`],
+        [`/api/packing-lists/${packingListId}/travelers`],
+        [`/api/packing-lists/${packingListId}/unassigned/category`],
+        [`/api/packing-lists/${packingListId}/unassigned/bag`],
+        [`/api/packing-lists/${packingListId}/unassigned/traveler`],
+        [`/api/packing-lists/${packingListId}/all-items`],
+        [`/api/packing-lists/${packingListId}/items`],
+      ];
+      
+      // Find this item in any of the cached data
+      let foundItem = null;
+      
+      for (const queryKey of allCachedQueries) {
+        const cachedData = queryClient.getQueryData(queryKey);
+        
+        if (!cachedData) continue;
+        
+        // Handle nested data structures like categories with items
+        if (Array.isArray(cachedData)) {
+          // Direct array of items
+          const directMatch = cachedData.find((item: any) => item.id === itemId);
+          if (directMatch) {
+            foundItem = directMatch;
+            break;
+          }
+          
+          // Nested items within containers
+          for (const container of cachedData) {
+            if (container.items && Array.isArray(container.items)) {
+              const nestedMatch = container.items.find((item: any) => item.id === itemId);
+              if (nestedMatch) {
+                foundItem = nestedMatch;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
+      // If we found the item in cache, use it
+      if (foundItem) {
+        console.log(`Found item ${itemId} in cache:`, foundItem);
+        setForm({
+          name: foundItem.name || "",
+          packed: foundItem.packed || false,
+          categoryId: foundItem.categoryId !== undefined ? foundItem.categoryId : null,
+          bagId: foundItem.bagId || null,
+          travelerId: foundItem.travelerId || null,
+          quantity: foundItem.quantity || 1,
+          weight: foundItem.weight || null,
+          notes: foundItem.notes || ""
+        });
+      }
+    }
+  }, [open, itemId, packingListId, queryClient]);
+  
+  // As a backup, also try to get the item directly from the API
   const { data: item, isLoading: isLoadingItem, refetch: refetchItem } = useQuery({
     queryKey: [`/api/items/${itemId}`],
     enabled: open && itemId > 0,
@@ -70,14 +134,26 @@ export default function EditItemModal({
   useEffect(() => {
     // Only reset the form when the modal opens (not when it closes)
     if (open && itemId > 0) {
-      console.log(`Modal opened for item ${itemId}, forcing data refetch`);
+      console.log(`Modal opened for item ${itemId}, ensuring fresh data`);
       
-      // Instead of resetting the form to empty values, we'll wait for the data
-      // Force a refetch of the item data to ensure we have the latest
+      // Force a refetch of the item data from API as well
       queryClient.invalidateQueries({ queryKey: [`/api/items/${itemId}`] });
+      
+      // Also ensure we have fresh data for all possible locations where the item might be
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] 
+      });
+      queryClient.invalidateQueries({ 
+        queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] 
+      });
+      
+      // Now refetch
       refetchItem();
     }
-  }, [open, itemId, queryClient, refetchItem]);
+  }, [open, itemId, packingListId, queryClient, refetchItem]);
   
   // Update form when item data is loaded
   useEffect(() => {
