@@ -397,19 +397,18 @@ export class MemStorage implements IStorage {
   }
 
   async updateItem(id: number, data: Partial<InsertItem>): Promise<Item | undefined> {
+    // This is a memory-based implementation, but we're actually using DatabaseStorage
+    // Keeping this for interface compatibility
+    
     const item = this.items.get(id);
     if (!item) return undefined;
     
-    const updatedData: Partial<Item> = {};
+    console.log('[INFO] MemStorage.updateItem called, but we are using DatabaseStorage');
+    console.log('[INFO] Item update data:', data);
     
-    // Only copy properties that are present in data
-    if (data.name !== undefined) updatedData.name = data.name;
-    if (data.categoryId !== undefined) updatedData.categoryId = data.categoryId;
-    if (data.quantity !== undefined) updatedData.quantity = data.quantity;
-    if (data.packed !== undefined) updatedData.packed = data.packed;
-    if (data.isEssential !== undefined) updatedData.isEssential = data.isEssential;
-    if (data.bagId !== undefined) updatedData.bagId = data.bagId ?? null;
-    if (data.travelerId !== undefined) updatedData.travelerId = data.travelerId ?? null;
+    // This shouldn't be called in production, so we'll still update the in-memory version
+    // for backward compatibility
+    const updatedData: Partial<Item> = { ...data };
     
     // Handle date conversion if dueDate is provided as string
     if (typeof data.dueDate === 'string') {
@@ -879,6 +878,19 @@ export class DatabaseStorage implements IStorage {
     // Create a copy of the data to avoid modifying the original
     let updateData: any = { ...data };
     
+    // Log the update data for debugging
+    console.log(`[DEBUG] DatabaseStorage.updateItem called for item ${id}:`, updateData);
+    
+    // Ensure packed status is properly handled as a boolean
+    if (updateData.packed !== undefined) {
+      if (typeof updateData.packed === 'string') {
+        updateData.packed = updateData.packed.toLowerCase() === 'true';
+        console.log(`[DEBUG] Converted packed string to boolean: ${updateData.packed}`);
+      }
+      // Explicitly log the packed status
+      console.log(`[DEBUG] Item ${id} packed status being set to: ${updateData.packed}`);
+    }
+    
     // Handle dueDate conversion
     if (data.dueDate !== undefined) {
       if (data.dueDate === null || (typeof data.dueDate === 'string' && data.dueDate.trim() === '')) {
@@ -890,12 +902,19 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
-    const [updatedItem] = await db
-      .update(items)
-      .set(updateData)
-      .where(eq(items.id, id))
-      .returning();
-    return updatedItem || undefined;
+    try {
+      const [updatedItem] = await db
+        .update(items)
+        .set(updateData)
+        .where(eq(items.id, id))
+        .returning();
+      
+      console.log(`[DEBUG] Successfully updated item ${id} in database:`, updatedItem);
+      return updatedItem || undefined;
+    } catch (error) {
+      console.error(`[ERROR] Failed to update item ${id} in database:`, error);
+      throw error;
+    }
   }
 
   async deleteItem(id: number): Promise<void> {
