@@ -18,8 +18,7 @@ import BagCard from "@/components/BagCard";
 import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
-import UnassignedItemsCard from "@/components/UnassignedItemsCard";
-import UncategorizedItemsDisplay from "@/components/UncategorizedItemsDisplay";
+import { UnassignedItemsContainer } from "@/features/items";
 import ItemDebugger from "@/components/ItemDebugger";
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
@@ -594,10 +593,11 @@ export default function PackingList() {
                       </div>
                     ))}
                     {/* Use the same component style as other views */}
-                    <UncategorizedItemsDisplay
+                    <UnassignedItemsContainer
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="category"
+                      onAddItem={() => setAdvancedAddOpen(true)}
                     />
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
                   </>
@@ -654,10 +654,11 @@ export default function PackingList() {
                     ))}
                     {/* Unassigned Items Card for Bag View */}
                     {/* Use only one component for unassigned bag items */}
-                    <UncategorizedItemsDisplay
+                    <UnassignedItemsContainer
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="bag"
+                      onAddItem={() => setAdvancedAddOpen(true)}
                     />
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
                   </>
@@ -714,10 +715,11 @@ export default function PackingList() {
                     ))}
                     {/* Unassigned Items Card for Traveler View */}
                     {/* Use only one component for unassigned traveler items */}
-                    <UncategorizedItemsDisplay
+                    <UnassignedItemsContainer
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="traveler"
+                      onAddItem={() => setAdvancedAddOpen(true)}
                     />
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>

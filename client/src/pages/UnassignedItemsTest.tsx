@@ -7,7 +7,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import UncategorizedItemsDisplay from '@/components/UncategorizedItemsDisplay';
+import { UnassignedItemsContainer } from '@/features/items';
 
 export default function UnassignedItemsTest() {
   const { id } = useParams();
@@ -116,7 +116,7 @@ export default function UnassignedItemsTest() {
         </Card>
       </div>
       
-      <h2 className="text-xl font-semibold mb-4">UncategorizedItemsDisplay Component Test</h2>
+      <h2 className="text-xl font-semibold mb-4">UnassignedItemsContainer Component Test</h2>
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="mb-4">
           <TabsTrigger value="category">Category View</TabsTrigger>
@@ -125,21 +125,21 @@ export default function UnassignedItemsTest() {
         </TabsList>
         
         <TabsContent value="category" className="space-y-4">
-          <UncategorizedItemsDisplay 
+          <UnassignedItemsContainer 
             packingListId={packingListId} 
             viewContext="category" 
           />
         </TabsContent>
         
         <TabsContent value="bag" className="space-y-4">
-          <UncategorizedItemsDisplay 
+          <UnassignedItemsContainer 
             packingListId={packingListId} 
             viewContext="bag" 
           />
         </TabsContent>
         
         <TabsContent value="traveler" className="space-y-4">
-          <UncategorizedItemsDisplay 
+          <UnassignedItemsContainer 
             packingListId={packingListId} 
             viewContext="traveler" 
           />
