@@ -648,7 +648,7 @@ export class MemStorage implements IStorage {
 }
 
 import { db } from "./db";
-import { eq, and, inArray, sql } from "drizzle-orm";
+import { eq, and, inArray, isNull, sql } from "drizzle-orm";
 import connectPgSimple from "connect-pg-simple";
 
 const PgSession = connectPgSimple(session);
