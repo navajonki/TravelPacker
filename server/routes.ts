@@ -1362,9 +1362,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If the packed field is being updated, make sure it's received as a boolean
       if (req.body.packed !== undefined) {
+        // Log the raw packed value for debugging
+        console.log(`[DEBUG] Raw packed value from request: ${JSON.stringify(req.body.packed)} (type: ${typeof req.body.packed})`);
+        
         if (typeof req.body.packed === 'string') {
           req.body.packed = req.body.packed.toLowerCase() === 'true';
           console.log(`[DEBUG] Converted packed string to boolean: ${req.body.packed}`);
+        }
+        
+        // Ensure it's a boolean, even if it was sent as null/undefined
+        if (typeof req.body.packed !== 'boolean') {
+          console.log(`[DEBUG] Forced packed value to boolean: false (was: ${JSON.stringify(req.body.packed)})`);
+          req.body.packed = false;
         }
       }
       

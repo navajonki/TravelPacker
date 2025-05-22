@@ -83,6 +83,10 @@ export default function ItemRow({
       incrementPending();
       
       console.log(`[DEBUG] Sending PATCH request to update item ${item.id} packed status to ${newPackedState}`);
+      
+      // Double-check the packed status to ensure consistency
+      console.log(`[DEBUG] Item ${item.id} current state check: original=${item.packed}, optimistic=${optimisticPacked}, computed=${isItemPacked}, new=${newPackedState}`);
+      
       try {
         // Use fetch directly with detailed logging to see exactly what's happening
         const response = await fetch(`/api/items/${item.id}`, {
@@ -129,8 +133,9 @@ export default function ItemRow({
       const previousItemsData = queryClient.getQueryData([`/api/packing-lists/${packingListId}/items`]);
       
       // Set local optimistic state
-      setOptimisticPacked(!isItemPacked);
       const newPackedState = !isItemPacked;
+      console.log(`[DEBUG] Setting optimistic state: item=${item.id}, original=${item.packed}, current=${isItemPacked}, new=${newPackedState}`);
+      setOptimisticPacked(newPackedState);
       
       // Notify other components that an item's packed status has changed
       // This will help with synchronization across views
