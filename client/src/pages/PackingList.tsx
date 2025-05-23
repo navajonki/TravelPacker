@@ -63,8 +63,8 @@ export default function PackingList() {
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters' | 'collaboration'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   
-  // TODO: Re-implement WebSocket connection for real-time collaboration
-  // Temporarily disabled to prevent infinite loops
+  // Real-time collaboration setup - temporarily simplified to prevent infinite loops
+  // TODO: Implement proper WebSocket-based real-time sync
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
@@ -200,8 +200,7 @@ export default function PackingList() {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       }
       
-      // TODO: Re-enable WebSocket notifications for real-time collaboration
-      // Temporarily disabled to prevent infinite loops
+      // Real-time sync temporarily disabled to fix infinite loop issue
       
       toast({
         title: "Success",
