@@ -470,6 +470,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const bag = await storage.createBag(data);
+      
+      // Broadcast bag creation to all connected clients
+      broadcastToRoom(data.packingListId, {
+        type: 'bag_created',
+        bagId: bag.id,
+        bag: bag,
+        updatedBy: user.id
+      });
+      
       return res.status(201).json(bag);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -520,6 +529,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedBag) {
         return res.status(404).json({ message: "Bag not found" });
       }
+      
+      // Broadcast bag update to all connected clients
+      broadcastToRoom(bag.packingListId, {
+        type: 'bag_updated',
+        bagId: id,
+        bag: updatedBag,
+        updatedBy: user.id
+      });
       
       return res.json(updatedBag);
     } catch (error) {
@@ -606,6 +623,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Now safely delete the bag
         await storage.deleteBag(id);
+      
+      // Broadcast bag deletion to all connected clients
+      broadcastToRoom(packingList.id, {
+        type: 'bag_deleted',
+        bagId: id,
+        updatedBy: user.id
+      });
+      
       } catch (innerError: any) {
         console.error(`[ERROR] Detailed bag deletion error:`, innerError);
         return res.status(500).json({
@@ -686,6 +711,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const traveler = await storage.createTraveler(data);
+      
+      // Broadcast traveler creation to all connected clients
+      broadcastToRoom(data.packingListId, {
+        type: 'traveler_created',
+        travelerId: traveler.id,
+        traveler: traveler,
+        updatedBy: user.id
+      });
+      
       return res.status(201).json(traveler);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -736,6 +770,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedTraveler) {
         return res.status(404).json({ message: "Traveler not found" });
       }
+      
+      // Broadcast traveler update to all connected clients
+      broadcastToRoom(traveler.packingListId, {
+        type: 'traveler_updated',
+        travelerId: id,
+        traveler: updatedTraveler,
+        updatedBy: user.id
+      });
       
       return res.json(updatedTraveler);
     } catch (error) {
@@ -812,6 +854,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Now safely delete the traveler
         await storage.deleteTraveler(id);
+        
+        // Broadcast traveler deletion to all connected clients
+        broadcastToRoom(packingList.id, {
+          type: 'traveler_deleted',
+          travelerId: id,
+          updatedBy: user.id
+        });
+        
       } catch (innerError: any) {
         console.error(`[ERROR] Detailed traveler deletion error:`, innerError);
         return res.status(500).json({
@@ -891,6 +941,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const category = await storage.createCategory(data);
+      
+      // Broadcast category creation to all connected clients
+      broadcastToRoom(data.packingListId, {
+        type: 'category_created',
+        categoryId: category.id,
+        category: category,
+        updatedBy: user.id
+      });
+      
       return res.status(201).json(category);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -941,6 +1000,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!updatedCategory) {
         return res.status(404).json({ message: "Category not found" });
       }
+      
+      // Broadcast category update to all connected clients
+      broadcastToRoom(category.packingListId, {
+        type: 'category_updated',
+        categoryId: id,
+        category: updatedCategory,
+        updatedBy: user.id
+      });
       
       return res.json(updatedCategory);
     } catch (error) {
@@ -1067,6 +1134,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         console.log(`[DELETION DEBUG] Category ${id} successfully deleted and all items preserved`);
+        
+        // Broadcast category deletion to all connected clients
+        broadcastToRoom(packingList.id, {
+          type: 'category_deleted',
+          categoryId: id,
+          updatedBy: user.id
+        });
+        
         return res.status(204).end();
       } catch (innerError: any) {
         console.error(`[ERROR] Detailed category deletion error:`, innerError);

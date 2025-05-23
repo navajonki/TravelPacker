@@ -54,6 +54,7 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
           
           // Handle different types of updates
           switch (message.type) {
+            // Item-related changes
             case 'item_updated':
             case 'item_created':
             case 'item_deleted':
@@ -80,6 +81,46 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
                 queryKey: [`/api/packing-lists/${packingListId}/unassigned`] 
               });
               console.log(`Invalidated queries for packing list ${packingListId} due to remote item change`);
+              break;
+              
+            // Category-related changes
+            case 'category_created':
+            case 'category_updated':
+            case 'category_deleted':
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/categories`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
+              });
+              console.log(`Invalidated category queries for packing list ${packingListId}`);
+              break;
+              
+            // Bag-related changes
+            case 'bag_created':
+            case 'bag_updated':
+            case 'bag_deleted':
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/bags`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
+              });
+              console.log(`Invalidated bag queries for packing list ${packingListId}`);
+              break;
+              
+            // Traveler-related changes
+            case 'traveler_created':
+            case 'traveler_updated':
+            case 'traveler_deleted':
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/travelers`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
+              });
+              console.log(`Invalidated traveler queries for packing list ${packingListId}`);
+              break;
               
               // Show a notification
               toast({
