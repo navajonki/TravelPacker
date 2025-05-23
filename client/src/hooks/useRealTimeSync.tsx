@@ -27,7 +27,10 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
     try {
       // Get the correct WebSocket URL for the current environment
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/ws`;
+      
+      console.log(`Connecting to WebSocket at: ${wsUrl}`);
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
