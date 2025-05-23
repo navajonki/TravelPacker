@@ -63,8 +63,8 @@ export default function PackingList() {
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters' | 'collaboration'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   
-  // Real-time collaboration setup - temporarily simplified to prevent infinite loops
-  // TODO: Implement proper WebSocket-based real-time sync
+  // Set up real-time collaboration for instant sync between users
+  const { sendUpdate } = useRealTimeSync(packingListId, user);
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
