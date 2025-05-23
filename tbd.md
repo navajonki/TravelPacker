@@ -13,6 +13,7 @@
 - [x] Edit item modal is broken
 - [x] Edit individual item doesnt' do anything
 - [x] Edit multiple modal is broken
+- [ ] A user who has access to the list should be able to do anything in it - add / remove bags, categories, etc.
 
 ## Papercuts
 - [x] Top header in list view is redundant and takes up too much space. Everything should be in one line.
