@@ -50,7 +50,7 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
           const message: SyncMessage = JSON.parse(event.data);
           
           // Only process updates from other users
-          if (message.userId === user.id) return;
+          if (message.userId === user.id || message.updatedBy === user.id) return;
           
           // Handle different types of updates
           switch (message.type) {
