@@ -54,6 +54,9 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
           
           // Handle different types of updates
           switch (message.type) {
+            case 'item_updated':
+            case 'item_created':
+            case 'item_deleted':
             case 'item_update':
             case 'item_create':
             case 'item_delete':
