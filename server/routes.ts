@@ -7,6 +7,7 @@ import { isAuthenticated, hashPassword } from "./auth";
 import { db } from "./db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { items } from "@shared/schema";
+import { broadcastToRoom } from "./websocket";
 import { 
   insertUserSchema,
   insertPackingListSchema, 
@@ -1434,6 +1435,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const item = await storage.updateItem(id, data);
         console.log(`[DEBUG] Successfully updated item ${id}:`, item);
+        
+        // Broadcast the update to all connected collaborators
+        if (item && packingListId) {
+          broadcastToRoom(packingListId, {
+            type: 'item_updated',
+            itemId: item.id,
+            item: item,
+            updatedBy: user.id
+          });
+        }
+        
         return res.json(item);
       } catch (error) {
         console.error(`[ERROR] Failed to update item ${id}:`, error);

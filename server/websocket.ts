@@ -136,5 +136,33 @@ export function setupWebSocketServer(server: http.Server) {
     });
   });
 
+  // Function to broadcast messages to all clients in a room
+  function broadcastToRoom(packingListId: number, message: any) {
+    const room = rooms.get(packingListId);
+    if (room) {
+      const messageString = JSON.stringify(message);
+      logger.debug(`Broadcasting to room ${packingListId}: ${messageString}`);
+      
+      room.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(messageString);
+        }
+      });
+    }
+  }
+
+  // Store the broadcast function globally for export
+  globalBroadcastFunction = broadcastToRoom;
+
   return wss;
+}
+
+// Global variable to store the broadcast function
+let globalBroadcastFunction: ((packingListId: number, message: any) => void) | null = null;
+
+// Export the broadcast function
+export function broadcastToRoom(packingListId: number, message: any) {
+  if (globalBroadcastFunction) {
+    globalBroadcastFunction(packingListId, message);
+  }
 }
