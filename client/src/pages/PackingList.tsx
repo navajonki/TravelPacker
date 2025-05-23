@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
 import { useWebSocket } from "@/services/websocket";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealTimeSync } from "@/hooks/useRealTimeSync";
 
 import MobileNav from "@/components/MobileNav";
 import PackingListHeader from "@/components/PackingListHeader";
@@ -200,7 +201,12 @@ export default function PackingList() {
         queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       }
       
-      // Real-time sync temporarily disabled to fix infinite loop issue
+      // Send real-time update to other collaborators
+      try {
+        sendUpdate('item_create', data);
+      } catch (error) {
+        console.error('Failed to send real-time update:', error);
+      }
       
       toast({
         title: "Success",
