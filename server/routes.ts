@@ -1508,6 +1508,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     await storage.deleteItem(id);
+    
+    // Broadcast item deletion to all connected clients
+    console.log(`[DEBUG] Broadcasting item deletion for item ${id} in packing list ${packingList.id}`);
+    broadcastToRoom(packingList.id, {
+      type: 'item_deleted',
+      itemId: id,
+      updatedBy: user.id
+    });
+    
     return res.status(204).end();
   });
 
