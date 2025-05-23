@@ -60,13 +60,26 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
             case 'item_update':
             case 'item_create':
             case 'item_delete':
-              // Invalidate relevant queries to refresh the UI
+              // Invalidate ALL relevant queries to refresh the UI completely
               queryClient.invalidateQueries({ 
                 queryKey: [`/api/packing-lists/${packingListId}/categories`] 
               });
               queryClient.invalidateQueries({ 
                 queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
               });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/items`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/bags`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/travelers`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/unassigned`] 
+              });
+              console.log(`Invalidated queries for packing list ${packingListId} due to remote item change`);
               
               // Show a notification
               toast({
