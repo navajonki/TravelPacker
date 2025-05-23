@@ -60,6 +60,15 @@ export function setupWebSocketServer(server: http.Server) {
 
           try {
             // Verify access permission
+            if (!userId) {
+              logger.warn(`No user ID provided for room ${packingListId}`);
+              ws.send(JSON.stringify({ 
+                type: 'error', 
+                message: 'User ID required' 
+              }));
+              return;
+            }
+            
             const hasAccess = await storage.canUserAccessPackingList(userId, packingListId);
             if (!hasAccess) {
               logger.warn(`User ${userId} attempted to join room ${packingListId} without permission`);

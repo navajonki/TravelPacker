@@ -37,10 +37,11 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
 
       ws.onopen = () => {
         console.log('Real-time sync connected');
-        // Subscribe to this packing list's updates
+        // Subscribe to this packing list's updates with user ID
         ws.send(JSON.stringify({
           type: 'join',
-          packingListId: packingListId
+          packingListId: packingListId,
+          userId: user.id
         }));
       };
 
