@@ -1266,15 +1266,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const item = await storage.createItem(itemData);
+      console.log(`[DEBUG] Item created successfully:`, item);
       
       // Broadcast the new item to all connected collaborators
       if (item && packingList.id) {
+        console.log(`[DEBUG] Broadcasting item creation to room ${packingList.id}`);
         broadcastToRoom(packingList.id, {
           type: 'item_updated',
           itemId: item.id,
           item: item,
           updatedBy: user.id
         });
+      } else {
+        console.log(`[DEBUG] Not broadcasting - item:`, !!item, 'packingList.id:', packingList.id);
       }
       
       return res.status(201).json(item);
