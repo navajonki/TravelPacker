@@ -1266,6 +1266,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const item = await storage.createItem(itemData);
+      
+      // Broadcast the new item to all connected collaborators
+      if (item && packingList.id) {
+        broadcastToRoom(packingList.id, {
+          type: 'item_updated',
+          itemId: item.id,
+          item: item,
+          updatedBy: user.id
+        });
+      }
+      
       return res.status(201).json(item);
     } catch (error) {
       if (error instanceof z.ZodError) {
