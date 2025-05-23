@@ -22,7 +22,7 @@ import AddBagCard from "@/components/AddBagCard";
 import TravelerCard from "@/components/TravelerCard";
 import AddTravelerCard from "@/components/AddTravelerCard";
 import { UnassignedItemsContainer } from "@/features/items";
-import ItemDebugger from "@/components/ItemDebugger";
+
 import SelectableItemRow from "@/components/SelectableItemRow";
 import ItemRow from "@/components/ItemRow";
 import AdvancedAddItemModal from "@/components/modals/AdvancedAddItemModal";
@@ -1010,10 +1010,7 @@ export default function PackingList() {
         onOpenChange={setInviteDialogOpen}
       />
       
-      {/* Add Item Debugger component to help diagnose issues */}
-      <div className="mt-8 mb-4 max-w-6xl mx-auto px-4">
-        <ItemDebugger packingListId={packingListId} />
-      </div>
+
     </div>
   );
 }
