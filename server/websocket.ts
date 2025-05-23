@@ -19,9 +19,13 @@ export function setupWebSocketServer(server: http.Server) {
   // Map to track connections by packing list ID
   const rooms = new Map<number, Set<WebSocket>>();
 
-  wss.on('connection', (ws) => {
-    let userId = 1; // Default user ID for now
+  wss.on('connection', (ws, req) => {
+    let userId: number | null = null;
     let packingListId: number | null = null;
+    
+    // Extract user ID from session (simplified approach)
+    // In a real app, you'd properly parse the session cookie
+    // For now, we'll get it from the join message
     
     logger.info(`WebSocket connection established for user ${userId}`);
 
@@ -44,6 +48,7 @@ export function setupWebSocketServer(server: http.Server) {
         // Handle join room message
         if (data.type === 'join') {
           packingListId = parseInt(data.packingListId);
+          userId = data.userId || 1; // Get user ID from the message
           
           if (isNaN(packingListId)) {
             ws.send(JSON.stringify({ 
@@ -54,7 +59,7 @@ export function setupWebSocketServer(server: http.Server) {
           }
 
           try {
-            // Verify access permission (simplified for now)
+            // Verify access permission
             const hasAccess = await storage.canUserAccessPackingList(userId, packingListId);
             if (!hasAccess) {
               logger.warn(`User ${userId} attempted to join room ${packingListId} without permission`);
