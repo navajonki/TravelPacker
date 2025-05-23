@@ -618,6 +618,9 @@ export default function PackingList() {
                       onEditItem={handleEditItem}
                       viewContext="category"
                       onAddItem={() => setAdvancedAddOpen(true)}
+                      isMultiEditMode={isMultiEditMode}
+                      selectedItemIds={selectedItemIds}
+                      onSelectChange={handleItemSelection}
                     />
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
                   </>
@@ -679,6 +682,9 @@ export default function PackingList() {
                       onEditItem={handleEditItem}
                       viewContext="bag"
                       onAddItem={() => setAdvancedAddOpen(true)}
+                      isMultiEditMode={isMultiEditMode}
+                      selectedItemIds={selectedItemIds}
+                      onSelectChange={handleItemSelection}
                     />
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
                   </>
@@ -740,6 +746,9 @@ export default function PackingList() {
                       onEditItem={handleEditItem}
                       viewContext="traveler"
                       onAddItem={() => setAdvancedAddOpen(true)}
+                      isMultiEditMode={isMultiEditMode}
+                      selectedItemIds={selectedItemIds}
+                      onSelectChange={handleItemSelection}
                     />
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>

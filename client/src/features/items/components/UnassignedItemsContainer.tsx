@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import ItemRow from "@/components/ItemRow"; // Will be moved to features/items folder later
+import SelectableItemRow from "@/components/SelectableItemRow";
 import { Item } from "@shared/schema";
 import { ViewContext } from "@shared/types";
 import { useUnassignedItems } from "../hooks/useUnassignedItems";
@@ -30,13 +31,19 @@ interface UnassignedItemsContainerProps {
   viewContext: ViewContext;
   onEditItem?: (itemId: number) => void;
   onAddItem?: () => void;
+  isMultiEditMode?: boolean;
+  selectedItemIds?: number[];
+  onSelectChange?: (itemId: number, isSelected: boolean) => void;
 }
 
 export default function UnassignedItemsContainer({
   packingListId,
   viewContext,
   onEditItem,
-  onAddItem
+  onAddItem,
+  isMultiEditMode = false,
+  selectedItemIds = [],
+  onSelectChange
 }: UnassignedItemsContainerProps) {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
@@ -304,13 +311,24 @@ export default function UnassignedItemsContainer({
       <CardContent className="p-0">
         <ul className="divide-y divide-gray-100">
           {unassignedItems.map((item) => (
-            <ItemRow
-              key={item.id}
-              item={item}
-              packingListId={packingListId}
-              onEditItem={onEditItem}
-              viewContext={viewContext}
-            />
+            isMultiEditMode ? (
+              <SelectableItemRow
+                key={item.id}
+                item={item}
+                packingListId={packingListId}
+                isMultiEditMode={true}
+                isSelected={selectedItemIds.includes(item.id)}
+                onSelectChange={onSelectChange || (() => {})}
+              />
+            ) : (
+              <ItemRow
+                key={item.id}
+                item={item}
+                packingListId={packingListId}
+                onEditItem={onEditItem}
+                viewContext={viewContext}
+              />
+            )
           ))}
           
           {/* Add item input */}
