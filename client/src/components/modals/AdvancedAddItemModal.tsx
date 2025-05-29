@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { 
   SideDialog, 
@@ -30,6 +30,11 @@ interface AdvancedAddItemModalProps {
   onClose: () => void;
   packingListId: number;
   onAddItem: (data: any) => Promise<void>;
+  initialValues?: {
+    categoryId?: string;
+    bagId?: string;
+    travelerId?: string;
+  };
 }
 
 const formSchema = z.object({
@@ -50,7 +55,8 @@ export default function AdvancedAddItemModal({
   open,
   onClose,
   packingListId,
-  onAddItem
+  onAddItem,
+  initialValues
 }: AdvancedAddItemModalProps) {
   const [showReminderOptions, setShowReminderOptions] = useState(false);
   
@@ -73,15 +79,31 @@ export default function AdvancedAddItemModal({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      categoryId: "",
-      bagId: "none",
-      travelerId: "none",
+      categoryId: initialValues?.categoryId || "",
+      bagId: initialValues?.bagId || "none",
+      travelerId: initialValues?.travelerId || "none",
       quantity: 1,
       isEssential: false,
       setReminder: false,
       dueDate: ""
     }
   });
+
+  // Reset form when initial values change or modal opens
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        name: "",
+        categoryId: initialValues?.categoryId || "",
+        bagId: initialValues?.bagId || "none",
+        travelerId: initialValues?.travelerId || "none",
+        quantity: 1,
+        isEssential: false,
+        setReminder: false,
+        dueDate: ""
+      });
+    }
+  }, [open, initialValues, form]);
   
   const onSubmit = async (data: FormValues) => {
     // Create the item data object with explicit packingListId

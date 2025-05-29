@@ -14,6 +14,7 @@
 - [x] Edit individual item doesnt' do anything
 - [x] Edit multiple modal is broken
 - [ ] A user who has access to the list should be able to do anything in it - add / remove bags, categories, etc.
+- [ ] Add item within containers should either work or be removed
 
 ## Papercuts
 - [x] Top header in list view is redundant and takes up too much space. Everything should be in one line.
@@ -26,14 +27,14 @@
 - [x] Back to Lists shouldn't show in when looking at all packing lists
 - [ ] In search dropdown, order should be person, category, bag
 - [ ] Invitations shouldn't expire
-- [ ] Bulk edit the stuff in unassigned
-- [ ] When adding a new item, Cateogry should also be able to be none
+- [x] Bulk edit the stuff in unassigned
+- [x] When adding a new item, Cateogry should also be able to be none
 
 ## Features
 - [x] Searching within the given packing list
 - [ ] Rearrange items on the lists
 - [x] New item entry fields should go away when not in use. There should just be a big plus button, when you tap on that those fields all pop up
-- [ ] Ability to collaborate
+- [x] Ability to collaborate
 - [ ] Copy list
 - [ ] Create "On Person" category that doesn't count toward packing completion
 - [ ] Shift-click should select all items in between previously selected item and next tapped one

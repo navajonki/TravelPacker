@@ -87,6 +87,13 @@ export default function PackingList() {
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
   
+  // Advanced add modal initial values
+  const [advancedAddInitialValues, setAdvancedAddInitialValues] = useState<{
+    categoryId?: string;
+    bagId?: string;
+    travelerId?: string;
+  }>({});
+  
   // Filter states
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedBags, setSelectedBags] = useState<number[]>([]);
@@ -604,7 +611,8 @@ export default function PackingList() {
                             category={category}
                             onEditCategory={handleEditCategory}
                             onDeleteCategory={handleDeleteCategory}
-                            onAddItem={() => {
+                            onAddItem={(categoryId) => {
+                              setAdvancedAddInitialValues({ categoryId: categoryId.toString() });
                               setAdvancedAddOpen(true);
                             }}
                             onEditItem={handleEditItem}
@@ -617,7 +625,10 @@ export default function PackingList() {
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="category"
-                      onAddItem={() => setAdvancedAddOpen(true)}
+                      onAddItem={() => {
+                        setAdvancedAddInitialValues({});
+                        setAdvancedAddOpen(true);
+                      }}
                       isMultiEditMode={isMultiEditMode}
                       selectedItemIds={selectedItemIds}
                       onSelectChange={handleItemSelection}
@@ -667,7 +678,8 @@ export default function PackingList() {
                             bag={bag}
                             onEditBag={handleEditBag}
                             onDeleteBag={handleDeleteBag}
-                            onAddItem={() => {
+                            onAddItem={(bagId) => {
+                              setAdvancedAddInitialValues({ bagId: bagId.toString() });
                               setAdvancedAddOpen(true);
                             }}
                             onEditItem={handleEditItem}
@@ -681,7 +693,10 @@ export default function PackingList() {
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="bag"
-                      onAddItem={() => setAdvancedAddOpen(true)}
+                      onAddItem={() => {
+                        setAdvancedAddInitialValues({});
+                        setAdvancedAddOpen(true);
+                      }}
                       isMultiEditMode={isMultiEditMode}
                       selectedItemIds={selectedItemIds}
                       onSelectChange={handleItemSelection}
@@ -731,7 +746,8 @@ export default function PackingList() {
                             traveler={traveler}
                             onEditTraveler={handleEditTraveler}
                             onDeleteTraveler={handleDeleteTraveler}
-                            onAddItem={() => {
+                            onAddItem={(travelerId) => {
+                              setAdvancedAddInitialValues({ travelerId: travelerId.toString() });
                               setAdvancedAddOpen(true);
                             }}
                             onEditItem={handleEditItem}
@@ -745,7 +761,10 @@ export default function PackingList() {
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="traveler"
-                      onAddItem={() => setAdvancedAddOpen(true)}
+                      onAddItem={() => {
+                        setAdvancedAddInitialValues({});
+                        setAdvancedAddOpen(true);
+                      }}
                       isMultiEditMode={isMultiEditMode}
                       selectedItemIds={selectedItemIds}
                       onSelectChange={handleItemSelection}
@@ -911,9 +930,13 @@ export default function PackingList() {
       
       <AdvancedAddItemModal
         open={advancedAddOpen}
-        onClose={() => setAdvancedAddOpen(false)}
+        onClose={() => {
+          setAdvancedAddOpen(false);
+          setAdvancedAddInitialValues({});
+        }}
         packingListId={packingListId}
         onAddItem={handleAddItem}
+        initialValues={advancedAddInitialValues}
       />
       
       <AddCategoryModal
