@@ -152,12 +152,17 @@ class SyncService {
         for (const op of operations) {
           try {
             // Send via WebSocket
+            // For create operations, ensure packingListId is included in the data
+            const dataToSend = op.operation === 'create' && op.entity === 'item' 
+              ? { ...op.data, packingListId: op.packingListId }
+              : op.data;
+              
             const sent = webSocketService.send({
               type: 'update',
               operation: op.operation,
               entity: op.entity,
               entityId: op.entityId,
-              changes: op.data,
+              changes: dataToSend,
               timestamp: op.timestamp
             });
 
