@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   SideDialog, 
   SideDialogContent, 
@@ -33,6 +33,16 @@ export default function BulkEditItemsModal({
   const [category, setCategory] = useState<string>('');
   const [bag, setBag] = useState<string>('');
   const [traveler, setTraveler] = useState<string>('');
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (open) {
+      setAction('pack');
+      setCategory('');
+      setBag('');
+      setTraveler('');
+    }
+  }, [open]);
   
   // Fetch categories, bags, and travelers for the dropdowns
   const { data: categories = [] } = useQuery<any[]>({
