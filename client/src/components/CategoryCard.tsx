@@ -60,6 +60,7 @@ export default function CategoryCard({
       await apiRequest('POST', '/api/items', {
         name: newItemName,
         categoryId: category.id,
+        packingListId: category.packingListId, // Add the missing packingListId
         quantity: 1,
         packed: false
       });
