@@ -188,10 +188,9 @@ export default function PackingList() {
 
   const addItemMutation = useMutation({
     mutationFn: async (item: any) => {
-      // Ensure the item has a packingListId
-      if (!item.packingListId) {
-        item.packingListId = packingListId;
-      }
+      console.log("DEBUG: Original item data:", item);
+      console.log("DEBUG: Current packingListId:", packingListId);
+      console.log("DEBUG: packingListId type:", typeof packingListId);
       
       // Ensure all required fields are present and valid
       const itemToCreate = {
@@ -201,6 +200,7 @@ export default function PackingList() {
         packed: item.packed || false
       };
       
+      console.log("DEBUG: Final itemToCreate:", itemToCreate);
       console.log("API Request: POST /api/items", itemToCreate);
       const response = await apiRequest('POST', '/api/items', itemToCreate);
       return response;
