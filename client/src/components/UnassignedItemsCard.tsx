@@ -45,6 +45,9 @@ export default function UnassignedItemsCard({
     mutationFn: async () => {
       await apiRequest('POST', '/api/items', {
         name: newItemName,
+        packingListId: packingListId, // Add the missing packingListId
+        quantity: 1,
+        packed: false,
         // For unassigned items in category view, we need to set a category
         // For unassigned items in other views, we set the specified field to null
         ...(field === 'categoryId' 
