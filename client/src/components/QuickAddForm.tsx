@@ -118,7 +118,9 @@ export default function QuickAddForm({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    console.log("QuickAddForm handleKeyDown called, key:", e.key);
     if (e.key === 'Enter') {
+      console.log("Enter pressed, calling handleSubmit");
       handleSubmit(e);
     }
   };
