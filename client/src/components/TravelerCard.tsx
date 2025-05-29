@@ -247,13 +247,27 @@ export default function TravelerCard({
             />
           ))}
           
-          <div 
-            className="p-2 flex items-center justify-center hover:bg-gray-50 cursor-pointer"
-            onClick={() => onAddItem(traveler.id)}
-          >
-            <Plus className="h-4 w-4 mr-1 text-primary" />
-            <span className="text-sm text-primary font-medium">Add Item</span>
-          </div>
+          {showAddItem ? (
+            <div className="p-2">
+              <Input
+                type="text"
+                placeholder="Enter item name..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={handleAddItemKeyDown}
+                className="w-full text-sm"
+                autoFocus
+              />
+            </div>
+          ) : (
+            <div 
+              className="p-2 flex items-center justify-center hover:bg-gray-50 cursor-pointer"
+              onClick={() => setShowAddItem(true)}
+            >
+              <Plus className="h-4 w-4 mr-1 text-primary" />
+              <span className="text-sm text-primary font-medium">Add Item</span>
+            </div>
+          )}
         </div>
       </div>
 
