@@ -987,6 +987,7 @@ export default function PackingList() {
         }}
         selectedItemIds={selectedItemIds}
         packingListId={packingListId}
+        onClearSelection={() => setSelectedItemIds([])}
       />
       
       {/* Edit modal components */}

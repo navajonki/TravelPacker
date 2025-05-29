@@ -19,13 +19,15 @@ interface BulkEditItemsModalProps {
   onClose: () => void;
   selectedItemIds: number[];
   packingListId: number;
+  onClearSelection?: () => void;
 }
 
 export default function BulkEditItemsModal({ 
   open, 
   onClose,
   selectedItemIds,
-  packingListId
+  packingListId,
+  onClearSelection
 }: BulkEditItemsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -163,6 +165,11 @@ export default function BulkEditItemsModal({
         title: "Success",
         description: `${selectedItemIds.length} items deleted successfully`,
       });
+      
+      // Clear the selection after successful deletion
+      if (onClearSelection) {
+        onClearSelection();
+      }
       
       onClose();
     },
