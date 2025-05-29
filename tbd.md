@@ -16,7 +16,8 @@
 - [ ] A user who has access to the list should be able to do anything in it - add / remove bags, categories, etc.
 - [x] Add item within containers should either work or be removed
 - [ ] Collaboration shouldn't be it's own tab
-- [ ] Delete stuff from unassigned
+- [x] Delete stuff from unassigned
+- [ ] Bulk edit modal should allow for deletion
 
 ## Papercuts
 - [x] Top header in list view is redundant and takes up too much space. Everything should be in one line.

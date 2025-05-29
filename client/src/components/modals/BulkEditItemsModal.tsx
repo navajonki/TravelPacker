@@ -29,7 +29,7 @@ export default function BulkEditItemsModal({
 }: BulkEditItemsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [action, setAction] = useState<'pack' | 'unpack' | 'move' | 'assign'>('pack');
+  const [action, setAction] = useState<'pack' | 'unpack' | 'move' | 'assign' | 'delete'>('pack');
   const [category, setCategory] = useState<string>('');
   const [bag, setBag] = useState<string>('');
   const [traveler, setTraveler] = useState<string>('');
@@ -125,9 +125,62 @@ export default function BulkEditItemsModal({
       });
     }
   });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async () => {
+      // Delete items one by one using the existing DELETE endpoint
+      const deletePromises = selectedItemIds.map(id => 
+        apiRequest('DELETE', `/api/items/${id}`)
+      );
+      await Promise.all(deletePromises);
+    },
+    onSuccess: () => {
+      // Invalidate all relevant queries
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      
+      // Invalidate unassigned queries for all view types
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+      
+      // Also invalidate the all-items query
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+
+      toast({
+        title: "Success",
+        description: `${selectedItemIds.length} items deleted successfully`,
+      });
+      
+      onClose();
+    },
+    onError: (error: any) => {
+      console.error('Bulk delete error:', error);
+      
+      let errorMessage = "Failed to delete items";
+      
+      if (error.response?.data?.message) {
+        errorMessage += `: ${error.response.data.message}`;
+      } else if (error.message) {
+        errorMessage += `: ${error.message}`;
+      }
+      
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    }
+  });
   
   const handleSubmit = () => {
-    bulkUpdateMutation.mutate();
+    if (action === 'delete') {
+      bulkDeleteMutation.mutate();
+    } else {
+      bulkUpdateMutation.mutate();
+    }
   };
   
   return (
@@ -230,6 +283,29 @@ export default function BulkEditItemsModal({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Delete items section */}
+          <div className="space-y-2 border-t border-destructive/20 pt-4">
+            <Label className="text-destructive">Danger Zone</Label>
+            <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-md">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="delete-action"
+                  name="action"
+                  checked={action === 'delete'}
+                  onChange={() => setAction('delete')}
+                  className="text-destructive focus:ring-destructive"
+                />
+                <label htmlFor="delete-action" className="text-sm font-medium text-destructive">
+                  Delete all selected items permanently
+                </label>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                This action cannot be undone. All selected items will be permanently removed.
+              </p>
+            </div>
+          </div>
         </div>
         
         <SideDialogFooter>
@@ -241,11 +317,15 @@ export default function BulkEditItemsModal({
           </Button>
           <Button
             onClick={handleSubmit}
-            disabled={bulkUpdateMutation.isPending || 
+            variant={action === 'delete' ? 'destructive' : 'default'}
+            disabled={bulkUpdateMutation.isPending || bulkDeleteMutation.isPending ||
               (action === 'move' && !category) || 
               (action === 'assign' && bag === '' && traveler === '')}
           >
-            {bulkUpdateMutation.isPending ? 'Updating...' : 'Update Items'}
+            {bulkUpdateMutation.isPending || bulkDeleteMutation.isPending 
+              ? (action === 'delete' ? 'Deleting...' : 'Updating...')
+              : (action === 'delete' ? 'Delete Items' : 'Update Items')
+            }
           </Button>
         </SideDialogFooter>
       </SideDialogContent>
