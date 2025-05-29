@@ -87,16 +87,28 @@ export default function QuickAddForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log("QuickAddForm: handleSubmit called!");
+    console.log("QuickAddForm: Event:", e);
+    
     // Return if no item name or no categories available
-    if (!itemName.trim()) return;
-    if (!categories || !Array.isArray(categories) || categories.length === 0) return;
+    if (!itemName.trim()) {
+      console.log("QuickAddForm: No item name, returning");
+      return;
+    }
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      console.log("QuickAddForm: No categories available, returning");
+      return;
+    }
     
     // Use the selected category or default to the first one
     const categoryId = selectedCategoryId 
       ? parseInt(selectedCategoryId) 
       : categories[0]?.id;
     
-    if (!categoryId) return;
+    if (!categoryId) {
+      console.log("QuickAddForm: No categoryId, returning");
+      return;
+    }
     
     // Create item data with explicit packingListId
     const itemData = {
@@ -110,9 +122,11 @@ export default function QuickAddForm({
     console.log("QuickAddForm: Creating item with data:", itemData);
     console.log("QuickAddForm: packingListId value:", packingListId);
     console.log("QuickAddForm: packingListId type:", typeof packingListId);
+    console.log("QuickAddForm: About to call onAddItem with:", itemData);
     
     await onAddItem(itemData);
     
+    console.log("QuickAddForm: onAddItem completed");
     setItemName("");
     // Don't collapse the form to allow multiple entries
   };
