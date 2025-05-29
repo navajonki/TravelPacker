@@ -14,7 +14,9 @@
 - [x] Edit individual item doesnt' do anything
 - [x] Edit multiple modal is broken
 - [ ] A user who has access to the list should be able to do anything in it - add / remove bags, categories, etc.
-- [ ] Add item within containers should either work or be removed
+- [x] Add item within containers should either work or be removed
+- [ ] Collaboration shouldn't be it's own tab
+- [ ] Delete stuff from unassigned
 
 ## Papercuts
 - [x] Top header in list view is redundant and takes up too much space. Everything should be in one line.
@@ -29,6 +31,7 @@
 - [ ] Invitations shouldn't expire
 - [x] Bulk edit the stuff in unassigned
 - [x] When adding a new item, Cateogry should also be able to be none
+- [ ] Add items should look and feel the same
 
 ## Features
 - [x] Searching within the given packing list

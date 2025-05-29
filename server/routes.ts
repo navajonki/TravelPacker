@@ -1562,14 +1562,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Item not found" });
     }
     
-    // Get the category to find the packing list
-    const category = await storage.getCategory(item.categoryId);
-    if (!category) {
-      return res.status(404).json({ message: "Associated category not found" });
+    // Get the packing list ID directly from the item (works for both assigned and unassigned items)
+    let packingListId = item.packingListId;
+    
+    // If for some reason the item doesn't have a direct packingListId, try to get it from the category
+    if (!packingListId && item.categoryId) {
+      const category = await storage.getCategory(item.categoryId);
+      if (!category) {
+        return res.status(404).json({ message: "Item has invalid category reference" });
+      }
+      packingListId = category.packingListId;
     }
     
-    // Check if the packing list belongs to the authenticated user
-    const packingList = await storage.getPackingList(category.packingListId);
+    if (!packingListId) {
+      return res.status(404).json({ message: "Cannot determine packing list for this item" });
+    }
+    
+    // Check if the packing list exists and belongs to the authenticated user
+    const packingList = await storage.getPackingList(packingListId);
     if (!packingList) {
       return res.status(404).json({ message: "Associated packing list not found" });
     }
