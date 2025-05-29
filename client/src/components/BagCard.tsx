@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import ItemRow from './ItemRow';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,8 @@ export default function BagCard({
 }: BagCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -64,6 +67,35 @@ export default function BagCard({
   const handleConfirmDelete = () => {
     onDeleteBag(bag.id);
     setShowDeleteDialog(false);
+  };
+
+  const addItemMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('POST', '/api/items', {
+        name: newItemName,
+        bagId: bag.id,
+        packingListId: bag.packingListId,
+        quantity: 1,
+        packed: false
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${bag.packingListId}/travelers`] });
+      setNewItemName("");
+      setShowAddItem(false);
+    }
+  });
+
+  const handleAddItemKeyDown = async (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newItemName.trim()) {
+      e.preventDefault();
+      await addItemMutation.mutate();
+    } else if (e.key === 'Escape') {
+      setShowAddItem(false);
+      setNewItemName("");
+    }
   };
   
   const bulkActionMutation = useMutation({
@@ -215,13 +247,27 @@ export default function BagCard({
             />
           ))}
           
-          <div 
-            className="p-2 flex items-center justify-center hover:bg-gray-50 cursor-pointer"
-            onClick={() => onAddItem(bag.id)}
-          >
-            <Plus className="h-4 w-4 mr-1 text-primary" />
-            <span className="text-sm text-primary font-medium">Add Item</span>
-          </div>
+          {showAddItem ? (
+            <div className="p-2">
+              <Input
+                type="text"
+                placeholder="Enter item name..."
+                value={newItemName}
+                onChange={(e) => setNewItemName(e.target.value)}
+                onKeyDown={handleAddItemKeyDown}
+                className="w-full text-sm"
+                autoFocus
+              />
+            </div>
+          ) : (
+            <div 
+              className="p-2 flex items-center justify-center hover:bg-gray-50 cursor-pointer"
+              onClick={() => setShowAddItem(true)}
+            >
+              <Plus className="h-4 w-4 mr-1 text-primary" />
+              <span className="text-sm text-primary font-medium">Add Item</span>
+            </div>
+          )}
         </div>
       </div>
 

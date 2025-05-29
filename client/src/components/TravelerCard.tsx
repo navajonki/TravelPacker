@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks } from 'lucide-react';
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import ItemRow from './ItemRow';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,8 @@ export default function TravelerCard({
 }: TravelerCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showAddItem, setShowAddItem] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -64,6 +67,35 @@ export default function TravelerCard({
   const handleConfirmDelete = () => {
     onDeleteTraveler(traveler.id);
     setShowDeleteDialog(false);
+  };
+
+  const addItemMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('POST', '/api/items', {
+        name: newItemName,
+        travelerId: traveler.id,
+        packingListId: traveler.packingListId,
+        quantity: 1,
+        packed: false
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}/travelers`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${traveler.packingListId}/bags`] });
+      setNewItemName("");
+      setShowAddItem(false);
+    }
+  });
+
+  const handleAddItemKeyDown = async (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && newItemName.trim()) {
+      e.preventDefault();
+      await addItemMutation.mutate();
+    } else if (e.key === 'Escape') {
+      setShowAddItem(false);
+      setNewItemName("");
+    }
   };
   
   const bulkActionMutation = useMutation({
