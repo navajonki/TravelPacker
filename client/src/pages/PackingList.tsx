@@ -192,8 +192,17 @@ export default function PackingList() {
       if (!item.packingListId) {
         item.packingListId = packingListId;
       }
-      console.log("API Request: POST /api/items", item);
-      const response = await apiRequest('POST', '/api/items', item);
+      
+      // Ensure all required fields are present and valid
+      const itemToCreate = {
+        ...item,
+        packingListId: packingListId, // Force this to be the current packing list ID
+        quantity: item.quantity || 1,
+        packed: item.packed || false
+      };
+      
+      console.log("API Request: POST /api/items", itemToCreate);
+      const response = await apiRequest('POST', '/api/items', itemToCreate);
       return response;
     },
     onSuccess: (data, variables) => {
