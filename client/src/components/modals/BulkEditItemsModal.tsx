@@ -290,11 +290,10 @@ export default function BulkEditItemsModal({
             <div className="p-3 bg-destructive/5 border border-destructive/20 rounded-md">
               <div className="flex items-center space-x-2">
                 <input
-                  type="radio"
+                  type="checkbox"
                   id="delete-action"
-                  name="action"
                   checked={action === 'delete'}
-                  onChange={() => setAction('delete')}
+                  onChange={(e) => setAction(e.target.checked ? 'delete' : 'pack')}
                   className="text-destructive focus:ring-destructive"
                 />
                 <label htmlFor="delete-action" className="text-sm font-medium text-destructive">
