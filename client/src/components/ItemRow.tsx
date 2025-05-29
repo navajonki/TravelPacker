@@ -428,17 +428,17 @@ export default function ItemRow({
       
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
 
-      // If item is assigned to a bag, invalidate bags query
-      if (item.bagId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      }
+      // Invalidate unassigned queries for all view types
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
       
-      // If item is assigned to a traveler, invalidate travelers query
-      if (item.travelerId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      }
+      // Also invalidate the all-items query
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
     }
   });
 
