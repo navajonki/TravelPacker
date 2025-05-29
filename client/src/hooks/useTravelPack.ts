@@ -67,9 +67,13 @@ export function useTravelPack(packingListId?: number) {
       console.log("useTravelPack packingListId:", packingListId);
       console.log("useTravelPack packingListId type:", typeof packingListId);
       
-      // Ensure the item has a packingListId if we're in a packing list context
-      if (packingListId && !item.packingListId) {
-        item.packingListId = Number(packingListId);
+      // Ensure the item has a packingListId - use from parameter or from item data
+      if (!item.packingListId) {
+        if (packingListId) {
+          item.packingListId = Number(packingListId);
+        } else {
+          throw new Error("No packingListId available for item creation");
+        }
       }
       
       console.log("useTravelPack final item:", item);
