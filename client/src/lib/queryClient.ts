@@ -39,6 +39,11 @@ export async function apiRequest(
   try {
     console.log(`API Request: ${method} ${url}`, data);
     
+    // Add stack trace for POST /api/items calls to debug the source
+    if (method === 'POST' && url === '/api/items') {
+      console.log('STACK TRACE for POST /api/items:', new Error().stack);
+    }
+    
     const res = await fetch(url, {
       method,
       headers: data ? { "Content-Type": "application/json" } : {},
