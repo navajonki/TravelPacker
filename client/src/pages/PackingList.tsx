@@ -294,6 +294,8 @@ export default function PackingList() {
   });
   
   const handleAddItem = async (item: any) => {
+    console.log("handleAddItem called with:", item);
+    console.log("handleAddItem packingListId:", packingListId);
     await addItemMutation.mutate(item);
   };
   
