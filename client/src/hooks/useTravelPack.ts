@@ -63,10 +63,16 @@ export function useTravelPack(packingListId?: number) {
   
   const addItemMutation = useMutation({
     mutationFn: async (item: any) => {
+      console.log("useTravelPack addItemMutation called with:", item);
+      console.log("useTravelPack packingListId:", packingListId);
+      console.log("useTravelPack packingListId type:", typeof packingListId);
+      
       // Ensure the item has a packingListId if we're in a packing list context
       if (packingListId && !item.packingListId) {
         item.packingListId = Number(packingListId);
       }
+      
+      console.log("useTravelPack final item:", item);
       return await apiRequest('POST', '/api/items', item);
     },
     onSuccess: () => {
