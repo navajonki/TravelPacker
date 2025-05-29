@@ -107,7 +107,9 @@ export default function QuickAddForm({
       travelerId: selectedTravelerId && selectedTravelerId !== "none" ? parseInt(selectedTravelerId) : undefined,
     };
     
-    console.log("Creating item with data:", itemData);
+    console.log("QuickAddForm: Creating item with data:", itemData);
+    console.log("QuickAddForm: packingListId value:", packingListId);
+    console.log("QuickAddForm: packingListId type:", typeof packingListId);
     
     await onAddItem(itemData);
     
