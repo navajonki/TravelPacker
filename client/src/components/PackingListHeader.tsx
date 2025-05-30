@@ -8,6 +8,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SearchBar from "@/components/SearchBar";
 
 interface PackingListHeaderProps {
   packingList: {
@@ -23,6 +24,7 @@ interface PackingListHeaderProps {
   onShare?: () => void;
   onEditList?: () => void;
   onDeleteList?: () => void;
+  onSearchResultSelect?: (itemId: number) => void;
 }
 
 export default function PackingListHeader({ 
@@ -32,7 +34,8 @@ export default function PackingListHeader({
   onExport,
   onShare,
   onEditList,
-  onDeleteList
+  onDeleteList,
+  onSearchResultSelect
 }: PackingListHeaderProps) {
   return (
     <div className="bg-white p-4 border-b border-gray-200">
@@ -102,6 +105,15 @@ export default function PackingListHeader({
           <span className="text-gray-500">Progress</span>
           <span className="font-medium">{packingList.progress}% packed</span>
         </div>
+      </div>
+      
+      {/* Search bar */}
+      <div className="mt-4">
+        <SearchBar 
+          packingListId={packingList.id}
+          onSelectResult={onSearchResultSelect}
+          className="max-w-md mx-auto"
+        />
       </div>
       
       <Tabs value={viewMode} className="mt-4" onValueChange={(value) => onChangeViewMode(value as any)}>

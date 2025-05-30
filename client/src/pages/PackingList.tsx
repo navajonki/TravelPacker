@@ -596,6 +596,7 @@ export default function PackingList() {
               onShare={handleOpenShareDialog}
               onEditList={() => setEditListOpen(true)}
               onDeleteList={handleDeleteList}
+              onSearchResultSelect={handleEditItem}
             />
           ) : null}
           
@@ -614,15 +615,6 @@ export default function PackingList() {
             onOpenBulkEdit={() => setBulkEditModalOpen(true)}
             onExportList={handleExportList}
           />
-          
-          {/* Search bar */}
-          <div className="px-4 py-2 bg-white border-b border-gray-200">
-            <SearchBar 
-              packingListId={packingListId}
-              onSelectResult={handleEditItem}
-              className="max-w-md mx-auto"
-            />
-          </div>
           
           <div className="bg-background p-4">
             {isLoading ? (

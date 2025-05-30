@@ -204,17 +204,7 @@ export default function QuickAddForm({
             <span className="absolute left-3 top-2.5 text-gray-400">+</span>
           </div>
           
-          <div className="flex-shrink-0">
-            <Button 
-              type="button"
-              variant="outline"
-              size="icon"
-              className="w-9 h-9"
-              onClick={onOpenAdvancedAdd}
-            >
-              <Settings className="h-5 w-5 text-gray-500" />
-            </Button>
-          </div>
+
         </form>
         
         <div className="flex flex-wrap items-center gap-3 mt-3 text-sm">
