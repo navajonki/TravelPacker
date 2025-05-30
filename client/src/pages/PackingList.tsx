@@ -35,7 +35,7 @@ import EditTravelerModal from "@/components/modals/EditTravelerModal";
 import EditItemModal from "@/components/modals/EditItemModal";
 import CreateListModal from "@/components/modals/CreateListModal";
 import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
-import { InviteDialog } from "@/features/collaboration";
+import ShareModal from "@/components/modals/ShareModal";
 import { useToast } from "@/hooks/use-toast";
 import { PackingListHeaderSkeleton, CategoryCardSkeleton } from "@/components/skeletons";
 import { useLoadingState } from "@/hooks/use-loading-state";
@@ -61,7 +61,7 @@ export default function PackingList() {
   const { connect, disconnect, subscribe } = useWebSocket();
   const { user } = useAuth();
   
-  const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters' | 'collaboration'>('category');
+  const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
   
   // Set up real-time collaboration for instant sync between users
@@ -415,8 +415,6 @@ export default function PackingList() {
   // Handler to open the share/invite dialog
   const handleOpenShareDialog = () => {
     setInviteDialogOpen(true);
-    // Switch to collaboration view
-    setViewMode('collaboration');
   };
   
   const handleCreateNewList = async (data: { name: string, theme?: string, dateRange?: string }) => {
@@ -789,11 +787,7 @@ export default function PackingList() {
                   </>
                 )}
 
-                {viewMode === 'collaboration' && (
-                  <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                    <CollaborationView packingListId={packingListId} />
-                  </div>
-                )}
+
 
                 {viewMode === 'filters' && (
                   <div className="col-span-1 md:col-span-2 lg:col-span-3">
