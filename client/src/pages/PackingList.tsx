@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { usePackingList } from "@/contexts/PackingListContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import Header from "@/components/Header";
 import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
 import { useWebSocket } from "@/services/websocket";
@@ -41,6 +41,16 @@ import { useToast } from "@/hooks/use-toast";
 import { PackingListHeaderSkeleton, CategoryCardSkeleton } from "@/components/skeletons";
 import { useLoadingState } from "@/hooks/use-loading-state";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { 
@@ -56,6 +66,7 @@ import { Loader2, CheckCircle, ChevronDown } from "lucide-react";
 export default function PackingList() {
   const { id } = useParams<{ id: string }>();
   const packingListId = parseInt(id);
+  const [, setLocation] = useLocation();
   const { activeList } = usePackingList();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -73,6 +84,7 @@ export default function PackingList() {
   const [createListOpen, setCreateListOpen] = useState(false);
   const [editListOpen, setEditListOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [deleteListDialogOpen, setDeleteListDialogOpen] = useState(false);
   
   // Edit modals
   const [editCategoryOpen, setEditCategoryOpen] = useState(false);
@@ -418,6 +430,33 @@ export default function PackingList() {
   const handleOpenShareDialog = () => {
     setShareModalOpen(true);
   };
+
+  const handleDeleteList = () => {
+    setDeleteListDialogOpen(true);
+  };
+
+  const deletePackingListMutation = useMutation({
+    mutationFn: async () => {
+      return apiRequest('DELETE', `/api/packing-lists/${packingListId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists'] });
+      toast({
+        title: "Success",
+        description: "Packing list deleted successfully",
+      });
+      setLocation('/');
+    },
+    onError: (error: unknown) => {
+      console.error("Error deleting packing list:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      toast({
+        title: "Error",
+        description: `Failed to delete packing list: ${errorMessage}`,
+        variant: "destructive",
+      });
+    }
+  });
   
   const handleCreateNewList = async (data: { name: string, theme?: string, dateRange?: string }) => {
     await createPackingListMutation.mutate({
@@ -555,6 +594,8 @@ export default function PackingList() {
               onChangeViewMode={setViewMode}
               onExport={handleExportList}
               onShare={handleOpenShareDialog}
+              onEditList={() => setEditListOpen(true)}
+              onDeleteList={handleDeleteList}
             />
           ) : null}
           
