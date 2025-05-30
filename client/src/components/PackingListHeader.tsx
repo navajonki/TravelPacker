@@ -21,6 +21,8 @@ interface PackingListHeaderProps {
   onChangeViewMode: (mode: 'category' | 'bag' | 'traveler' | 'filters') => void;
   onExport?: () => void;
   onShare?: () => void;
+  onEditList?: () => void;
+  onDeleteList?: () => void;
 }
 
 export default function PackingListHeader({ 
@@ -28,7 +30,9 @@ export default function PackingListHeader({
   viewMode,
   onChangeViewMode,
   onExport,
-  onShare
+  onShare,
+  onEditList,
+  onDeleteList
 }: PackingListHeaderProps) {
   return (
     <div className="bg-white p-4 border-b border-gray-200">
@@ -81,10 +85,10 @@ export default function PackingListHeader({
                 <Download className="h-4 w-4 mr-2" />
                 <span>Export</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={onEditList}>
                 <span>Edit List</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onSelect={onDeleteList}>
                 <span>Delete List</span>
               </DropdownMenuItem>
             </DropdownMenuContent>

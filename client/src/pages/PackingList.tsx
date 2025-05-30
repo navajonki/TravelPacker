@@ -34,6 +34,7 @@ import AddTravelerModal from "@/components/modals/AddTravelerModal";
 import EditTravelerModal from "@/components/modals/EditTravelerModal";
 import EditItemModal from "@/components/modals/EditItemModal";
 import CreateListModal from "@/components/modals/CreateListModal";
+import EditListModal from "@/components/modals/EditListModal";
 import BulkEditItemsModal from "@/components/modals/BulkEditItemsModal";
 import ShareModal from "@/components/modals/ShareModal";
 import { useToast } from "@/hooks/use-toast";
@@ -70,6 +71,7 @@ export default function PackingList() {
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
+  const [editListOpen, setEditListOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   
   // Edit modals

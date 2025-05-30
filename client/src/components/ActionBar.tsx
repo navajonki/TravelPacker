@@ -40,7 +40,7 @@ export default function ActionBar({
                 className="flex items-center gap-1"
               >
                 <X className="h-4 w-4" />
-                <span>Cancel</span>
+                <span>Back</span>
               </Button>
               <Button
                 size="sm"
