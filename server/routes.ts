@@ -463,9 +463,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Packing list not found" });
       }
       
-      // Verify ownership
+      // Check if the user has access to this packing list
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, data.packingListId);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify this packing list" });
       }
       
@@ -704,9 +706,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Packing list not found" });
       }
       
-      // Verify ownership
+      // Check if the user has access to this packing list
       const user = req.user as User;
-      if (packingList.userId !== user.id) {
+      const hasAccess = await storage.canUserAccessPackingList(user.id, data.packingListId);
+      
+      if (!hasAccess) {
         return res.status(403).json({ message: "You don't have permission to modify this packing list" });
       }
       
