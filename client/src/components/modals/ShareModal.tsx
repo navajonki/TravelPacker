@@ -88,8 +88,9 @@ export default function ShareModal({
 
   const sendInviteMutation = useMutation({
     mutationFn: async (email: string) => {
-      return await apiRequest('POST', `/api/packing-lists/${packingListId}/invite`, {
-        email: email.trim()
+      return await apiRequest('POST', `/api/packing-lists/${packingListId}/invitations`, {
+        email: email.trim(),
+        role: 'editor'
       });
     },
     onSuccess: () => {
