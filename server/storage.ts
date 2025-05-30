@@ -31,6 +31,7 @@ export interface IStorage {
   getCollaborators(packingListId: number): Promise<PackingListCollaborator[]>;
   addCollaborator(collaborator: InsertCollaborator): Promise<PackingListCollaborator>;
   removeCollaborator(packingListId: number, userId: number): Promise<void>;
+  isUserCollaborator(packingListId: number, userId: number): Promise<boolean>;
   getSharedPackingLists(userId: number): Promise<PackingList[]>;
   createInvitation(invitation: InsertInvitation): Promise<CollaborationInvitation>;
   getInvitation(token: string): Promise<CollaborationInvitation | undefined>;
