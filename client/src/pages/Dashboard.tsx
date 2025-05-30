@@ -8,7 +8,7 @@ import { InvitationsList } from "@/features/collaboration";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { DashboardSkeleton } from "@/components/skeletons";
 import { useLoadingState } from "@/hooks/use-loading-state";
-import { Luggage, Trash2, Plus, Users, Mail } from "lucide-react";
+import { Luggage, Trash2, Plus, Users, Mail, Copy } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -103,6 +103,29 @@ export default function Dashboard() {
     }
   });
 
+  const copyPackingListMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest('POST', `/api/packing-lists/${id}/copy`);
+    },
+    onSuccess: (data: ListData) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/packing-lists'] });
+      toast({
+        title: "Success",
+        description: "Packing list copied successfully",
+      });
+      setLocation(`/list/${data.id}`);
+    },
+    onError: (error: unknown) => {
+      console.error("Error copying packing list:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      toast({
+        title: "Error Copying List",
+        description: `Failed to copy packing list: ${errorMessage}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleCreateList = async (data: { name: string; theme?: string; dateRange?: string }) => {
     createPackingListMutation.mutate(data);
   };
@@ -110,6 +133,11 @@ export default function Dashboard() {
   const handleDeleteList = (e: React.MouseEvent, id: number) => {
     e.stopPropagation(); // Prevent card click from navigating
     setDeleteListId(id);
+  };
+
+  const handleCopyList = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation(); // Prevent card click from navigating
+    copyPackingListMutation.mutate(id);
   };
   
   const confirmDelete = () => {
@@ -176,7 +204,17 @@ export default function Dashboard() {
                         <span className="font-medium">{list.progress}% packed</span>
                       </div>
                     </CardContent>
-                    <CardFooter className="px-6 py-3 border-t flex justify-end">
+                    <CardFooter className="px-6 py-3 border-t flex justify-between">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition"
+                        onClick={(e) => handleCopyList(e, list.id)}
+                        disabled={copyPackingListMutation.isPending}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copy
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
