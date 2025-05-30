@@ -98,6 +98,10 @@ export default function BulkEditItemsModal({
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      // Invalidate unassigned item queries
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
       
       let successMessage = '';
       if (action === 'pack') {
