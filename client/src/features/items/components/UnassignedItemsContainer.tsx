@@ -223,17 +223,6 @@ export default function UnassignedItemsContainer({
             <div className="flex items-center">
               <h3 className="font-medium">{containerTitle} (0)</h3>
             </div>
-            {onAddItem && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onAddItem}
-                className="ml-2"
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Add Item
-              </Button>
-            )}
           </div>
         </CardHeader>
         
@@ -242,17 +231,6 @@ export default function UnassignedItemsContainer({
             {helperText}
           </div>
         </CardContent>
-        
-        <CardFooter className="p-2">
-          <Button
-            variant="ghost"
-            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
-            onClick={() => setShowAddItem(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            <span>Add an item</span>
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
@@ -339,17 +317,6 @@ export default function UnassignedItemsContainer({
           )}
         </ul>
       </CardContent>
-      
-      <CardFooter className="p-2">
-        <Button
-          variant="ghost"
-          className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
-          onClick={() => setShowAddItem(true)}
-        >
-          <Plus className="h-4 w-4 mr-1" />
-          <span>Add an item</span>
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

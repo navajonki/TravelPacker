@@ -242,17 +242,6 @@ export default function CategoryCard({
             )}
           </ul>
         </CardContent>
-        
-        <CardFooter className="p-2">
-          <Button
-            variant="ghost"
-            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
-            onClick={() => setShowAddItem(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            <span>Add an item</span>
-          </Button>
-        </CardFooter>
       </Card>
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
