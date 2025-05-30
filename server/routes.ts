@@ -752,19 +752,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(404).json({ message: "Associated packing list not found" });
     }
     
-    // Verify ownership
+    // Verify ownership or collaborator access
     const user = req.user as User;
-    if (packingList.userId !== user.id) {
+    const hasAccess = await storage.canUserAccessPackingList(user.id, packingList.id);
+    
+    if (!hasAccess) {
       return res.status(403).json({ message: "You don't have permission to modify this traveler" });
     }
     
     try {
       const data = insertTravelerSchema.partial().parse(req.body);
       
-      // Don't allow changing the packingListId to a list the user doesn't own
+      // Don't allow changing the packingListId to a list the user doesn't have access to
       if (data.packingListId && data.packingListId !== traveler.packingListId) {
         const targetPackingList = await storage.getPackingList(data.packingListId);
-        if (!targetPackingList || targetPackingList.userId !== user.id) {
+        const hasTargetAccess = targetPackingList ? await storage.canUserAccessPackingList(user.id, targetPackingList.id) : false;
+        if (!targetPackingList || !hasTargetAccess) {
           delete data.packingListId;
         }
       }
