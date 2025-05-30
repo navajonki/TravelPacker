@@ -247,25 +247,24 @@ export default function BagCard({
             />
           ))}
           
-          {showAddItem ? (
+          {showAddItem && (
             <div className="p-2">
-              <Input
-                type="text"
-                placeholder="Enter item name..."
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={handleAddItemKeyDown}
-                className="w-full text-sm"
-                autoFocus
-              />
-            </div>
-          ) : (
-            <div 
-              className="p-2 flex items-center justify-center hover:bg-gray-50 cursor-pointer"
-              onClick={() => setShowAddItem(true)}
-            >
-              <Plus className="h-4 w-4 mr-1 text-primary" />
-              <span className="text-sm text-primary font-medium">Add Item</span>
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" disabled />
+                </div>
+                <div className="ml-3 flex-1">
+                  <Input
+                    type="text"
+                    autoFocus
+                    className="h-8 text-sm border-0 p-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                    placeholder="Item name"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    onKeyDown={handleAddItemKeyDown}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
