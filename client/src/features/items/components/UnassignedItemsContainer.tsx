@@ -267,21 +267,6 @@ export default function UnassignedItemsContainer({
           </div>
           <div className="flex items-center space-x-1">
             <span className="text-sm text-gray-500">{packedItems}/{totalItems}</span>
-            <Button 
-              variant="ghost"
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="ml-2"
-            >
-              <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
-            {onAddItem && (
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onAddItem}>
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-6 w-6">
