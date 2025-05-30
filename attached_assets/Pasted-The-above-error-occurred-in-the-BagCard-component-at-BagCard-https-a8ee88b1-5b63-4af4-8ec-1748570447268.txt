@@ -1,0 +1,27 @@
+The above error occurred in the <BagCard> component:
+
+    at BagCard (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/components/BagCard.tsx:46:3)
+    at div
+    at div
+    at div
+    at div
+    at div
+    at div
+    at PackingList (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/pages/PackingList.tsx:59:18)
+    at Route (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=27a96c1e:323:16)
+    at ProtectedRoute (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/components/ProtectedRoute.tsx:21:34)
+    at Switch (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=27a96c1e:379:17)
+    at Router (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/App.tsx?v=oP3prgu76f5jC2Dbfe1gc:36:31)
+    at SyncStatusProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/hooks/use-sync-status.tsx:20:38)
+    at PackingListProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/contexts/PackingListContext.tsx:26:39)
+    at NetworkProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/contexts/NetworkContext.tsx:27:35)
+    at AuthProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/hooks/use-auth.tsx:26:32)
+    at App
+    at PackingListProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/contexts/PackingListContext.tsx:26:39)
+    at NetworkProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/contexts/NetworkContext.tsx:27:35)
+    at QueryClientProvider (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=27a96c1e:2805:3)
+    at ErrorBoundary (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/components/ErrorBoundary.tsx:11:5)
+    at AppErrorBoundary (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/components/AppErrorBoundary.tsx:24:29)
+    at AppProviders (https://a8ee88b1-5b63-4af4-8ec5-ee9e40a44b13-00-1imh9mggipmd5.janeway.replit.dev/src/providers/AppProviders.tsx?v=oP3prgu76f5jC2Dbfe1gc:23:25)
+
+React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary.

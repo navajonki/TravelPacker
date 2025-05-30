@@ -3,6 +3,7 @@ import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import ItemRow from './ItemRow';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
