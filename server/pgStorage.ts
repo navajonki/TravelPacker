@@ -66,6 +66,13 @@ export class PgStorage implements IStorage {
     await db.delete(bags).where(eq(bags.packingListId, id));
     await db.delete(travelers).where(eq(travelers.packingListId, id));
     
+    // Delete all items that are directly associated with this packing list
+    await db.delete(items).where(eq(items.packingListId, id));
+    
+    // Delete collaboration data
+    await db.delete(packingListCollaborators).where(eq(packingListCollaborators.packingListId, id));
+    await db.delete(collaborationInvitations).where(eq(collaborationInvitations.packingListId, id));
+    
     // Finally delete the packing list
     await db.delete(packingLists).where(eq(packingLists.id, id));
   }

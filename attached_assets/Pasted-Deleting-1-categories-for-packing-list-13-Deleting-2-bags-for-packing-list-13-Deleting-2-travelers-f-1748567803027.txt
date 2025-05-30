@@ -1,0 +1,47 @@
+Deleting 1 categories for packing list 13
+Deleting 2 bags for packing list 13
+Deleting 2 travelers for packing list 13
+Error in deletePackingList: PostgresError: update or delete on table "packing_lists" violates foreign key constraint "packing_list_collaborators_packing_list_id_fkey" on table "packing_list_collaborators"
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(13) is still referenced from table "packing_list_collaborators".',
+  schema_name: 'public',
+  table_name: 'packing_list_collaborators',
+  constraint_name: 'packing_list_collaborators_packing_list_id_fkey',
+  file: 'ri_triggers.c',
+  line: '2621',
+  routine: 'ri_ReportViolation'
+}
+node:internal/process/promises:391
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+PostgresError: update or delete on table "packing_lists" violates foreign key constraint "packing_list_collaborators_packing_list_id_fkey" on table "packing_list_collaborators"
+    at ErrorResponse (file:///home/runner/workspace/node_modules/postgres/src/connection.js:788:26)
+    at handle (file:///home/runner/workspace/node_modules/postgres/src/connection.js:474:6)
+    at TLSSocket.data (file:///home/runner/workspace/node_modules/postgres/src/connection.js:315:9)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5)
+    at TLSWrap.onStreamRead (node:internal/stream_base_commons:191:23) {
+  severity_local: 'ERROR',
+  severity: 'ERROR',
+  code: '23503',
+  detail: 'Key (id)=(13) is still referenced from table "packing_list_collaborators".',
+  schema_name: 'public',
+  table_name: 'packing_list_collaborators',
+  constraint_name: 'packing_list_collaborators_packing_list_id_fkey',
+  file: 'ri_triggers.c',
+  line: '2621',
+  routine: 'ri_ReportViolation'
+}
