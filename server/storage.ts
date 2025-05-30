@@ -749,6 +749,10 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
+      // Delete collaboration data
+      await db.delete(packingListCollaborators).where(eq(packingListCollaborators.packingListId, id));
+      await db.delete(collaborationInvitations).where(eq(collaborationInvitations.packingListId, id));
+      
       // Finally delete the packing list itself
       await db.delete(packingLists).where(eq(packingLists.id, id));
       console.log(`Successfully deleted packing list ${id}`);
