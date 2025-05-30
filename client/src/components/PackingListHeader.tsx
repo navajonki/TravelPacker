@@ -111,7 +111,7 @@ export default function PackingListHeader({
       <div className="mt-4">
         <SearchBar 
           packingListId={packingList.id}
-          onSelectResult={onSearchResultSelect}
+          onSelectResult={onSearchResultSelect || (() => {})}
           className="max-w-md mx-auto"
         />
       </div>
