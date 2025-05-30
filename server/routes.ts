@@ -2217,9 +2217,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Packing list not found" });
       }
       
-      // Check if user is the owner of the packing list
-      if (packingList.userId !== user.id) {
-        return res.status(403).json({ message: "Only the owner can send invitations" });
+      // Check if user has access to the packing list (owner or collaborator)
+      const hasAccess = packingList.userId === user.id || 
+        await storage.isUserCollaborator(data.packingListId, user.id);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to invite others to this list" });
       }
       
       // Create the invitation

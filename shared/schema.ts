@@ -35,7 +35,6 @@ export const insertPackingListSchema = createInsertSchema(packingLists).pick({
 export const packingListCollaborators = pgTable("packing_list_collaborators", {
   packingListId: integer("packing_list_id").notNull().references(() => packingLists.id),
   userId: integer("user_id").notNull().references(() => users.id),
-  permissionLevel: varchar("permission_level", { length: 20 }).notNull().default("editor"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 }, (table) => {
   return {
@@ -46,7 +45,6 @@ export const packingListCollaborators = pgTable("packing_list_collaborators", {
 export const insertCollaboratorSchema = createInsertSchema(packingListCollaborators).pick({
   packingListId: true,
   userId: true,
-  permissionLevel: true,
 });
 
 // Collaboration invitations table
@@ -56,7 +54,6 @@ export const collaborationInvitations = pgTable("collaboration_invitations", {
   invitedByUserId: integer("invited_by_user_id").notNull().references(() => users.id),
   email: text("email").notNull(),
   token: text("token").notNull().unique(),
-  permissionLevel: varchar("permission_level", { length: 20 }).notNull().default("editor"),
   accepted: boolean("accepted").notNull().default(false),
   expires: timestamp("expires").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
@@ -66,7 +63,6 @@ export const insertInvitationSchema = createInsertSchema(collaborationInvitation
   packingListId: true,
   invitedByUserId: true,
   email: true,
-  permissionLevel: true,
 });
 
 // Bags schema

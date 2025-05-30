@@ -70,7 +70,7 @@ export default function PackingList() {
   const [addBagOpen, setAddBagOpen] = useState(false);
   const [addTravelerOpen, setAddTravelerOpen] = useState(false);
   const [createListOpen, setCreateListOpen] = useState(false);
-  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   
   // Edit modals
   const [editCategoryOpen, setEditCategoryOpen] = useState(false);
@@ -414,7 +414,7 @@ export default function PackingList() {
   
   // Handler to open the share/invite dialog
   const handleOpenShareDialog = () => {
-    setInviteDialogOpen(true);
+    setShareModalOpen(true);
   };
   
   const handleCreateNewList = async (data: { name: string, theme?: string, dateRange?: string }) => {
@@ -1037,11 +1037,11 @@ export default function PackingList() {
         />
       )}
       
-      {/* Invite Dialog */}
-      <InviteDialog
+      {/* Share Modal */}
+      <ShareModal
         packingListId={packingListId}
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
       />
       
 
