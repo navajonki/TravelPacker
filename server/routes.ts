@@ -342,6 +342,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(204).end();
   });
 
+  // Copy packing list
+  app.post("/api/packing-lists/:id/copy", isAuthenticated, async (req, res) => {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid id parameter" });
+    }
+    
+    const originalList = await storage.getPackingList(id);
+    
+    if (!originalList) {
+      return res.status(404).json({ message: "Packing list not found" });
+    }
+    
+    // Check if the authenticated user has access to this packing list
+    const user = req.user as User;
+    const hasAccess = await storage.canUserAccessPackingList(user.id, id);
+    
+    if (!hasAccess) {
+      return res.status(403).json({ message: "You don't have permission to copy this packing list" });
+    }
+    
+    try {
+      // Create new packing list with "Copy of" prefix
+      const newListName = `Copy of ${originalList.name}`;
+      const newList = await storage.createPackingList({
+        name: newListName,
+        theme: originalList.theme,
+        dateRange: originalList.dateRange,
+        userId: user.id
+      });
+      
+      // Copy all categories
+      const originalCategories = await storage.getCategories(id);
+      const categoryMap = new Map<number, number>(); // old ID -> new ID
+      
+      for (const category of originalCategories) {
+        const newCategory = await storage.createCategory({
+          name: category.name,
+          packingListId: newList.id
+        });
+        categoryMap.set(category.id, newCategory.id);
+      }
+      
+      // Copy all bags
+      const originalBags = await storage.getBags(id);
+      const bagMap = new Map<number, number>(); // old ID -> new ID
+      
+      for (const bag of originalBags) {
+        const newBag = await storage.createBag({
+          name: bag.name,
+          packingListId: newList.id
+        });
+        bagMap.set(bag.id, newBag.id);
+      }
+      
+      // Copy all travelers
+      const originalTravelers = await storage.getTravelers(id);
+      const travelerMap = new Map<number, number>(); // old ID -> new ID
+      
+      for (const traveler of originalTravelers) {
+        const newTraveler = await storage.createTraveler({
+          name: traveler.name,
+          packingListId: newList.id
+        });
+        travelerMap.set(traveler.id, newTraveler.id);
+      }
+      
+      // Copy all items
+      const originalItems = await storage.getAllItemsByPackingList(id);
+      
+      for (const item of originalItems) {
+        await storage.createItem({
+          name: item.name,
+          quantity: item.quantity,
+          packed: item.packed,
+          isEssential: item.isEssential,
+          dueDate: item.dueDate,
+          packingListId: newList.id,
+          categoryId: item.categoryId ? categoryMap.get(item.categoryId) || null : null,
+          bagId: item.bagId ? bagMap.get(item.bagId) || null : null,
+          travelerId: item.travelerId ? travelerMap.get(item.travelerId) || null : null,
+          createdBy: user.id,
+          lastModifiedBy: user.id
+        });
+      }
+      
+      return res.status(201).json(newList);
+    } catch (error) {
+      console.error("Error copying packing list:", error);
+      return res.status(500).json({ message: "Failed to copy packing list" });
+    }
+  });
+
   // Get all items for a packing list (including those with null references)
   app.get("/api/packing-lists/:id/all-items", isAuthenticated, async (req, res) => {
     try {
