@@ -378,9 +378,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const originalCategories = await storage.getCategories(id);
       const categoryMap = new Map<number, number>(); // old ID -> new ID
       
-      for (const category of originalCategories) {
+      for (let i = 0; i < originalCategories.length; i++) {
+        const category = originalCategories[i];
         const newCategory = await storage.createCategory({
           name: category.name,
+          position: i, // Use array index for position
           packingListId: newList.id
         });
         categoryMap.set(category.id, newCategory.id);
@@ -419,7 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           quantity: item.quantity,
           packed: item.packed,
           isEssential: item.isEssential,
-          dueDate: item.dueDate,
+          dueDate: item.dueDate ? item.dueDate.toISOString().split('T')[0] : undefined,
           packingListId: newList.id,
           categoryId: item.categoryId ? categoryMap.get(item.categoryId) || null : null,
           bagId: item.bagId ? bagMap.get(item.bagId) || null : null,
