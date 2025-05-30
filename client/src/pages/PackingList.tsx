@@ -1087,6 +1087,44 @@ export default function PackingList() {
         onClose={() => setShareModalOpen(false)}
       />
       
+      {/* Edit List Modal */}
+      {packingList && (
+        <EditListModal
+          open={editListOpen}
+          onClose={() => setEditListOpen(false)}
+          packingList={{
+            id: packingList.id,
+            name: packingList.name,
+            theme: packingList.theme,
+            dateRange: packingList.dateRange,
+          }}
+        />
+      )}
+      
+      {/* Delete List Confirmation Dialog */}
+      <AlertDialog open={deleteListDialogOpen} onOpenChange={setDeleteListDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Packing List</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this packing list? This action cannot be undone and will permanently delete all items, categories, bags, and travelers associated with this list.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                deletePackingListMutation.mutate();
+                setDeleteListDialogOpen(false);
+              }}
+              className="bg-red-500 hover:bg-red-600"
+              disabled={deletePackingListMutation.isPending}
+            >
+              {deletePackingListMutation.isPending ? "Deleting..." : "Delete List"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );
