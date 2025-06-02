@@ -39,7 +39,7 @@ interface AdvancedAddItemModalProps {
 
 const formSchema = z.object({
   name: z.string().min(1, "Item name is required"),
-  categoryId: z.string().min(1, "Category is required"),
+  categoryId: z.string().optional(),
   bagId: z.string().optional(),
   travelerId: z.string().optional(),
   quantity: z.coerce.number().min(1, "Quantity must be at least 1"),
@@ -109,7 +109,7 @@ export default function AdvancedAddItemModal({
     // Create the item data object with explicit packingListId
     const itemData = {
       name: data.name,
-      categoryId: parseInt(data.categoryId),
+      categoryId: data.categoryId && data.categoryId !== "none" ? parseInt(data.categoryId) : undefined,
       packingListId: packingListId, // Add this explicitly
       bagId: data.bagId && data.bagId !== "none" ? parseInt(data.bagId) : undefined,
       travelerId: data.travelerId && data.travelerId !== "none" ? parseInt(data.travelerId) : undefined,
@@ -172,6 +172,7 @@ export default function AdvancedAddItemModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="none">Unassigned</SelectItem>
                       {Array.isArray(categories) && categories.map((category: any) => (
                         <SelectItem key={category.id} value={category.id.toString()}>
                           {category.name}
@@ -196,7 +197,7 @@ export default function AdvancedAddItemModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="none">Unassigned</SelectItem>
                       {Array.isArray(bags) && bags.map((bag: any) => (
                         <SelectItem key={bag.id} value={bag.id.toString()}>
                           {bag.name}
@@ -221,7 +222,7 @@ export default function AdvancedAddItemModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
+                      <SelectItem value="none">Unassigned</SelectItem>
                       {Array.isArray(travelers) && travelers.map((traveler: any) => (
                         <SelectItem key={traveler.id} value={traveler.id.toString()}>
                           {traveler.name}
