@@ -1855,15 +1855,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             continue;
           }
           
-          // Get the category to check ownership via the packing list
-          const category = await storage.getCategory(item.categoryId);
-          if (!category) {
-            results.push({ id: numericId, success: false, message: "Category not found" });
-            continue;
-          }
-          
           // Check if the packing list belongs to the authenticated user
-          const packingList = await storage.getPackingList(category.packingListId);
+          const packingList = await storage.getPackingList(item.packingListId);
           if (!packingList) {
             results.push({ id: numericId, success: false, message: "Packing list not found" });
             continue;
@@ -1875,6 +1868,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!hasAccess) {
             results.push({ id: numericId, success: false, message: "Not authorized to modify this item" });
             continue;
+          }
+          
+          // If updating categoryId, validate that the target category exists and belongs to the same packing list
+          if (parsedUpdates.categoryId !== undefined && parsedUpdates.categoryId !== null) {
+            const targetCategory = await storage.getCategory(parsedUpdates.categoryId);
+            if (!targetCategory) {
+              results.push({ id: numericId, success: false, message: "Target category not found" });
+              continue;
+            }
+            if (targetCategory.packingListId !== item.packingListId) {
+              results.push({ id: numericId, success: false, message: "Target category belongs to a different packing list" });
+              continue;
+            }
           }
           
           // Add lastModifiedBy field to track who made the changes
