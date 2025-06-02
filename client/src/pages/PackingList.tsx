@@ -977,15 +977,30 @@ export default function PackingList() {
                             return categoryMatch && bagMatch && travelerMatch;
                           });
                           
-                          // Render filtered items
-                          return filteredItems.map(item => (
-                            <ItemRow 
-                              key={item.id} 
-                              item={item} 
-                              packingListId={packingListId} 
-                              onEditItem={handleEditItem} 
-                            />
-                          ));
+                          // Render filtered items with appropriate component based on edit mode
+                          return filteredItems.map(item => {
+                            if (isMultiEditMode) {
+                              return (
+                                <SelectableItemRow
+                                  key={item.id}
+                                  item={item}
+                                  packingListId={packingListId}
+                                  onEditItem={handleEditItem}
+                                  isSelected={selectedItemIds.includes(item.id)}
+                                  onSelectChange={(isSelected) => handleItemSelection(item.id, isSelected)}
+                                />
+                              );
+                            } else {
+                              return (
+                                <ItemRow 
+                                  key={item.id} 
+                                  item={item} 
+                                  packingListId={packingListId} 
+                                  onEditItem={handleEditItem} 
+                                />
+                              );
+                            }
+                          });
                         })()}
                       </div>
                     </div>
