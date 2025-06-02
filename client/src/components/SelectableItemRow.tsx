@@ -18,6 +18,7 @@ interface SelectableItemRowProps {
   isMultiEditMode: boolean;
   isSelected: boolean;
   onSelectChange: (itemId: number, isSelected: boolean) => void;
+  onEditItem: (itemId: number) => void;
 }
 
 export default function SelectableItemRow({ 
@@ -25,7 +26,8 @@ export default function SelectableItemRow({
   packingListId,
   isMultiEditMode,
   isSelected,
-  onSelectChange
+  onSelectChange,
+  onEditItem
 }: SelectableItemRowProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

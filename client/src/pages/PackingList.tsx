@@ -657,6 +657,7 @@ export default function PackingList() {
                                   isMultiEditMode={isMultiEditMode}
                                   isSelected={selectedItemIds.includes(item.id)}
                                   onSelectChange={handleItemSelection}
+                                  onEditItem={handleEditItem}
                                 />
                               ))}
                             </div>
@@ -724,6 +725,7 @@ export default function PackingList() {
                                       setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
                                     }
                                   }}
+                                  onEditItem={handleEditItem}
                                 />
                               ))}
                             </div>
@@ -792,6 +794,7 @@ export default function PackingList() {
                                       setSelectedItemIds(selectedItemIds.filter(id => id !== itemId));
                                     }
                                   }}
+                                  onEditItem={handleEditItem}
                                 />
                               ))}
                             </div>
