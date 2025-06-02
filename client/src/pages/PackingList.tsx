@@ -834,11 +834,16 @@ export default function PackingList() {
                           <h4 className="text-sm font-medium mb-2">Categories</h4>
                           <MultiSelectDropdown
                             title="Categories"
-                            items={categories?.map(cat => ({ 
-                              id: cat.id, 
-                              name: cat.name, 
-                              count: cat.totalItems 
-                            })) || []}
+                            items={[
+                              // Add unassigned option with special ID -1
+                              { id: -1, name: "(unassigned)", count: allItems?.filter(item => !item.categoryId).length || 0 },
+                              // Regular categories
+                              ...(categories?.map(cat => ({ 
+                                id: cat.id, 
+                                name: cat.name, 
+                                count: cat.totalItems 
+                              })) || [])
+                            ]}
                             selectedIds={selectedCategories}
                             onSelectionChange={setSelectedCategories}
                           />
@@ -848,11 +853,16 @@ export default function PackingList() {
                           <h4 className="text-sm font-medium mb-2">Bags</h4>
                           <MultiSelectDropdown
                             title="Bags"
-                            items={bags?.map(bag => ({ 
-                              id: bag.id, 
-                              name: bag.name, 
-                              count: bag.totalItems 
-                            })) || []}
+                            items={[
+                              // Add unassigned option with special ID -2
+                              { id: -2, name: "(unassigned)", count: allItems?.filter(item => !item.bagId).length || 0 },
+                              // Regular bags
+                              ...(bags?.map(bag => ({ 
+                                id: bag.id, 
+                                name: bag.name, 
+                                count: bag.totalItems 
+                              })) || [])
+                            ]}
                             selectedIds={selectedBags}
                             onSelectionChange={setSelectedBags}
                           />
@@ -862,11 +872,16 @@ export default function PackingList() {
                           <h4 className="text-sm font-medium mb-2">Travelers</h4>
                           <MultiSelectDropdown
                             title="Travelers"
-                            items={travelers?.map(traveler => ({ 
-                              id: traveler.id, 
-                              name: traveler.name, 
-                              count: traveler.totalItems 
-                            })) || []}
+                            items={[
+                              // Add unassigned option with special ID -3
+                              { id: -3, name: "(unassigned)", count: allItems?.filter(item => !item.travelerId).length || 0 },
+                              // Regular travelers
+                              ...(travelers?.map(traveler => ({ 
+                                id: traveler.id, 
+                                name: traveler.name, 
+                                count: traveler.totalItems 
+                              })) || [])
+                            ]}
                             selectedIds={selectedTravelers}
                             onSelectionChange={setSelectedTravelers}
                           />
@@ -938,17 +953,20 @@ export default function PackingList() {
                               return true;
                             }
                             
-                            // Check category filter
+                            // Check category filter (handle unassigned with ID -1)
                             const categoryMatch = selectedCategories.length === 0 || 
-                                                selectedCategories.includes(item.categoryId);
+                                                selectedCategories.includes(item.categoryId) ||
+                                                (selectedCategories.includes(-1) && !item.categoryId);
                             
-                            // Check bag filter
+                            // Check bag filter (handle unassigned with ID -2)
                             const bagMatch = selectedBags.length === 0 || 
-                                          (item.bagId && selectedBags.includes(item.bagId));
+                                          selectedBags.includes(item.bagId) ||
+                                          (selectedBags.includes(-2) && !item.bagId);
                             
-                            // Check traveler filter
+                            // Check traveler filter (handle unassigned with ID -3)
                             const travelerMatch = selectedTravelers.length === 0 || 
-                                               (item.travelerId && selectedTravelers.includes(item.travelerId));
+                                               selectedTravelers.includes(item.travelerId) ||
+                                               (selectedTravelers.includes(-3) && !item.travelerId);
                             
                             return categoryMatch && bagMatch && travelerMatch;
                           });
