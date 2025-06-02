@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useParams, Link, useLocation } from "wouter";
 import Header from "@/components/Header";
 import { MultiSelectDropdown } from "@/components/custom/MultiSelectDropdown";
+import { Item } from "@shared/schema";
 import { useWebSocket } from "@/services/websocket";
 import { useAuth } from "@/hooks/use-auth";
 import { useRealTimeSync } from "@/hooks/useRealTimeSync";
@@ -181,6 +182,11 @@ export default function PackingList() {
   
   const { data: travelers, isLoading: isLoadingTravelers } = useQuery<TravelerData[]>({
     queryKey: [`/api/packing-lists/${packingListId}/travelers`],
+  });
+
+  // Get all items for filter view (includes unassigned items)
+  const { data: allItemsForFilter } = useQuery<Item[]>({
+    queryKey: [`/api/packing-lists/${packingListId}/all-items`],
   });
   
   // Calculate all items from categories for the current view
@@ -836,7 +842,7 @@ export default function PackingList() {
                             title="Categories"
                             items={[
                               // Add unassigned option with special ID -1
-                              { id: -1, name: "(unassigned)", count: allItems?.filter(item => !item.categoryId).length || 0 },
+                              { id: -1, name: "(unassigned)", count: allItemsForFilter?.filter(item => !item.categoryId).length || 0 },
                               // Regular categories
                               ...(categories?.map(cat => ({ 
                                 id: cat.id, 
@@ -855,7 +861,7 @@ export default function PackingList() {
                             title="Bags"
                             items={[
                               // Add unassigned option with special ID -2
-                              { id: -2, name: "(unassigned)", count: allItems?.filter(item => !item.bagId).length || 0 },
+                              { id: -2, name: "(unassigned)", count: allItemsForFilter?.filter(item => !item.bagId).length || 0 },
                               // Regular bags
                               ...(bags?.map(bag => ({ 
                                 id: bag.id, 
@@ -874,7 +880,7 @@ export default function PackingList() {
                             title="Travelers"
                             items={[
                               // Add unassigned option with special ID -3
-                              { id: -3, name: "(unassigned)", count: allItems?.filter(item => !item.travelerId).length || 0 },
+                              { id: -3, name: "(unassigned)", count: allItemsForFilter?.filter(item => !item.travelerId).length || 0 },
                               // Regular travelers
                               ...(travelers?.map(traveler => ({ 
                                 id: traveler.id, 
@@ -937,11 +943,11 @@ export default function PackingList() {
                       <div className="divide-y divide-gray-100">
                         {/* Filter and display items */}
                         {(() => {
-                          // Collect all items from all categories
-                          const allItems = categories?.flatMap(category => category.items) || [];
+                          // Use all items including unassigned ones for filtering
+                          const itemsToFilter = allItemsForFilter || [];
                           
                           // Apply filters
-                          const filteredItems = allItems.filter(item => {
+                          const filteredItems = itemsToFilter.filter(item => {
                             // Skip if packed status doesn't match filters
                             if (item.packed && !showPacked) return false;
                             if (!item.packed && !showUnpacked) return false;
