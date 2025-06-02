@@ -71,7 +71,11 @@ export default function BulkEditItemsModal({
       } else if (action === 'unpack') {
         data = { packed: false };
       } else if (action === 'move' && category) {
-        data = { categoryId: parseInt(category) };
+        if (category === 'null') {
+          data = { categoryId: null };
+        } else {
+          data = { categoryId: parseInt(category) };
+        }
       } else if (action === 'assign') {
         if (bag === 'null') {
           // Set bagId to null to clear the assignment
@@ -248,6 +252,7 @@ export default function BulkEditItemsModal({
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="null">Unassigned</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat.id} value={cat.id.toString()}>
                     {cat.name}
@@ -276,7 +281,7 @@ export default function BulkEditItemsModal({
                     {b.name}
                   </SelectItem>
                 ))}
-                <SelectItem value="null">None</SelectItem>
+                <SelectItem value="null">Unassigned</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -300,7 +305,7 @@ export default function BulkEditItemsModal({
                     {t.name}
                   </SelectItem>
                 ))}
-                <SelectItem value="null">None</SelectItem>
+                <SelectItem value="null">Unassigned</SelectItem>
               </SelectContent>
             </Select>
           </div>
