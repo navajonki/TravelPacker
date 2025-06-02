@@ -90,25 +90,16 @@ export default function QuickAddForm({
     console.log("QuickAddForm: handleSubmit called!");
     console.log("QuickAddForm: Event:", e);
     
-    // Return if no item name or no categories available
+    // Return if no item name
     if (!itemName.trim()) {
       console.log("QuickAddForm: No item name, returning");
       return;
     }
-    if (!categories || !Array.isArray(categories) || categories.length === 0) {
-      console.log("QuickAddForm: No categories available, returning");
-      return;
-    }
     
-    // Use the selected category or default to the first one
-    const categoryId = selectedCategoryId 
+    // Handle category selection - allow unassigned items
+    const categoryId = selectedCategoryId && selectedCategoryId !== "none" 
       ? parseInt(selectedCategoryId) 
-      : categories[0]?.id;
-    
-    if (!categoryId) {
-      console.log("QuickAddForm: No categoryId, returning");
-      return;
-    }
+      : undefined;
     
     // Create item data with explicit packingListId
     const itemData = {
@@ -220,6 +211,7 @@ export default function QuickAddForm({
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
                   {Array.isArray(categories) && categories.map((category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
@@ -242,7 +234,7 @@ export default function QuickAddForm({
                   <SelectValue placeholder="Select bag" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">Unassigned</SelectItem>
                   {Array.isArray(bags) && bags.map((bag) => (
                     <SelectItem key={bag.id} value={bag.id.toString()}>
                       {bag.name}
@@ -265,7 +257,7 @@ export default function QuickAddForm({
                   <SelectValue placeholder="Select traveler" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="none">Unassigned</SelectItem>
                   {Array.isArray(travelers) && travelers.map((traveler) => (
                     <SelectItem key={traveler.id} value={traveler.id.toString()}>
                       {traveler.name}
