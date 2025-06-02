@@ -49,8 +49,9 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
         try {
           const message: SyncMessage = JSON.parse(event.data);
           
-          // Only process updates from other users
-          if (message.userId === user.id || message.updatedBy === user.id) return;
+          // Process updates from all users to ensure unassigned queries are refreshed
+          // (Previously only processed updates from other users, but we need to refresh
+          // unassigned queries even for local changes to see them immediately)
           
           // Handle different types of updates
           switch (message.type) {

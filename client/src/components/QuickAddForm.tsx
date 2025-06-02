@@ -18,7 +18,7 @@ interface QuickAddFormProps {
   packingListId: number;
   onAddItem: (item: {
     name: string;
-    categoryId: number;
+    categoryId?: number;
     bagId?: number;
     travelerId?: number;
   }) => Promise<void>;
