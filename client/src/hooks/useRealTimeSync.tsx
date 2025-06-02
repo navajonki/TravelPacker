@@ -77,8 +77,15 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
               queryClient.invalidateQueries({ 
                 queryKey: [`/api/packing-lists/${packingListId}/travelers`] 
               });
+              // Invalidate all unassigned item queries for different contexts
               queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/unassigned`] 
+                queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] 
+              });
+              queryClient.invalidateQueries({ 
+                queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] 
               });
               console.log(`Invalidated queries for packing list ${packingListId} due to remote item change`);
               break;
