@@ -964,17 +964,17 @@ export default function PackingList() {
                             
                             // Check category filter (handle unassigned with ID -1)
                             const categoryMatch = selectedCategories.length === 0 || 
-                                                selectedCategories.includes(item.categoryId) ||
+                                                (item.categoryId && selectedCategories.includes(item.categoryId)) ||
                                                 (selectedCategories.includes(-1) && !item.categoryId);
                             
                             // Check bag filter (handle unassigned with ID -2)
                             const bagMatch = selectedBags.length === 0 || 
-                                          selectedBags.includes(item.bagId) ||
+                                          (item.bagId && selectedBags.includes(item.bagId)) ||
                                           (selectedBags.includes(-2) && !item.bagId);
                             
                             // Check traveler filter (handle unassigned with ID -3)
                             const travelerMatch = selectedTravelers.length === 0 || 
-                                               selectedTravelers.includes(item.travelerId) ||
+                                               (item.travelerId && selectedTravelers.includes(item.travelerId)) ||
                                                (selectedTravelers.includes(-3) && !item.travelerId);
                             
                             return categoryMatch && bagMatch && travelerMatch;
@@ -988,9 +988,10 @@ export default function PackingList() {
                                   key={item.id}
                                   item={item}
                                   packingListId={packingListId}
+                                  isMultiEditMode={isMultiEditMode}
                                   onEditItem={handleEditItem}
                                   isSelected={selectedItemIds.includes(item.id)}
-                                  onSelectChange={(isSelected) => handleItemSelection(item.id, isSelected)}
+                                  onSelectChange={(itemId, isSelected) => handleItemSelection(itemId, isSelected)}
                                 />
                               );
                             } else {

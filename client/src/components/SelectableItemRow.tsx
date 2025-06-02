@@ -10,9 +10,9 @@ interface SelectableItemRowProps {
     name: string;
     packed: boolean;
     quantity: number;
-    bagId?: number;
-    travelerId?: number;
-    categoryId: number;
+    bagId?: number | null;
+    travelerId?: number | null;
+    categoryId: number | null;
   };
   packingListId: number;
   isMultiEditMode: boolean;
