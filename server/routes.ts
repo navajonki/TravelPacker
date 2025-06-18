@@ -2465,8 +2465,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const invitationData = {
         packingListId: listId,
         invitedByUserId: user.id,
-        email: req.body.email,
-        permissionLevel: req.body.role || 'viewer'
+        email: req.body.email
       };
       
       // Create the invitation
@@ -2560,7 +2559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: inviter.id,
           username: inviter.username
         } : undefined,
-        role: invitation.permissionLevel
+
       });
     } catch (error) {
       console.error("Error fetching invitation:", error);
@@ -2666,8 +2665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add user as a collaborator directly
       const newCollaborator = await storage.addCollaborator({
         packingListId,
-        userId: user.id,
-        permissionLevel: 'editor'
+        userId: user.id
       });
       
       console.log(`[DEBUG] Manually added collaborator:`, newCollaborator);

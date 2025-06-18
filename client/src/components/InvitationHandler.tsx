@@ -23,7 +23,6 @@ interface InvitationData {
   packingListId: number;
   email: string;
   token: string;
-  role: string;
   createdAt: string;
   expiresAt: string;
   packingList?: {
@@ -329,8 +328,8 @@ export default function InvitationHandler({ token }: InvitationHandlerProps) {
                 {invitation.packingList?.name || "Unknown Packing List"}
               </p>
               <p className="text-sm text-gray-600">
-                <span className="font-medium">Role:</span>{" "}
-                {invitation.role}
+                <span className="font-medium">Access:</span>{" "}
+                Full collaboration access (create, edit, delete)
               </p>
             </div>
           </div>
