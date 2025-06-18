@@ -36,9 +36,11 @@ import {
   XCircle, 
   User,
   UserX,
-  Share2
+  Share2,
+  Send
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { InviteDialog } from "@/features/collaboration/components";
 
 interface ShareModalProps {
   open: boolean;
@@ -68,7 +70,7 @@ export default function ShareModal({
   onClose,
   packingListId
 }: ShareModalProps) {
-  const [inviteEmail, setInviteEmail] = useState("");
+  const [showInviteDialog, setShowInviteDialog] = useState(false);
   const [removeCollaboratorId, setRemoveCollaboratorId] = useState<number | null>(null);
   const [cancelInvitationId, setCancelInvitationId] = useState<number | null>(null);
   const queryClient = useQueryClient();
@@ -95,7 +97,6 @@ export default function ShareModal({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/invitations`] });
-      setInviteEmail("");
       toast({
         title: "Invitation Sent",
         description: "The invitation has been sent successfully!",
@@ -154,19 +155,6 @@ export default function ShareModal({
     }
   });
 
-  const handleSendInvite = () => {
-    if (!inviteEmail.trim()) {
-      toast({
-        title: "Email Required",
-        description: "Please enter an email address.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    sendInviteMutation.mutate(inviteEmail);
-  };
-
   const confirmRemoveCollaborator = () => {
     if (removeCollaboratorId) {
       removeCollaboratorMutation.mutate(removeCollaboratorId);
@@ -192,7 +180,7 @@ export default function ShareModal({
               Invite others to collaborate on this packing list. Everyone has full access to create, edit, and delete items.
             </SideDialogDescription>
           </SideDialogHeader>
-          
+
           <div className="py-4 space-y-6">
             {/* Invite New Collaborator */}
             <Card>
@@ -206,27 +194,12 @@ export default function ShareModal({
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter email address"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSendInvite();
-                      }
-                    }}
-                  />
-                </div>
                 <Button 
-                  onClick={handleSendInvite}
-                  disabled={sendInviteMutation.isPending || !inviteEmail.trim()}
+                  onClick={() => setShowInviteDialog(true)}
                   className="w-full"
                 >
-                  {sendInviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
+                  <Send className="mr-2 h-4 w-4" />
+                  Create Invitation Link
                 </Button>
               </CardContent>
             </Card>
@@ -330,6 +303,13 @@ export default function ShareModal({
             )}
           </div>
         </SideDialogContent>
+
+      {/* Invite Dialog */}
+      <InviteDialog
+        packingListId={packingListId}
+        open={showInviteDialog}
+        onOpenChange={setShowInviteDialog}
+      />
       </SideDialog>
 
       {/* Remove Collaborator Dialog */}
