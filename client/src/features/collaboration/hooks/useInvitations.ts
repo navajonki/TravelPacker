@@ -96,8 +96,8 @@ export default function useInvitations({ packingListId }: UseInvitationsProps): 
   };
 
   // Wrapped mutation handlers with nicer API
-  const createInvitation = async (email: string, permissionLevel: string): Promise<any> => {
-    return await createMutation.mutateAsync({ email, permissionLevel });
+  const createInvitation = async (email: string): Promise<any> => {
+    return await createMutation.mutateAsync({ email });
   };
   
   const cancelInvitation = async (invitationId: number): Promise<void> => {

@@ -320,8 +320,7 @@ export const CollaborationApi = {
   
   createInvitation: (data: CreateInvitationRequest) => 
     apiRequest<CollaborationInvitation>('POST', `/api/packing-lists/${data.packingListId}/invitations`, {
-      email: data.email,
-      role: data.permissionLevel
+      email: data.email
     }),
   
   getInvitations: (packingListId: number) => 

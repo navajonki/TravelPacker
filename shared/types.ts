@@ -184,7 +184,6 @@ export interface AssignItemsToTravelerRequest {
 export interface CreateInvitationRequest {
   email: string;
   packingListId: number;
-  permissionLevel: 'viewer' | 'editor' | 'admin';
 }
 
 // =============================
