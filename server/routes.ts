@@ -2765,7 +2765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Delete the invitation
       await storage.deleteInvitation(invitationId);
       
-      return res.status(200).end();
+      return res.status(200).json({ message: "Invitation deleted successfully" });
     } catch (error) {
       console.error("Error deleting invitation:", error);
       
