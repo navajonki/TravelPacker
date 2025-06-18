@@ -297,23 +297,24 @@ export default function ShareModal({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => copyInvitationLink(invitation.token)}
-                            className="text-blue-600 hover:text-blue-700"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 px-2"
+                            title="Copy invitation link"
                           >
-                            <Copy className="h-4 w-4 mr-1" />
-                            Copy Link
+                            <Copy className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => setCancelInvitationId(invitation.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 px-2"
+                            title="Cancel invitation"
                           >
-                            Cancel
+                            <XCircle className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
