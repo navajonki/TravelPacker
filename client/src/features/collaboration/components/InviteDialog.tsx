@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Copy, CheckCircle2 } from "lucide-react";
 import { useInvitations } from "../hooks";
@@ -20,7 +20,6 @@ export default function InviteDialog({
   onOpenChange 
 }: InviteDialogProps) {
   const [email, setEmail] = useState<string>("");
-  const [role, setRole] = useState<string>("viewer");
   const [invitationLink, setInvitationLink] = useState<string>("");
   const [linkCopied, setLinkCopied] = useState<boolean>(false);
   const { toast } = useToast();
@@ -46,7 +45,7 @@ export default function InviteDialog({
     
     try {
       // Create invitation
-      const response = await createInvitation(email, role);
+      const response = await createInvitation(email);
       
       // Create invitation link
       const baseUrl = window.location.origin;
@@ -96,7 +95,6 @@ export default function InviteDialog({
   const handleClose = () => {
     // Reset form state
     setEmail("");
-    setRole("viewer");
     setInvitationLink("");
     setLinkCopied(false);
     
@@ -110,7 +108,7 @@ export default function InviteDialog({
         <DialogHeader>
           <DialogTitle>Invite Collaborator</DialogTitle>
           <DialogDescription>
-            Invite someone to collaborate on this packing list.
+            Invite someone to collaborate on this packing list. All collaborators have full access to create, edit, and delete items.
           </DialogDescription>
         </DialogHeader>
         
@@ -129,21 +127,7 @@ export default function InviteDialog({
             />
           </div>
           
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="role" className="text-right">
-              Role
-            </Label>
-            <Select value={role} onValueChange={setRole}>
-              <SelectTrigger id="role" className="col-span-3">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="viewer">Viewer (Can view only)</SelectItem>
-                <SelectItem value="editor">Editor (Can edit items)</SelectItem>
-                <SelectItem value="admin">Admin (Full access)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+
           
           {invitationLink && (
             <div className="grid grid-cols-4 items-center gap-4 mt-2">

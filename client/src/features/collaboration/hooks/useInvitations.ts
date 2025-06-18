@@ -19,7 +19,7 @@ interface UseInvitationsResult {
   isLoading: boolean;
   isError: boolean;
   error: ApiError | null;
-  createInvitation: (email: string, permissionLevel: string) => Promise<any>;
+  createInvitation: (email: string) => Promise<any>;
   cancelInvitation: (invitationId: number) => Promise<void>;
 }
 
@@ -40,12 +40,11 @@ export default function useInvitations({ packingListId }: UseInvitationsProps): 
   
   // Mutation to create a new invitation
   const createMutation = useMutation({
-    mutationFn: ({ email, permissionLevel }: { email: string; permissionLevel: string }) => {
-      logger.debug('Creating invitation', { packingListId, email, permissionLevel });
+    mutationFn: ({ email }: { email: string }) => {
+      logger.debug('Creating invitation', { packingListId, email });
       return CollaborationApi.createInvitation({
         email,
-        packingListId,
-        permissionLevel: permissionLevel as any
+        packingListId
       });
     },
     onSuccess: (data) => {
