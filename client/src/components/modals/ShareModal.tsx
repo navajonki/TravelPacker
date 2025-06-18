@@ -37,7 +37,8 @@ import {
   User,
   UserX,
   Share2,
-  Send
+  Send,
+  Copy
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { InviteDialog } from "@/features/collaboration/components";
@@ -167,6 +168,23 @@ export default function ShareModal({
     }
   };
 
+  const copyInvitationLink = async (token: string) => {
+    const inviteUrl = `${window.location.origin}/invite/${token}`;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast({
+        title: "Link Copied",
+        description: "Invitation link copied to clipboard.",
+      });
+    } catch (error) {
+      toast({
+        title: "Copy Failed",
+        description: "Failed to copy link to clipboard.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <SideDialog open={open} onOpenChange={(open) => !open && onClose()}>
@@ -279,14 +297,25 @@ export default function ShareModal({
                             </p>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCancelInvitationId(invitation.id)}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          Cancel
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyInvitationLink(invitation.token)}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Copy className="h-4 w-4 mr-1" />
+                            Copy Link
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCancelInvitationId(invitation.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
