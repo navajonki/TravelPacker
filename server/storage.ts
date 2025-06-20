@@ -3,6 +3,7 @@ import {
   packingLists, type PackingList, type InsertPackingList,
   packingListCollaborators, type PackingListCollaborator, type InsertCollaborator,
   collaborationInvitations, type CollaborationInvitation, type InsertInvitation,
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   bags, type Bag, type InsertBag,
   travelers, type Traveler, type InsertTraveler,
   categories, type Category, type InsertCategory,
@@ -19,6 +20,13 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPassword(id: number, hashedPassword: string): Promise<void>;
+
+  // Password reset methods
+  createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken>;
+  getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined>;
+  markPasswordResetTokenAsUsed(token: string): Promise<void>;
+  deleteExpiredPasswordResetTokens(): Promise<void>;
 
   // PackingList methods
   getPackingLists(userId: number): Promise<PackingList[]>;

@@ -65,6 +65,22 @@ export const insertInvitationSchema = createInsertSchema(collaborationInvitation
   email: true,
 });
 
+// Password reset tokens table
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  token: text("token").notNull().unique(),
+  expires: timestamp("expires").notNull(),
+  used: boolean("used").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+
+export const insertPasswordResetTokenSchema = createInsertSchema(passwordResetTokens).pick({
+  userId: true,
+  token: true,
+  expires: true,
+});
+
 // Bags schema
 export const bags = pgTable("bags", {
   id: serial("id").primaryKey(),
@@ -153,6 +169,9 @@ export type InsertCollaborator = z.infer<typeof insertCollaboratorSchema>;
 
 export type CollaborationInvitation = typeof collaborationInvitations.$inferSelect;
 export type InsertInvitation = z.infer<typeof insertInvitationSchema>;
+
+export type PasswordResetToken = typeof passwordResetTokens.$inferSelect;
+export type InsertPasswordResetToken = z.infer<typeof insertPasswordResetTokenSchema>;
 
 export type Bag = typeof bags.$inferSelect;
 export type InsertBag = z.infer<typeof insertBagSchema>;

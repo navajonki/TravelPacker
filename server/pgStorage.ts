@@ -1,10 +1,11 @@
 import { db } from "./db";
-import { eq, and, inArray, ne } from "drizzle-orm";
+import { eq, and, inArray, ne, lt } from "drizzle-orm";
 import { 
   users, type User, type InsertUser,
   packingLists, type PackingList, type InsertPackingList,
   packingListCollaborators, type PackingListCollaborator, type InsertCollaborator,
   collaborationInvitations, type CollaborationInvitation, type InsertInvitation,
+  passwordResetTokens, type PasswordResetToken, type InsertPasswordResetToken,
   bags, type Bag, type InsertBag,
   travelers, type Traveler, type InsertTraveler,
   categories, type Category, type InsertCategory,
