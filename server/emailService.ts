@@ -71,10 +71,13 @@ class EmailService {
       This link will expire in 1 hour for security purposes.
     `;
 
+    // Use environment variable for sender email, fallback to a placeholder
+    const senderEmail = process.env.SENDGRID_SENDER_EMAIL || 'noreply@yourverifieddomain.com';
+    
     return await this.sendEmail({
       to: email,
-      from: 'noreply@packinglist.app', // Replace with your verified sender
-      subject: 'Reset Your Password',
+      from: senderEmail,
+      subject: 'Reset Your Password - TravelPack',
       text: textContent,
       html: htmlContent,
     });
