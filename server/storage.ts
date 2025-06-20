@@ -181,6 +181,50 @@ export class MemStorage implements IStorage {
     return user;
   }
 
+  async updateUserPassword(id: number, hashedPassword: string): Promise<void> {
+    const user = this.users.get(id);
+    if (user) {
+      user.password = hashedPassword;
+      this.users.set(id, user);
+    }
+  }
+
+  // Password reset methods
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const id = Date.now(); // Simple ID generation for in-memory storage
+    const passwordResetToken: PasswordResetToken = {
+      id,
+      userId: token.userId,
+      token: token.token,
+      used: false,
+      expires: token.expires,
+      createdAt: new Date()
+    };
+    this.passwordResetTokens.set(token.token, passwordResetToken);
+    return passwordResetToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    return this.passwordResetTokens.get(token);
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    const resetToken = this.passwordResetTokens.get(token);
+    if (resetToken) {
+      resetToken.used = true;
+      this.passwordResetTokens.set(token, resetToken);
+    }
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    const now = new Date();
+    for (const [token, resetToken] of this.passwordResetTokens) {
+      if (resetToken.expires < now) {
+        this.passwordResetTokens.delete(token);
+      }
+    }
+  }
+
   // PackingList methods
   async getPackingLists(userId: number): Promise<PackingList[]> {
     return Array.from(this.packingLists.values()).filter(
@@ -692,6 +736,44 @@ export class DatabaseStorage implements IStorage {
       .values(insertUser)
       .returning();
     return user;
+  }
+
+  async updateUserPassword(id: number, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id));
+  }
+
+  // Password reset methods
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const [passwordResetToken] = await db
+      .insert(passwordResetTokens)
+      .values(token)
+      .returning();
+    return passwordResetToken;
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const [passwordResetToken] = await db
+      .select()
+      .from(passwordResetTokens)
+      .where(eq(passwordResetTokens.token, token));
+    return passwordResetToken || undefined;
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    await db
+      .update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.token, token));
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    const now = new Date();
+    await db
+      .delete(passwordResetTokens)
+      .where(sql`${passwordResetTokens.expires} < ${now.toISOString()}`);
   }
 
   // PackingList methods
