@@ -103,6 +103,7 @@ export class MemStorage implements IStorage {
   private templates: Map<number, Template>;
   private collaborators: Map<string, PackingListCollaborator>;
   private invitations: Map<number, CollaborationInvitation>;
+  private passwordResetTokens: Map<string, PasswordResetToken>;
   
   private currentUserId: number;
   private currentPackingListId: number;
@@ -127,6 +128,7 @@ export class MemStorage implements IStorage {
     this.templates = new Map();
     this.collaborators = new Map();
     this.invitations = new Map();
+    this.passwordResetTokens = new Map();
     
     this.currentUserId = 1;
     this.currentPackingListId = 1;
