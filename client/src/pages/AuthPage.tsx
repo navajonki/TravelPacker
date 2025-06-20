@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
 import { useState } from "react";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { Loader2 } from "lucide-react";
 
 export default function AuthPage() {
@@ -94,6 +94,14 @@ export default function AuthPage() {
                       </>
                     ) : "Sign In"}
                   </Button>
+                  
+                  <div className="text-center mt-4">
+                    <Link href="/forgot-password">
+                      <Button variant="link" className="text-sm p-0">
+                        Forgot your password?
+                      </Button>
+                    </Link>
+                  </div>
                 </form>
               </TabsContent>
               

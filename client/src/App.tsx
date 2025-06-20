@@ -4,6 +4,8 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import PackingList from "@/pages/PackingList";
 import AuthPage from "@/pages/AuthPage";
+import ForgotPasswordPage from "@/pages/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/ResetPasswordPage";
 import InvitationPage from "@/pages/InvitationPage";
 import UnassignedItemsTest from "@/pages/UnassignedItemsTest";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -38,6 +40,8 @@ function Router() {
       <ProtectedRoute path="/list/:id" component={PackingList} />
       <ProtectedRoute path="/list/:id/unassigned" component={UnassignedItemsTest} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/invitation/:token" component={InvitationPage} />
       <Route component={NotFound} />
     </Switch>
