@@ -31,6 +31,34 @@ export class PgStorage implements IStorage {
     return result[0];
   }
 
+  async updateUserPassword(id: number, hashedPassword: string): Promise<void> {
+    await db.update(users)
+      .set({ password: hashedPassword })
+      .where(eq(users.id, id));
+  }
+
+  // Password reset token methods
+  async createPasswordResetToken(token: InsertPasswordResetToken): Promise<PasswordResetToken> {
+    const result = await db.insert(passwordResetTokens).values(token).returning();
+    return result[0];
+  }
+
+  async getPasswordResetToken(token: string): Promise<PasswordResetToken | undefined> {
+    const result = await db.select().from(passwordResetTokens).where(eq(passwordResetTokens.token, token));
+    return result[0];
+  }
+
+  async markPasswordResetTokenAsUsed(token: string): Promise<void> {
+    await db.update(passwordResetTokens)
+      .set({ used: true })
+      .where(eq(passwordResetTokens.token, token));
+  }
+
+  async deleteExpiredPasswordResetTokens(): Promise<void> {
+    await db.delete(passwordResetTokens)
+      .where(lt(passwordResetTokens.expires, new Date()));
+  }
+
   // PackingList methods
   async getPackingLists(userId: number): Promise<PackingList[]> {
     return await db.select().from(packingLists).where(eq(packingLists.userId, userId));

@@ -3,7 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import passport from "passport";
-import { isAuthenticated, hashPassword } from "./auth";
+import { isAuthenticated, hashPassword, comparePasswords } from "./auth";
+import { emailService } from "./emailService";
+import { randomBytes } from "crypto";
 import { db } from "./db";
 import { eq, and, inArray, sql } from "drizzle-orm";
 import { items } from "@shared/schema";
@@ -119,6 +121,104 @@ export async function registerRoutes(app: Express): Promise<Server> {
       id: user.id,
       username: user.username
     });
+  });
+
+  // Password reset request
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Find user by email (username)
+      const user = await storage.getUserByUsername(email);
+      if (!user) {
+        // Don't reveal if user exists, just return success for security
+        return res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+      }
+
+      // Generate secure random token
+      const resetToken = randomBytes(32).toString('hex');
+      
+      // Token expires in 1 hour
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+
+      // Store reset token in database
+      await storage.createPasswordResetToken({
+        userId: user.id,
+        token: resetToken,
+        expires: expiresAt,
+      });
+
+      // Send reset email
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const emailSent = await emailService.sendPasswordResetEmail(email, resetToken, baseUrl);
+
+      if (!emailSent) {
+        return res.status(500).json({ message: "Failed to send reset email. Please try again later." });
+      }
+
+      res.json({ message: "If an account with that email exists, a password reset link has been sent." });
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Reset password with token
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      // Find valid token
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken || resetToken.used || resetToken.expires < new Date()) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update user password
+      await storage.updateUserPassword(resetToken.userId, hashedPassword);
+
+      // Mark token as used
+      await storage.markPasswordResetTokenAsUsed(token);
+
+      res.json({ message: "Password has been reset successfully" });
+    } catch (error) {
+      console.error('Password reset error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Validate reset token (for frontend to check if token is valid)
+  app.get("/api/auth/validate-reset-token/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+
+      const resetToken = await storage.getPasswordResetToken(token);
+      
+      if (!resetToken || resetToken.used || resetToken.expires < new Date()) {
+        return res.status(400).json({ valid: false, message: "Invalid or expired reset token" });
+      }
+
+      res.json({ valid: true });
+    } catch (error) {
+      console.error('Token validation error:', error);
+      res.status(500).json({ message: "Internal server error" });
+    }
   });
 
   // User routes
