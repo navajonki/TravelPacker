@@ -122,6 +122,7 @@ TravelPack is a collaborative packing list management application that allows us
   - Successfully tested with zjbodnar@gmail.com and zikzaker@gmail.com
   - Password reset emails delivered via Mailjet free service
   - Token generation and validation working correctly on server
+  - Fixed Mailjet click tracking interference with reset links
 
 ## Changelog
 

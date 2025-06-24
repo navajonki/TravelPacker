@@ -47,7 +47,9 @@ class MailjetService {
             ],
             Subject: params.subject,
             TextPart: params.text,
-            HTMLPart: params.html
+            HTMLPart: params.html,
+            TrackClicks: 'disabled',
+            TrackOpens: 'disabled'
           }
         ]
       });
