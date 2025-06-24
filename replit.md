@@ -119,7 +119,9 @@ TravelPack is a collaborative packing list management application that allows us
   - Implemented intelligent provider selection (Mailjet → SendGrid fallback)
   - Created comprehensive setup guide for free email delivery
   - Eliminated email costs for small to medium usage
-  - Successfully tested with zjbodnar@gmail.com - working perfectly
+  - Successfully tested with zjbodnar@gmail.com and zikzaker@gmail.com
+  - Password reset emails delivered via Mailjet free service
+  - Token generation and validation working correctly on server
 
 ## Changelog
 
