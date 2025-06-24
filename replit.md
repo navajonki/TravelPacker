@@ -105,10 +105,25 @@ TravelPack is a collaborative packing list management application that allows us
 - **CSRF Protection**: Same-site cookie configuration
 - **SQL Injection**: Parameterized queries through Drizzle ORM
 
+## Recent Changes
+
+- **December 20, 2024**: Implemented complete email-based password reset system
+  - Created secure password reset tokens with 1-hour expiration
+  - Built ForgotPasswordPage and ResetPasswordPage with proper validation
+  - Integrated SendGrid for reliable email delivery
+  - Added "Forgot Password" link to authentication flow
+  - System automatically handles token validation and one-time use
+
+- **December 20, 2024**: Optimized email service configuration
+  - Evaluated Mailchimp Transactional vs SendGrid costs
+  - Decided on SendGrid for better cost efficiency ($20/month vs $14.95/month)
+  - Simplified email service to use only SendGrid
+  - Removed unnecessary Mailchimp dependencies
+
 ## Changelog
 
-Changelog:
 - June 24, 2025. Initial setup
+- December 20, 2024. Complete password reset system implementation
 
 ## User Preferences
 
