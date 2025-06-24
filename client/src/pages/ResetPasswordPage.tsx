@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Link, useLocation, useRoute } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,6 @@ const resetPasswordSchema = z.object({
 type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPasswordPage() {
-  const [, params] = useRoute("/reset-password");
   const [location] = useLocation();
   const [resetSuccess, setResetSuccess] = useState(false);
   const { toast } = useToast();
@@ -31,8 +30,6 @@ export default function ResetPasswordPage() {
   // Extract token from URL params
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const token = urlParams.get('token');
-  
-
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -96,10 +93,8 @@ export default function ResetPasswordPage() {
     );
   }
 
-  // Clean validation logic without excessive debugging
-  
-  // Only show error after validation completes and definitively fails
-  if (!validatingToken && (!token || tokenError || (tokenValidation && tokenValidation.valid === false))) {
+  // Show error if no token or invalid token
+  if (!token || tokenError || (tokenValidation && tokenValidation.valid === false)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
@@ -163,13 +158,8 @@ export default function ResetPasswordPage() {
       </div>
     );
   }
-  
-  // Show the password reset form if token validation passed
-  if (!token || !tokenValidation?.valid) {
-    return null; // This shouldn't happen as we handle these cases above
-  }
 
-  // Show reset form
+  // Show password reset form (token is valid)
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -218,25 +208,23 @@ export default function ResetPasswordPage() {
                     </FormItem>
                   )}
                 />
-                
-                <Button
-                  type="submit"
+
+                <Button 
+                  type="submit" 
                   className="w-full"
                   disabled={resetPasswordMutation.isPending}
                 >
-                  {resetPasswordMutation.isPending ? "Resetting..." : "Reset Password"}
+                  {resetPasswordMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Resetting Password...
+                    </>
+                  ) : (
+                    "Reset Password"
+                  )}
                 </Button>
               </form>
             </Form>
-            
-            <div className="mt-6 text-center">
-              <Link href="/auth">
-                <Button variant="ghost" className="text-sm">
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Login
-                </Button>
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </div>
