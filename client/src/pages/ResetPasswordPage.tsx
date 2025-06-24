@@ -32,18 +32,7 @@ export default function ResetPasswordPage() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const token = urlParams.get('token');
   
-  // Debug logging
-  useEffect(() => {
-    console.log('=== RESET PASSWORD DEBUG ===');
-    console.log('Location:', location);
-    console.log('URL search params:', location.split('?')[1]);
-    console.log('Token extracted:', token);
-    console.log('Token length:', token?.length);
-    console.log('Validating token:', validatingToken);
-    console.log('Token validation result:', tokenValidation);
-    console.log('Token error:', tokenError);
-    console.log('=== END DEBUG ===');
-  }, [location, token, validatingToken, tokenValidation, tokenError]);
+
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -107,22 +96,10 @@ export default function ResetPasswordPage() {
     );
   }
 
-  // More specific error checking
-  const hasToken = !!token;
-  const hasValidationError = !!tokenError;
-  const hasValidationResponse = !!tokenValidation;
-  const isTokenValid = tokenValidation?.valid === true;
+  // Clean validation logic without excessive debugging
   
-  console.log('Condition checks:', {
-    hasToken,
-    hasValidationError, 
-    hasValidationResponse,
-    isTokenValid,
-    shouldShowError: !hasToken || hasValidationError || (hasValidationResponse && !isTokenValid)
-  });
-  
-  // Only show error if we definitively know there's a problem
-  if (!token || tokenError || (tokenValidation && tokenValidation.valid === false)) {
+  // Wait for validation to complete before showing error
+  if (!validatingToken && (!token || tokenError || (tokenValidation && tokenValidation.valid === false))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
