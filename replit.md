@@ -114,11 +114,11 @@ TravelPack is a collaborative packing list management application that allows us
   - Added "Forgot Password" link to authentication flow
   - System automatically handles token validation and one-time use
 
-- **December 20, 2024**: Optimized email service configuration
-  - Evaluated Mailchimp Transactional vs SendGrid costs
-  - Decided on SendGrid for better cost efficiency ($20/month vs $14.95/month)
-  - Simplified email service to use only SendGrid
-  - Removed unnecessary Mailchimp dependencies
+- **December 20, 2024**: Integrated free Mailjet email service
+  - Added Mailjet as primary email provider (6,000 free emails/month)
+  - Implemented intelligent provider selection (Mailjet → SendGrid fallback)
+  - Created comprehensive setup guide for free email delivery
+  - Eliminated email costs for small to medium usage
 
 ## Changelog
 
