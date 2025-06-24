@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
   const { toast } = useToast();
 
   // Extract token from URL params
-  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
 
   const form = useForm<ResetPasswordForm>({
@@ -46,6 +46,16 @@ export default function ResetPasswordPage() {
     retry: false,
     staleTime: 0,
     cacheTime: 0,
+  });
+
+  // Debug logging
+  console.log('Reset page debug:', {
+    fullUrl: window.location.href,
+    search: window.location.search,
+    token: token ? token.substring(0, 10) + '...' : null,
+    validatingToken,
+    tokenValidation,
+    tokenError: tokenError?.message
   });
 
   const resetPasswordMutation = useMutation({

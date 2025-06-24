@@ -70,7 +70,7 @@ TravelPack is a collaborative packing list management application that allows us
 ## External Dependencies
 
 ### Email Services
-- **Primary**: Mailchimp Transactional for password reset emails
+- **Primary**: Mailjet for password reset emails (6,000 free emails/month)
 - **Fallback**: SendGrid as backup email provider
 - **Configuration**: Environment-based provider selection
 
