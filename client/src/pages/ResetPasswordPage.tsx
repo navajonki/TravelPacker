@@ -31,6 +31,10 @@ export default function ResetPasswordPage() {
   // Extract token from URL params
   const urlParams = new URLSearchParams(location.split('?')[1]);
   const token = urlParams.get('token');
+  
+  // Debug token extraction
+  console.log('Location:', location);
+  console.log('Token extracted:', token);
 
   const form = useForm<ResetPasswordForm>({
     resolver: zodResolver(resetPasswordSchema),
@@ -45,6 +49,13 @@ export default function ResetPasswordPage() {
     queryKey: [`/api/auth/validate-reset-token/${token}`],
     enabled: !!token,
     retry: false,
+    queryFn: async () => {
+      const response = await fetch(`/api/auth/validate-reset-token/${token}`);
+      if (!response.ok) {
+        throw new Error('Invalid or expired reset token');
+      }
+      return response.json();
+    }
   });
 
   const resetPasswordMutation = useMutation({
