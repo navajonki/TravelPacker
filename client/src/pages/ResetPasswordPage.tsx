@@ -98,7 +98,7 @@ export default function ResetPasswordPage() {
 
   // Clean validation logic without excessive debugging
   
-  // Wait for validation to complete before showing error
+  // Only show error after validation completes and definitively fails
   if (!validatingToken && (!token || tokenError || (tokenValidation && tokenValidation.valid === false))) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -162,6 +162,11 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     );
+  }
+  
+  // Show the password reset form if token validation passed
+  if (!token || !tokenValidation?.valid) {
+    return null; // This shouldn't happen as we handle these cases above
   }
 
   // Show reset form
