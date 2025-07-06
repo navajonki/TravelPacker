@@ -49,8 +49,6 @@ export default function UnassignedItemsContainer({
   newItemName: externalNewItemName,
   setNewItemName: externalSetNewItemName
 }: UnassignedItemsContainerProps) {
-  console.log('🏁 UnassignedItemsContainer MOUNT/INIT with props:', { packingListId, viewContext });
-  
   // Use external state if provided, otherwise fall back to internal state
   const [internalShowAddItem, setInternalShowAddItem] = useState(false);
   const [internalNewItemName, setInternalNewItemName] = useState("");
@@ -60,9 +58,6 @@ export default function UnassignedItemsContainer({
   const setShowAddItem = externalSetShowAddItem || setInternalShowAddItem;
   const newItemName = externalNewItemName !== undefined ? externalNewItemName : internalNewItemName;
   const setNewItemName = externalSetNewItemName || setInternalNewItemName;
-  
-  // Log when state changes
-  console.log('📝 Component state (external/internal):', { showAddItem, newItemName, isExternal: !!externalShowAddItem });
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -253,24 +248,18 @@ export default function UnassignedItemsContainer({
         <CardFooter className="p-2">
           <Button
             variant="ghost"
-            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md bg-red-200"
-            onClick={() => {
-              console.log('🔴 EMPTY STATE Add item button clicked, showAddItem before:', showAddItem);
-              setShowAddItem(true);
-              console.log('🔴 EMPTY STATE Add item button clicked, showAddItem after should be true');
-              alert('DEBUG: Empty state button clicked! showAddItem is now: ' + true);
-            }}
+            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
+            onClick={() => setShowAddItem(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
-            <span>🔴 Add an item (EMPTY STATE DEBUG)</span>
+            <span>Add an item</span>
           </Button>
         </CardFooter>
       </Card>
     );
   }
   
-  // Simplified debug
-  console.log('🐛 UnassignedItemsContainer render:', { showAddItem, viewContext, timestamp: Date.now() });
+
 
   // Otherwise show the full card with items
   return (
@@ -332,49 +321,38 @@ export default function UnassignedItemsContainer({
             )
           ))}
           
-          {/* DEBUG: Force show input regardless of state */}
-          <li className="p-2 bg-red-100">
-            <div className="text-sm text-red-800">
-              DEBUG: showAddItem = {String(showAddItem)}
-              {showAddItem ? " (INPUT SHOULD BE VISIBLE)" : " (INPUT SHOULD BE HIDDEN)"}
-            </div>
-          </li>
-          
-          {/* Add item input - let's force it to always show for debugging */}
-          <li className="p-2 bg-green-100">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" disabled />
+          {/* Add item input */}
+          {showAddItem && (
+            <li className="p-2">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" disabled />
+                </div>
+                <div className="ml-3 flex-1">
+                  <Input
+                    type="text"
+                    autoFocus
+                    className="h-8 text-sm border-0 p-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                    placeholder="Item name"
+                    value={newItemName}
+                    onChange={(e) => setNewItemName(e.target.value)}
+                    onKeyDown={handleAddItemKeyDown}
+                  />
+                </div>
               </div>
-              <div className="ml-3 flex-1">
-                <Input
-                  type="text"
-                  autoFocus
-                  className="h-8 text-sm border-0 p-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
-                  placeholder="Item name (ALWAYS VISIBLE FOR DEBUG)"
-                  value={newItemName}
-                  onChange={(e) => setNewItemName(e.target.value)}
-                  onKeyDown={handleAddItemKeyDown}
-                />
-              </div>
-            </div>
-          </li>
+            </li>
+          )}
         </ul>
       </CardContent>
       
       <CardFooter className="p-2">
         <Button
           variant="ghost"
-          className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md bg-blue-200"
-          onClick={() => {
-            console.log('🔵 FOOTER Add item button clicked, showAddItem before:', showAddItem);
-            setShowAddItem(true);
-            console.log('🔵 FOOTER Add item button clicked, showAddItem after should be true');
-            alert('DEBUG: Footer button clicked! showAddItem is now: ' + true);
-          }}
+          className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
+          onClick={() => setShowAddItem(true)}
         >
           <Plus className="h-4 w-4 mr-1" />
-          <span>🔵 Add an item (FOOTER DEBUG)</span>
+          <span>Add an item</span>
         </Button>
       </CardFooter>
     </Card>

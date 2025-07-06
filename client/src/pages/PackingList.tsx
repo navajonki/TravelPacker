@@ -65,8 +65,6 @@ import {
 import { Loader2, CheckCircle, ChevronDown } from "lucide-react";
 
 export default function PackingList() {
-  console.log('🔥 PackingList component rendering at', Date.now());
-  
   const { id } = useParams<{ id: string }>();
   const packingListId = parseInt(id);
   const [, setLocation] = useLocation();
