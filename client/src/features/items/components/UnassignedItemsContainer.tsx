@@ -43,16 +43,26 @@ export default function UnassignedItemsContainer({
   onAddItem,
   isMultiEditMode = false,
   selectedItemIds = [],
-  onSelectChange
+  onSelectChange,
+  showAddItem: externalShowAddItem,
+  setShowAddItem: externalSetShowAddItem,
+  newItemName: externalNewItemName,
+  setNewItemName: externalSetNewItemName
 }: UnassignedItemsContainerProps) {
   console.log('🏁 UnassignedItemsContainer MOUNT/INIT with props:', { packingListId, viewContext });
   
-  const [showAddItem, setShowAddItem] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
+  // Use external state if provided, otherwise fall back to internal state
+  const [internalShowAddItem, setInternalShowAddItem] = useState(false);
+  const [internalNewItemName, setInternalNewItemName] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  const showAddItem = externalShowAddItem !== undefined ? externalShowAddItem : internalShowAddItem;
+  const setShowAddItem = externalSetShowAddItem || setInternalShowAddItem;
+  const newItemName = externalNewItemName !== undefined ? externalNewItemName : internalNewItemName;
+  const setNewItemName = externalSetNewItemName || setInternalNewItemName;
+  
   // Log when state changes
-  console.log('📝 Component state initialized:', { showAddItem, newItemName });
+  console.log('📝 Component state (external/internal):', { showAddItem, newItemName, isExternal: !!externalShowAddItem });
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -259,23 +269,8 @@ export default function UnassignedItemsContainer({
     );
   }
   
-  // Debug current state - check every render
-  console.log('🐛 UnassignedItemsContainer RENDER #' + Date.now(), {
-    showAddItem,
-    newItemName,
-    unassignedItemsCount: unassignedItems.length,
-    isLoading,
-    viewContext,
-    packingListId
-  });
-
-  // Test: Add a simple visual indicator when showAddItem is true
-  if (showAddItem) {
-    console.log('🟡 SHOULD SHOW ADD ITEM INPUT - showAddItem is true');
-  }
-  
-  // Check if component is re-mounting/re-creating
-  console.log('🔄 Component state check - showAddItem should persist:', showAddItem);
+  // Simplified debug
+  console.log('🐛 UnassignedItemsContainer render:', { showAddItem, viewContext, timestamp: Date.now() });
 
   // Otherwise show the full card with items
   return (

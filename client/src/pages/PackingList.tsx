@@ -65,6 +65,8 @@ import {
 import { Loader2, CheckCircle, ChevronDown } from "lucide-react";
 
 export default function PackingList() {
+  console.log('🔥 PackingList component rendering at', Date.now());
+  
   const { id } = useParams<{ id: string }>();
   const packingListId = parseInt(id);
   const [, setLocation] = useLocation();
@@ -76,6 +78,12 @@ export default function PackingList() {
   
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
+  
+  // Add item states for UnassignedItemsContainer
+  const [showAddItemCategory, setShowAddItemCategory] = useState(false);
+  const [showAddItemBag, setShowAddItemBag] = useState(false);
+  const [showAddItemTraveler, setShowAddItemTraveler] = useState(false);
+  const [newItemName, setNewItemName] = useState("");
   
   // Set up real-time collaboration for instant sync between users
   const { sendUpdate } = useRealTimeSync(packingListId, user);
@@ -689,6 +697,10 @@ export default function PackingList() {
                       isMultiEditMode={isMultiEditMode}
                       selectedItemIds={selectedItemIds}
                       onSelectChange={handleItemSelection}
+                      showAddItem={showAddItemCategory}
+                      setShowAddItem={setShowAddItemCategory}
+                      newItemName={newItemName}
+                      setNewItemName={setNewItemName}
                     />
                     <AddCategoryCard onClick={() => setAddCategoryOpen(true)} />
                   </>
@@ -759,6 +771,10 @@ export default function PackingList() {
                       isMultiEditMode={isMultiEditMode}
                       selectedItemIds={selectedItemIds}
                       onSelectChange={handleItemSelection}
+                      showAddItem={showAddItemBag}
+                      setShowAddItem={setShowAddItemBag}
+                      newItemName={newItemName}
+                      setNewItemName={setNewItemName}
                     />
                     <AddBagCard onClick={() => setAddBagOpen(true)} />
                   </>
@@ -829,6 +845,10 @@ export default function PackingList() {
                       isMultiEditMode={isMultiEditMode}
                       selectedItemIds={selectedItemIds}
                       onSelectChange={handleItemSelection}
+                      showAddItem={showAddItemTraveler}
+                      setShowAddItem={setShowAddItemTraveler}
+                      newItemName={newItemName}
+                      setNewItemName={setNewItemName}
                     />
                     <AddTravelerCard onClick={() => setAddTravelerOpen(true)} />
                   </>
