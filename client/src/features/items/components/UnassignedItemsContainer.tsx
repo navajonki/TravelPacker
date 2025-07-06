@@ -45,9 +45,14 @@ export default function UnassignedItemsContainer({
   selectedItemIds = [],
   onSelectChange
 }: UnassignedItemsContainerProps) {
+  console.log('🏁 UnassignedItemsContainer MOUNT/INIT with props:', { packingListId, viewContext });
+  
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Log when state changes
+  console.log('📝 Component state initialized:', { showAddItem, newItemName });
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -254,18 +259,23 @@ export default function UnassignedItemsContainer({
     );
   }
   
-  // Debug current state
-  console.log('UnassignedItemsContainer render state:', {
+  // Debug current state - check every render
+  console.log('🐛 UnassignedItemsContainer RENDER #' + Date.now(), {
     showAddItem,
     newItemName,
     unassignedItemsCount: unassignedItems.length,
-    isLoading
+    isLoading,
+    viewContext,
+    packingListId
   });
 
   // Test: Add a simple visual indicator when showAddItem is true
   if (showAddItem) {
     console.log('🟡 SHOULD SHOW ADD ITEM INPUT - showAddItem is true');
   }
+  
+  // Check if component is re-mounting/re-creating
+  console.log('🔄 Component state check - showAddItem should persist:', showAddItem);
 
   // Otherwise show the full card with items
   return (
