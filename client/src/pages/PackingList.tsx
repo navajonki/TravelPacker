@@ -678,6 +678,7 @@ export default function PackingList() {
                     ))}
                     {/* Use the same component style as other views */}
                     <UnassignedItemsContainer
+                      key="unassigned-category"
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="category"
@@ -747,6 +748,7 @@ export default function PackingList() {
                     {/* Unassigned Items Card for Bag View */}
                     {/* Use only one component for unassigned bag items */}
                     <UnassignedItemsContainer
+                      key="unassigned-bag"
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="bag"
@@ -816,6 +818,7 @@ export default function PackingList() {
                     {/* Unassigned Items Card for Traveler View */}
                     {/* Use only one component for unassigned traveler items */}
                     <UnassignedItemsContainer
+                      key="unassigned-traveler"
                       packingListId={packingListId}
                       onEditItem={handleEditItem}
                       viewContext="traveler"
