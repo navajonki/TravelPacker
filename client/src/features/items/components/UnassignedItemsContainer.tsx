@@ -238,15 +238,16 @@ export default function UnassignedItemsContainer({
         <CardFooter className="p-2">
           <Button
             variant="ghost"
-            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
+            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md bg-red-200"
             onClick={() => {
-              console.log('Add item button clicked, showAddItem before:', showAddItem);
+              console.log('🔴 EMPTY STATE Add item button clicked, showAddItem before:', showAddItem);
               setShowAddItem(true);
-              console.log('Add item button clicked, showAddItem after should be true');
+              console.log('🔴 EMPTY STATE Add item button clicked, showAddItem after should be true');
+              alert('DEBUG: Empty state button clicked! showAddItem is now: ' + true);
             }}
           >
             <Plus className="h-4 w-4 mr-1" />
-            <span>Add an item</span>
+            <span>🔴 Add an item (EMPTY STATE DEBUG)</span>
           </Button>
         </CardFooter>
       </Card>
@@ -359,15 +360,16 @@ export default function UnassignedItemsContainer({
       <CardFooter className="p-2">
         <Button
           variant="ghost"
-          className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
+          className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md bg-blue-200"
           onClick={() => {
-            console.log('Add item button clicked (footer), showAddItem before:', showAddItem);
+            console.log('🔵 FOOTER Add item button clicked, showAddItem before:', showAddItem);
             setShowAddItem(true);
-            console.log('Add item button clicked (footer), showAddItem after should be true');
+            console.log('🔵 FOOTER Add item button clicked, showAddItem after should be true');
+            alert('DEBUG: Footer button clicked! showAddItem is now: ' + true);
           }}
         >
           <Plus className="h-4 w-4 mr-1" />
-          <span>Add an item</span>
+          <span>🔵 Add an item (FOOTER DEBUG)</span>
         </Button>
       </CardFooter>
     </Card>
