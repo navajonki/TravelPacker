@@ -54,10 +54,13 @@ export default function UnassignedItemsContainer({
   
   // Use our custom hook for unassigned items
   const { 
-    data: unassignedItems, 
+    data: unassignedItemsData, 
     isLoading, 
     forceRefresh 
   } = useUnassignedItems(packingListId, viewContext);
+  
+  // Ensure we have a proper array with type safety
+  const unassignedItems: Item[] = unassignedItemsData || [];
   
   // Add item mutation
   const addItemMutation = useMutation({
@@ -258,6 +261,11 @@ export default function UnassignedItemsContainer({
     isLoading
   });
 
+  // Test: Add a simple visual indicator when showAddItem is true
+  if (showAddItem) {
+    console.log('🟡 SHOULD SHOW ADD ITEM INPUT - showAddItem is true');
+  }
+
   // Otherwise show the full card with items
   return (
     <Card className="bg-white rounded-lg shadow border-dashed border-2 border-gray-300 mb-4">
@@ -296,7 +304,7 @@ export default function UnassignedItemsContainer({
       
       <CardContent className="p-0">
         <ul className="divide-y divide-gray-100">
-          {unassignedItems.map((item) => (
+          {unassignedItems.map(item => (
             isMultiEditMode ? (
               <SelectableItemRow
                 key={item.id}
@@ -305,6 +313,7 @@ export default function UnassignedItemsContainer({
                 isMultiEditMode={true}
                 isSelected={selectedItemIds.includes(item.id)}
                 onSelectChange={onSelectChange || (() => {})}
+                onEditItem={onEditItem || (() => {})}
               />
             ) : (
               <ItemRow
@@ -336,6 +345,13 @@ export default function UnassignedItemsContainer({
                   />
                 </div>
               </div>
+            </li>
+          )}
+          
+          {/* Always show a visible debug indicator */}
+          {showAddItem && (
+            <li className="p-2 bg-yellow-100">
+              <div className="text-sm text-yellow-800">DEBUG: Add item input should be visible above</div>
             </li>
           )}
         </ul>

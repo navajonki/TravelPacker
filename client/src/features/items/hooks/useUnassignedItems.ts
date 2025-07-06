@@ -25,16 +25,15 @@ export function useUnassignedItems(
   const queryKey = [`/api/packing-lists/${packingListId}/unassigned/${viewContext}`];
   
   // Use the specialized endpoint for unassigned items
-  const queryResult = useQuery<Item[]>({
+  const queryResult = useQuery({
     queryKey,
+    queryFn: () => ItemApi.getAllUnassigned(packingListId, viewContext),
     enabled: !!packingListId,
     staleTime: 60000, // Consider data fresh for 60 seconds (up from 5 seconds)
-    cacheTime: 5 * 60 * 1000, // Cache for 5 minutes
+    gcTime: 5 * 60 * 1000, // Cache for 5 minutes (gcTime in v5)
     refetchOnMount: false, // Don't refetch on mount
     refetchOnWindowFocus: false, // Don't refetch on window focus
     refetchInterval: false, // Disable automatic refetching
-    // Use the API client to fetch data
-    queryFn: () => ItemApi.getAllUnassigned(packingListId, viewContext)
   });
   
   // Temporarily disabled auto-refresh to fix infinite loop issue
