@@ -34,6 +34,11 @@ interface UnassignedItemsContainerProps {
   isMultiEditMode?: boolean;
   selectedItemIds?: number[];
   onSelectChange?: (itemId: number, isSelected: boolean) => void;
+  // External state management for add item
+  showAddItem?: boolean;
+  setShowAddItem?: (show: boolean) => void;
+  newItemName?: string;
+  setNewItemName?: (name: string) => void;
 }
 
 export default function UnassignedItemsContainer({
@@ -240,21 +245,42 @@ export default function UnassignedItemsContainer({
         </CardHeader>
         
         <CardContent className="p-4">
-          <div className="text-center text-gray-500">
-            {helperText}
-          </div>
+          {showAddItem ? (
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" disabled />
+              </div>
+              <div className="ml-3 flex-1">
+                <Input
+                  type="text"
+                  autoFocus
+                  className="h-8 text-sm"
+                  placeholder="Item name"
+                  value={newItemName}
+                  onChange={(e) => setNewItemName(e.target.value)}
+                  onKeyDown={handleAddItemKeyDown}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-gray-500">
+              {helperText}
+            </div>
+          )}
         </CardContent>
         
-        <CardFooter className="p-2">
-          <Button
-            variant="ghost"
-            className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
-            onClick={() => setShowAddItem(true)}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            <span>Add an item</span>
-          </Button>
-        </CardFooter>
+        {!showAddItem && (
+          <CardFooter className="p-2">
+            <Button
+              variant="ghost"
+              className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
+              onClick={() => setShowAddItem(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" />
+              <span>Add an item</span>
+            </Button>
+          </CardFooter>
+        )}
       </Card>
     );
   }
