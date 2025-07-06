@@ -236,7 +236,11 @@ export default function UnassignedItemsContainer({
           <Button
             variant="ghost"
             className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
-            onClick={() => setShowAddItem(true)}
+            onClick={() => {
+              console.log('Add item button clicked, showAddItem before:', showAddItem);
+              setShowAddItem(true);
+              console.log('Add item button clicked, showAddItem after should be true');
+            }}
           >
             <Plus className="h-4 w-4 mr-1" />
             <span>Add an item</span>
@@ -246,6 +250,14 @@ export default function UnassignedItemsContainer({
     );
   }
   
+  // Debug current state
+  console.log('UnassignedItemsContainer render state:', {
+    showAddItem,
+    newItemName,
+    unassignedItemsCount: unassignedItems.length,
+    isLoading
+  });
+
   // Otherwise show the full card with items
   return (
     <Card className="bg-white rounded-lg shadow border-dashed border-2 border-gray-300 mb-4">
@@ -333,7 +345,11 @@ export default function UnassignedItemsContainer({
         <Button
           variant="ghost"
           className="w-full flex items-center justify-center p-2 text-sm text-gray-500 hover:bg-gray-50 rounded-md"
-          onClick={() => setShowAddItem(true)}
+          onClick={() => {
+            console.log('Add item button clicked (footer), showAddItem before:', showAddItem);
+            setShowAddItem(true);
+            console.log('Add item button clicked (footer), showAddItem after should be true');
+          }}
         >
           <Plus className="h-4 w-4 mr-1" />
           <span>Add an item</span>
