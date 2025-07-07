@@ -54,6 +54,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   DropdownMenu,
   DropdownMenuTrigger,
@@ -121,6 +128,7 @@ export default function PackingList() {
   const [selectedTravelers, setSelectedTravelers] = useState<number[]>([]);
   const [showPacked, setShowPacked] = useState<boolean>(true);
   const [showUnpacked, setShowUnpacked] = useState<boolean>(true);
+  const [groupBy, setGroupBy] = useState<'none' | 'category' | 'bag' | 'traveler'>('none');
   
   // Common handler for item selection
   const handleItemSelection = useCallback((itemId: number, isSelected: boolean) => {
@@ -919,6 +927,23 @@ export default function PackingList() {
                       </div>
 
                       <div className="flex flex-col space-y-4 my-6">
+                        <div>
+                          <Label htmlFor="group-by" className="text-sm font-medium mb-2 block">
+                            Group By
+                          </Label>
+                          <Select value={groupBy} onValueChange={(value: 'none' | 'category' | 'bag' | 'traveler') => setGroupBy(value)}>
+                            <SelectTrigger id="group-by" className="w-full">
+                              <SelectValue placeholder="Select grouping" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">No Grouping</SelectItem>
+                              <SelectItem value="category">Category</SelectItem>
+                              <SelectItem value="bag">Bag</SelectItem>
+                              <SelectItem value="traveler">Traveler</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
                         <div className="flex items-center space-x-2">
                           <Switch 
                             id="show-packed"
@@ -1001,7 +1026,89 @@ export default function PackingList() {
                             return categoryMatch && bagMatch && travelerMatch;
                           });
                           
-                          // Render filtered items with appropriate component based on edit mode
+                          // Group items if groupBy is set
+                          if (groupBy !== 'none') {
+                            // Create groups based on the selected grouping
+                            const groups = new Map<number | null, typeof filteredItems>();
+                            const groupNames = new Map<number | null, string>();
+                            
+                            filteredItems.forEach(item => {
+                              let groupKey: number | null = null;
+                              let groupName = 'Unassigned';
+                              
+                              if (groupBy === 'category') {
+                                groupKey = item.categoryId;
+                                if (groupKey) {
+                                  const category = categories?.find(c => c.id === groupKey);
+                                  groupName = category?.name || 'Unknown Category';
+                                }
+                              } else if (groupBy === 'bag') {
+                                groupKey = item.bagId;
+                                if (groupKey) {
+                                  const bag = bags?.find(b => b.id === groupKey);
+                                  groupName = bag?.name || 'Unknown Bag';
+                                }
+                              } else if (groupBy === 'traveler') {
+                                groupKey = item.travelerId;
+                                if (groupKey) {
+                                  const traveler = travelers?.find(t => t.id === groupKey);
+                                  groupName = traveler?.name || 'Unknown Traveler';
+                                }
+                              }
+                              
+                              if (!groups.has(groupKey)) {
+                                groups.set(groupKey, []);
+                                groupNames.set(groupKey, groupName);
+                              }
+                              groups.get(groupKey)!.push(item);
+                            });
+                            
+                            // Sort groups: unassigned (null) first, then by name
+                            const sortedGroups = Array.from(groups.entries()).sort(([keyA], [keyB]) => {
+                              if (keyA === null) return -1;
+                              if (keyB === null) return 1;
+                              const nameA = groupNames.get(keyA) || '';
+                              const nameB = groupNames.get(keyB) || '';
+                              return nameA.localeCompare(nameB);
+                            });
+                            
+                            // Render grouped items
+                            return sortedGroups.map(([groupKey, groupItems]) => (
+                              <div key={groupKey ?? 'unassigned'} className="mb-6">
+                                <h4 className="font-medium text-sm text-gray-700 px-4 py-2 bg-gray-50 border-b">
+                                  {groupNames.get(groupKey)} ({groupItems.length} items)
+                                </h4>
+                                <div className="divide-y divide-gray-100">
+                                  {groupItems.map(item => {
+                                    if (isMultiEditMode) {
+                                      return (
+                                        <SelectableItemRow
+                                          key={item.id}
+                                          item={item}
+                                          packingListId={packingListId}
+                                          isMultiEditMode={isMultiEditMode}
+                                          onEditItem={handleEditItem}
+                                          isSelected={selectedItemIds.includes(item.id)}
+                                          onSelectChange={(itemId, isSelected) => handleItemSelection(itemId, isSelected)}
+                                        />
+                                      );
+                                    } else {
+                                      return (
+                                        <ItemRow 
+                                          key={item.id} 
+                                          item={item} 
+                                          packingListId={packingListId} 
+                                          onEditItem={handleEditItem} 
+                                        />
+                                      );
+                                    }
+                                  })}
+                                </div>
+                              </div>
+                            ));
+                          }
+                          
+                          // No grouping - render flat list
                           return filteredItems.map(item => {
                             if (isMultiEditMode) {
                               return (

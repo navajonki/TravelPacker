@@ -42,5 +42,7 @@
 - [x] Copy list
 - [ ] Create "On Person" category that doesn't count toward packing completion
 - [ ] Shift-click should select all items in between previously selected item and next tapped one
-- [ ] Password reset
+- [x] Password reset
 - [ ] What happens right now when an invitation is sent to someone who doesn't have an account yet?
+- [ ] Group by in filters
+- [ ] Sort by in filters
