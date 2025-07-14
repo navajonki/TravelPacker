@@ -1,11 +1,19 @@
 import { useState } from "react";
-import { Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks, User } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import ItemRow from "./ItemRow";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import useTravelers from "@/features/travelers/hooks/useTravelers";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -50,10 +58,14 @@ export default function CategoryCard({
 }: CategoryCardProps) {
   const [showAddItem, setShowAddItem] = useState(false);
   const [newItemName, setNewItemName] = useState("");
+  const [selectedTravelerId, setSelectedTravelerId] = useState<string>("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  // Fetch travelers for the dropdown
+  const { travelers } = useTravelers({ packingListId: category.packingListId });
   
   const addItemMutation = useMutation({
     mutationFn: async () => {
@@ -61,13 +73,16 @@ export default function CategoryCard({
         name: newItemName,
         categoryId: category.id,
         packingListId: category.packingListId, // Add the missing packingListId
+        travelerId: selectedTravelerId ? parseInt(selectedTravelerId) : undefined,
         quantity: 1,
         packed: false
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${category.packingListId}/categories`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${category.packingListId}/travelers`] });
       setNewItemName("");
+      setSelectedTravelerId("");
       setShowAddItem(false);
     }
   });
@@ -79,6 +94,7 @@ export default function CategoryCard({
     } else if (e.key === 'Escape') {
       setShowAddItem(false);
       setNewItemName("");
+      setSelectedTravelerId("");
     }
   };
   
@@ -221,7 +237,7 @@ export default function CategoryCard({
             
             {/* Add item input */}
             {showAddItem && (
-              <li className="p-2">
+              <li className="p-2 space-y-2">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary" disabled />
@@ -237,6 +253,23 @@ export default function CategoryCard({
                       onKeyDown={handleAddItemKeyDown}
                     />
                   </div>
+                </div>
+                <div className="ml-7">
+                  <Select value={selectedTravelerId} onValueChange={setSelectedTravelerId}>
+                    <SelectTrigger className="h-8 text-sm">
+                      <SelectValue placeholder="Assign to traveler (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {travelers.map((traveler) => (
+                        <SelectItem key={traveler.id} value={traveler.id.toString()}>
+                          <div className="flex items-center">
+                            <User className="h-3 w-3 mr-2" />
+                            {traveler.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </li>
             )}
