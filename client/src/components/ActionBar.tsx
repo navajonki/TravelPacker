@@ -68,10 +68,10 @@ export default function ActionBar({
               <div className="flex items-center space-x-2">
                 <Button
                   onClick={() => setIsAddFormExpanded(true)}
-                  className="flex items-center gap-1"
-                  size="sm"
+                  className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 shadow-md"
+                  size="default"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-5 w-5" />
                   <span>Add Item</span>
                 </Button>
                 <Button
