@@ -685,10 +685,6 @@ export default function PackingList() {
                             category={category}
                             onEditCategory={handleEditCategory}
                             onDeleteCategory={handleDeleteCategory}
-                            onAddItem={(categoryId) => {
-                              setAdvancedAddInitialValues({ categoryId: categoryId.toString() });
-                              setAdvancedAddOpen(true);
-                            }}
                             onEditItem={handleEditItem}
                           />
                         )}

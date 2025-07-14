@@ -45,7 +45,6 @@ interface CategoryCardProps {
   };
   onEditCategory: (categoryId: number) => void;
   onDeleteCategory: (categoryId: number) => void;
-  onAddItem: (categoryId: number) => void;
   onEditItem?: (itemId: number) => void;
 }
 
@@ -53,7 +52,6 @@ export default function CategoryCard({
   category, 
   onEditCategory,
   onDeleteCategory,
-  onAddItem,
   onEditItem
 }: CategoryCardProps) {
   const [showAddItem, setShowAddItem] = useState(false);

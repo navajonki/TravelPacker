@@ -107,6 +107,12 @@ TravelPack is a collaborative packing list management application that allows us
 
 ## Recent Changes
 
+- **July 14, 2025**: Enhanced item creation in category view
+  - Added traveler selection dropdown when adding items within categories
+  - Maintained quick inline item entry without modal popups
+  - Items can now be assigned to travelers during creation
+  - Traveler assignment remains optional
+
 - **June 24, 2025**: Fixed password reset frontend validation issues
   - Completely rebuilt ResetPasswordPage with proper conditional rendering logic
   - Fixed token validation flow that was showing error state prematurely
