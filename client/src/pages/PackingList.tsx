@@ -628,12 +628,8 @@ export default function PackingList() {
               onSearchResultSelect={handleEditItem}
               onAddItem={() => setShowQuickAdd(!showQuickAdd)}
               onToggleMultiEditMode={() => setIsMultiEditMode(true)}
-            />
-          ) : null}
-          
-          {showQuickAdd && (
-            <div className="border-b border-gray-200 bg-gray-50">
-              <div className="px-4 py-3">
+              showQuickAdd={showQuickAdd}
+              quickAddForm={showQuickAdd ? (
                 <QuickAddForm 
                   packingListId={packingListId}
                   onAddItem={handleAddItem}
@@ -641,9 +637,9 @@ export default function PackingList() {
                   isInline={true}
                   onClose={() => setShowQuickAdd(false)}
                 />
-              </div>
-            </div>
-          )}
+              ) : null}
+            />
+          ) : null}
           
           <ActionBar 
             isMultiEditMode={isMultiEditMode}

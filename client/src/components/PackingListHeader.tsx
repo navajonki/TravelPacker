@@ -21,6 +21,8 @@ interface PackingListHeaderProps {
   onSearchResultSelect?: (itemId: number) => void;
   onAddItem?: () => void;
   onToggleMultiEditMode?: () => void;
+  showQuickAdd?: boolean;
+  quickAddForm?: React.ReactNode;
 }
 
 export default function PackingListHeader({ 
@@ -33,7 +35,9 @@ export default function PackingListHeader({
   onDeleteList,
   onSearchResultSelect,
   onAddItem,
-  onToggleMultiEditMode
+  onToggleMultiEditMode,
+  showQuickAdd,
+  quickAddForm
 }: PackingListHeaderProps) {
   return (
     <div className="bg-white p-4 border-b border-gray-200">
@@ -113,6 +117,13 @@ export default function PackingListHeader({
           />
         </div>
       </div>
+      
+      {/* Quick Add Form */}
+      {showQuickAdd && quickAddForm && (
+        <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4">
+          {quickAddForm}
+        </div>
+      )}
       
       {/* Tabs at the bottom */}
       <Tabs value={viewMode} className="mt-4" onValueChange={(value) => onChangeViewMode(value as any)}>
