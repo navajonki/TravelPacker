@@ -54,7 +54,7 @@ export default function PackingListHeader({
           </div>
           
           {/* Progress bar next to title */}
-          <div className="flex-1 max-w-xs">
+          <div className="flex-1 max-w-xs ml-auto text-right">
             <Progress value={packingList.progress} className="h-2.5" />
             <div className="flex items-center justify-between mt-1 text-sm">
               <span className="text-gray-500">Progress</span>
