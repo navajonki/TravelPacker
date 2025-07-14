@@ -1,4 +1,4 @@
-import { Calendar, Share2, Download, MoreHorizontal, Users } from "lucide-react";
+import { Share2, Download, MoreHorizontal, Plus, Edit3 } from "lucide-react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,8 @@ interface PackingListHeaderProps {
   onEditList?: () => void;
   onDeleteList?: () => void;
   onSearchResultSelect?: (itemId: number) => void;
+  onAddItem?: () => void;
+  onToggleMultiEditMode?: () => void;
 }
 
 export default function PackingListHeader({ 
@@ -35,18 +37,29 @@ export default function PackingListHeader({
   onShare,
   onEditList,
   onDeleteList,
-  onSearchResultSelect
+  onSearchResultSelect,
+  onAddItem,
+  onToggleMultiEditMode
 }: PackingListHeaderProps) {
   return (
     <div className="bg-white p-4 border-b border-gray-200">
+      {/* Title and Progress Bar */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">{packingList.name}</h1>
-          <div className="flex items-center text-sm text-gray-500 mt-1">
-            <Calendar className="h-4 w-4 mr-1" />
-            <span>{packingList.dateRange || 'No date set'}</span>
-            <span className="mx-2">•</span>
-            <span>{packingList.itemCount} items</span>
+        <div className="flex items-center space-x-4">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">{packingList.name}</h1>
+            <div className="flex items-center text-sm text-gray-500 mt-1">
+              <span>{packingList.itemCount} items</span>
+            </div>
+          </div>
+          
+          {/* Progress bar next to title */}
+          <div className="flex-1 max-w-xs">
+            <Progress value={packingList.progress} className="h-2.5" />
+            <div className="flex items-center justify-between mt-1 text-sm">
+              <span className="text-gray-500">Progress</span>
+              <span className="font-medium">{packingList.progress}% packed</span>
+            </div>
           </div>
         </div>
         
@@ -99,23 +112,40 @@ export default function PackingListHeader({
         </div>
       </div>
       
-      <div className="mt-4">
-        <Progress value={packingList.progress} className="h-2.5" />
-        <div className="flex items-center justify-between mt-1 text-sm">
-          <span className="text-gray-500">Progress</span>
-          <span className="font-medium">{packingList.progress}% packed</span>
+      {/* Action buttons and Search bar */}
+      <div className="mt-4 flex items-center space-x-4">
+        {/* Add Item and Edit Multiple buttons */}
+        <div className="flex items-center space-x-2">
+          <Button
+            onClick={onAddItem}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 shadow-md"
+            size="default"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add Item</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="default"
+            onClick={onToggleMultiEditMode}
+            className="flex items-center gap-2"
+          >
+            <Edit3 className="h-4 w-4" />
+            <span>Edit Multiple</span>
+          </Button>
+        </div>
+        
+        {/* Search bar */}
+        <div className="flex-1">
+          <SearchBar 
+            packingListId={packingList.id}
+            onSelectResult={onSearchResultSelect || (() => {})}
+            className="max-w-md"
+          />
         </div>
       </div>
       
-      {/* Search bar */}
-      <div className="mt-4">
-        <SearchBar 
-          packingListId={packingList.id}
-          onSelectResult={onSearchResultSelect || (() => {})}
-          className="max-w-md mx-auto"
-        />
-      </div>
-      
+      {/* Tabs at the bottom */}
       <Tabs value={viewMode} className="mt-4" onValueChange={(value) => onChangeViewMode(value as any)}>
         <TabsList className="w-full flex border-b border-gray-200 [&>*]:flex-1 [&>*]:rounded-none [&>*]:border-b-2 [&>*]:border-transparent">
           <TabsTrigger value="category" className="py-2 data-[state=active]:text-primary data-[state=active]:border-primary">

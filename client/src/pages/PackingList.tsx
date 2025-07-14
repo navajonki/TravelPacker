@@ -617,15 +617,14 @@ export default function PackingList() {
               onEditList={() => setEditListOpen(true)}
               onDeleteList={handleDeleteList}
               onSearchResultSelect={handleEditItem}
+              onAddItem={() => setAdvancedAddOpen(true)}
+              onToggleMultiEditMode={() => setIsMultiEditMode(true)}
             />
           ) : null}
           
           <ActionBar 
-            packingListId={packingListId}
             isMultiEditMode={isMultiEditMode}
             selectedItemIds={selectedItemIds}
-            onOpenAdvancedAdd={() => setAdvancedAddOpen(true)}
-            onAddItem={handleAddItem}
             onToggleMultiEditMode={(enabled) => {
               setIsMultiEditMode(enabled);
               if (!enabled) {
@@ -633,7 +632,6 @@ export default function PackingList() {
               }
             }}
             onOpenBulkEdit={() => setBulkEditModalOpen(true)}
-            onExportList={handleExportList}
           />
           
           <div className="bg-background p-4">
