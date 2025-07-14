@@ -1,14 +1,30 @@
 import { Link, useRoute } from "wouter";
-import { Luggage, ArrowLeft } from "lucide-react";
+import { Luggage, ArrowLeft, MoreHorizontal, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import UserMenu from "@/components/UserMenu";
 
 interface HeaderProps {
   onCreateNewList?: () => void;
+  showPackingListMenu?: boolean;
+  onShare?: () => void;
+  onExport?: () => void;
+  onEditList?: () => void;
+  onDeleteList?: () => void;
 }
 
 export default function Header({ 
-  onCreateNewList
+  onCreateNewList,
+  showPackingListMenu = false,
+  onShare,
+  onExport,
+  onEditList,
+  onDeleteList
 }: HeaderProps) {
   const [isListPage] = useRoute("/list/:id");
 
@@ -37,7 +53,32 @@ export default function Header({
           )}
           
           {/* Right side - User menu with logout */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-2">
+            {showPackingListMenu && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem className="md:hidden" onSelect={onShare}>
+                    <Share2 className="h-4 w-4 mr-2" />
+                    <span>Share</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="md:hidden" onSelect={onExport}>
+                    <Download className="h-4 w-4 mr-2" />
+                    <span>Export</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={onEditList}>
+                    <span>Edit List</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={onDeleteList}>
+                    <span>Delete List</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <UserMenu />
           </div>
         </div>

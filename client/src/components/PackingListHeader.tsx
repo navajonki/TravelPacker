@@ -1,10 +1,4 @@
-import { Share2, Download, MoreHorizontal, Plus, Edit3 } from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
+import { Share2, Download, Plus, Edit3 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -63,52 +57,26 @@ export default function PackingListHeader({
           </div>
           
           {/* Action buttons */}
-          <div className="flex items-center space-x-2">
-            <div className="hidden md:flex items-center space-x-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center"
-                onClick={onShare}
-              >
-                <Share2 className="h-4 w-4 mr-1" />
-                <span>Share</span>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="flex items-center"
-                onClick={onExport}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                <span>Export</span>
-              </Button>
-            </div>
+          <div className="hidden md:flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center"
+              onClick={onShare}
+            >
+              <Share2 className="h-4 w-4 mr-1" />
+              <span>Share</span>
+            </Button>
             
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreHorizontal className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem className="md:hidden" onSelect={onShare}>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  <span>Share</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="md:hidden" onSelect={onExport}>
-                  <Download className="h-4 w-4 mr-2" />
-                  <span>Export</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onEditList}>
-                  <span>Edit List</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onDeleteList}>
-                  <span>Delete List</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center"
+              onClick={onExport}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              <span>Export</span>
+            </Button>
           </div>
         </div>
       </div>

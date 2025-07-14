@@ -594,7 +594,13 @@ export default function PackingList() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <Header 
+        showPackingListMenu={true}
+        onShare={handleOpenShareDialog}
+        onExport={handleExportList}
+        onEditList={() => setEditListOpen(true)}
+        onDeleteList={handleDeleteList}
+      />
       
       <div className="flex flex-1 flex-col">
         
