@@ -139,6 +139,7 @@ TravelPack is a collaborative packing list management application that allows us
 
 ## Changelog
 
+- July 14, 2025. Enhanced item creation with quick add form and traveler selection
 - June 24, 2025. Initial setup
 - December 20, 2024. Complete password reset system implementation
 

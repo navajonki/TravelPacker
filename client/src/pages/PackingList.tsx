@@ -122,6 +122,9 @@ export default function PackingList() {
     travelerId?: string;
   }>({});
   
+  // Quick add form state
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
+  
   // Filter states
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [selectedBags, setSelectedBags] = useState<number[]>([]);
@@ -623,10 +626,24 @@ export default function PackingList() {
               onEditList={() => setEditListOpen(true)}
               onDeleteList={handleDeleteList}
               onSearchResultSelect={handleEditItem}
-              onAddItem={() => setAdvancedAddOpen(true)}
+              onAddItem={() => setShowQuickAdd(!showQuickAdd)}
               onToggleMultiEditMode={() => setIsMultiEditMode(true)}
             />
           ) : null}
+          
+          {showQuickAdd && (
+            <div className="border-b border-gray-200 bg-gray-50">
+              <div className="px-4 py-3">
+                <QuickAddForm 
+                  packingListId={packingListId}
+                  onAddItem={handleAddItem}
+                  onOpenAdvancedAdd={() => setAdvancedAddOpen(true)}
+                  isInline={true}
+                  onClose={() => setShowQuickAdd(false)}
+                />
+              </div>
+            </div>
+          )}
           
           <ActionBar 
             isMultiEditMode={isMultiEditMode}
