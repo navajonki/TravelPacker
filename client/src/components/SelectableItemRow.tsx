@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -21,7 +21,7 @@ interface SelectableItemRowProps {
   onEditItem: (itemId: number) => void;
 }
 
-export default function SelectableItemRow({ 
+const SelectableItemRow = memo(function SelectableItemRow({ 
   item, 
   packingListId,
   isMultiEditMode,
@@ -100,4 +100,6 @@ export default function SelectableItemRow({
       </div>
     </div>
   );
-}
+});
+
+export default SelectableItemRow;

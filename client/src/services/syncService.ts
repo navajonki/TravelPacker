@@ -28,7 +28,7 @@ class SyncService {
     // Initialize offline storage
     await offlineStorage.init();
 
-    // Periodic sync attempt (every 30 seconds)
+    // Periodic sync attempt (every 60 seconds - reduced frequency)
     this.startPeriodicSync();
 
     // Listen for messages from WebSocket service
@@ -45,7 +45,7 @@ class SyncService {
       clearInterval(this.syncInterval);
     }
     
-    this.syncInterval = setInterval(this.attemptSync, 30000);
+    this.syncInterval = setInterval(this.attemptSync, 60000);
     logger.debug('Periodic sync started');
   }
 
@@ -317,8 +317,8 @@ export function useSyncService() {
     // Update immediately
     updatePendingCount();
     
-    // Then update every 5 seconds
-    const intervalId = setInterval(updatePendingCount, 5000);
+    // Then update every 10 seconds (reduced frequency)
+    const intervalId = setInterval(updatePendingCount, 10000);
     
     return () => {
       mounted = false;

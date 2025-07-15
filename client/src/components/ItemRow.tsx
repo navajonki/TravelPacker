@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,7 +32,7 @@ interface ItemRowProps {
   viewContext?: 'category' | 'bag' | 'traveler';
 }
 
-export default function ItemRow({ 
+const ItemRow = memo(function ItemRow({ 
   item, 
   packingListId, 
   onEditItem,
@@ -579,4 +579,6 @@ export default function ItemRow({
       </AlertDialog>
     </div>
   );
-}
+});
+
+export default ItemRow;

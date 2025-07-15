@@ -227,8 +227,8 @@ class WebSocketService {
    */
   private scheduleReconnect() {
     this.reconnectAttempts++;
-    // Exponential backoff with max delay of 30 seconds
-    const delay = Math.min(30000, 1000 * Math.pow(2, Math.min(this.reconnectAttempts, 5)));
+    // Exponential backoff with max delay of 60 seconds (increased from 30)
+    const delay = Math.min(60000, 2000 * Math.pow(2, Math.min(this.reconnectAttempts, 5)));
 
     logger.info('Scheduling WebSocket reconnect', { delay, attempt: this.reconnectAttempts });
 

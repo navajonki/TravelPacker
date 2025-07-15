@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@shared/schema';
+import { useBatchedInvalidation, getQueryKeysForOperation } from '@/lib/batchedInvalidation';
 
 interface SyncMessage {
   type: 'item_update' | 'item_create' | 'item_delete';
@@ -17,6 +18,7 @@ interface SyncMessage {
 export function useRealTimeSync(packingListId: number, user: User | null) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { batchInvalidate } = useBatchedInvalidation();
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -49,11 +51,13 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
         try {
           const message: SyncMessage = JSON.parse(event.data);
           
-          // Process updates from all users to ensure unassigned queries are refreshed
-          // (Previously only processed updates from other users, but we need to refresh
-          // unassigned queries even for local changes to see them immediately)
+          // Use batched invalidation system to reduce performance impact
+          // Skip invalidation for own changes to avoid unnecessary work
+          if (message.userId === user?.id) {
+            return;
+          }
           
-          // Handle different types of updates
+          // Handle different types of updates with batched invalidation
           switch (message.type) {
             // Item-related changes
             case 'item_updated':
@@ -62,82 +66,44 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
             case 'item_update':
             case 'item_create':
             case 'item_delete':
-              // Invalidate ALL relevant queries to refresh the UI completely
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/categories`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/items`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/bags`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/travelers`] 
-              });
-              // Invalidate all unassigned item queries for different contexts
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] 
-              });
-              console.log(`Invalidated queries for packing list ${packingListId} due to remote item change`);
+              batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
+              console.log(`Batched invalidation for item change in list ${packingListId}`);
               break;
               
             // Category-related changes
             case 'category_created':
             case 'category_updated':
             case 'category_deleted':
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/categories`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
-              });
-              console.log(`Invalidated category queries for packing list ${packingListId}`);
+              batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'category'));
+              console.log(`Batched invalidation for category change in list ${packingListId}`);
               break;
               
             // Bag-related changes
             case 'bag_created':
             case 'bag_updated':
             case 'bag_deleted':
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/bags`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
-              });
-              console.log(`Invalidated bag queries for packing list ${packingListId}`);
+              batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'bag'));
+              console.log(`Batched invalidation for bag change in list ${packingListId}`);
               break;
               
             // Traveler-related changes
             case 'traveler_created':
             case 'traveler_updated':
             case 'traveler_deleted':
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/travelers`] 
-              });
-              queryClient.invalidateQueries({ 
-                queryKey: [`/api/packing-lists/${packingListId}/all-items`] 
-              });
-              console.log(`Invalidated traveler queries for packing list ${packingListId}`);
+              batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'traveler'));
+              console.log(`Batched invalidation for traveler change in list ${packingListId}`);
               break;
               
-              // Show a notification
-              toast({
-                title: "Update from collaborator",
-                description: "Another user made changes to the packing list",
-                variant: "default"
-              });
-              break;
+            default:
+              console.log(`Unknown message type: ${message.type}`);
           }
+          
+          // Show a notification for remote changes
+          toast({
+            title: "Update from collaborator",
+            description: "Another user made changes to the packing list",
+            variant: "default"
+          });
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
         }
@@ -145,8 +111,8 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
 
       ws.onclose = () => {
         console.log('Real-time sync disconnected');
-        // Attempt to reconnect after 3 seconds
-        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+        // Attempt to reconnect after 5 seconds (reduced frequency)
+        reconnectTimeoutRef.current = setTimeout(connect, 5000);
       };
 
       ws.onerror = (error) => {

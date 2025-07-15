@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useSyncStatus } from '@/hooks/use-sync-status';
 import { useQuery } from '@tanstack/react-query';
 import { Item, Category as SchemaCategory, Bag, Traveler } from '@shared/schema';
+import { useSearchOptimization } from '@/hooks/useOptimizedData';
 
 // Extended Category type that includes items
 interface Category extends SchemaCategory {
@@ -61,7 +62,10 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
     category.items || []
   );
   
-  // Define the search function to use local data instead of API calls
+  // Use optimized search
+  const { searchItems: optimizedSearchItems } = useSearchOptimization(allItems);
+  
+  // Define the search function to use optimized search
   const searchItems = useCallback(() => {
     if (!debouncedSearchTerm || debouncedSearchTerm.length < 2) {
       setResults([]);
@@ -71,10 +75,8 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
 
     setIsLoading(true);
     try {
-      // Filter items locally that match the search term
-      const matchedItems = allItems.filter(item => 
-        item.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      );
+      // Use optimized search function
+      const matchedItems = optimizedSearchItems(debouncedSearchTerm);
       
       // Transform items into the search result format
       const searchResults: SearchResult[] = matchedItems.map(item => {
@@ -101,7 +103,7 @@ export default function SearchBar({ packingListId, onSelectResult, className }: 
     } finally {
       setIsLoading(false);
     }
-  }, [debouncedSearchTerm, allItems, categories, bags, travelers]);
+  }, [debouncedSearchTerm, optimizedSearchItems, categories, bags, travelers]);
 
   // Search when the search term changes
   useEffect(() => {

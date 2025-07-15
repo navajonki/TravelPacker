@@ -42,6 +42,9 @@ import { useToast } from "@/hooks/use-toast";
 import { PackingListHeaderSkeleton, CategoryCardSkeleton } from "@/components/skeletons";
 import { useLoadingState } from "@/hooks/use-loading-state";
 import { Button } from "@/components/ui/button";
+import { useBatchedInvalidation, getQueryKeysForOperation } from "@/lib/batchedInvalidation";
+import { useFilteredItems, useFilterOptions } from "@/hooks/useFilteredItems";
+import { useOptimizedData } from "@/hooks/useOptimizedData";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +83,7 @@ export default function PackingList() {
   const { toast } = useToast();
   const { connect, disconnect, subscribe } = useWebSocket();
   const { user } = useAuth();
+  const { batchInvalidate } = useBatchedInvalidation();
   
   const [viewMode, setViewMode] = useState<'category' | 'bag' | 'traveler' | 'filters'>('category');
   const [advancedAddOpen, setAdvancedAddOpen] = useState(false);
@@ -205,21 +209,49 @@ export default function PackingList() {
   const { data: allItemsForFilter } = useQuery<Item[]>({
     queryKey: [`/api/packing-lists/${packingListId}/all-items`],
   });
+
+  // Use optimized filtering logic
+  const { filteredItems, sortedGroups, totalFilteredItems } = useFilteredItems({
+    allItems: allItemsForFilter || [],
+    categories: categories || [],
+    bags: bags || [],
+    travelers: travelers || [],
+    filters: {
+      selectedCategories,
+      selectedBags,
+      selectedTravelers,
+      showPacked,
+      showUnpacked,
+      groupBy
+    }
+  });
+
+  // Get optimized filter options
+  const { categoryOptions, bagOptions, travelerOptions } = useFilterOptions({
+    categories: categories || [],
+    bags: bags || [],
+    travelers: travelers || [],
+    allItems: allItemsForFilter || []
+  });
   
-  // Calculate all items from categories for the current view
-  const allItems = useMemo(() => {
-    return categories?.flatMap(category => category.items || []) || [];
-  }, [categories]);
-  
-  // For bag view: find items without a bag assignment
-  const itemsWithoutBag = useMemo(() => {
-    return allItems.filter(item => item.bagId === null || item.bagId === undefined);
-  }, [allItems]);
-  
-  // For traveler view: find items without a traveler assignment
-  const itemsWithoutTraveler = useMemo(() => {
-    return allItems.filter(item => item.travelerId === null || item.travelerId === undefined);
-  }, [allItems]);
+  // Use optimized data calculations
+  const {
+    allItemsFromCategories,
+    itemsWithoutBag,
+    itemsWithoutTraveler,
+    itemsWithoutCategory,
+    categoryMap,
+    bagMap,
+    travelerMap,
+    itemCounts,
+    categoryStats,
+    bagStats,
+    travelerStats
+  } = useOptimizedData({
+    categories: categories || [],
+    bags: bags || [],
+    travelers: travelers || []
+  });
   
   const { send } = useWebSocket();
 
@@ -243,21 +275,8 @@ export default function PackingList() {
       return response;
     },
     onSuccess: (data, variables) => {
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
-      
-      // If item was assigned to a bag, invalidate bags query
-      if (variables.bagId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      }
-      
-      // If item was assigned to a traveler, invalidate travelers query
-      if (variables.travelerId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      }
+      // Use batched invalidation for better performance
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
       
       // Send real-time update to other collaborators
       try {
@@ -292,7 +311,7 @@ export default function PackingList() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'category'));
       toast({
         title: "Success",
         description: "Category added successfully",
@@ -344,7 +363,7 @@ export default function PackingList() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'bag'));
       toast({
         title: "Success",
         description: "Bag added successfully",
@@ -367,7 +386,7 @@ export default function PackingList() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'traveler'));
       toast({
         title: "Success",
         description: "Traveler added successfully",
@@ -492,21 +511,15 @@ export default function PackingList() {
     try {
       await apiRequest('DELETE', `/api/categories/${categoryId}`);
       
-      // Invalidate all relevant queries to ensure UI is properly updated
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      // Use batched invalidation for better performance
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'category'));
       
       // Dispatch a custom event to notify components that a container was deleted
       window.dispatchEvent(new CustomEvent('item-container-deleted', {
         detail: { type: 'category', id: categoryId }
       }));
       
-      console.log("Invalidated all queries after category deletion");
+      console.log("Batch invalidated queries after category deletion");
       
       toast({
         title: "Success",
@@ -525,21 +538,15 @@ export default function PackingList() {
     try {
       await apiRequest('DELETE', `/api/bags/${bagId}`);
       
-      // Invalidate all relevant queries to ensure UI is properly updated
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      // Use batched invalidation for better performance
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'bag'));
       
       // Dispatch a custom event to notify components that a container was deleted
       window.dispatchEvent(new CustomEvent('item-container-deleted', {
         detail: { type: 'bag', id: bagId }
       }));
       
-      console.log("Invalidated all queries after bag deletion");
+      console.log("Batch invalidated queries after bag deletion");
       
       toast({
         title: "Success",
@@ -558,21 +565,15 @@ export default function PackingList() {
     try {
       await apiRequest('DELETE', `/api/travelers/${travelerId}`);
       
-      // Invalidate all relevant queries to ensure UI is properly updated
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/items`] });
+      // Use batched invalidation for better performance
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'traveler'));
       
       // Dispatch a custom event to notify components that a container was deleted
       window.dispatchEvent(new CustomEvent('item-container-deleted', {
         detail: { type: 'traveler', id: travelerId }
       }));
       
-      console.log("Invalidated all queries after traveler deletion");
+      console.log("Batch invalidated queries after traveler deletion");
       
       toast({
         title: "Success",
@@ -885,16 +886,7 @@ export default function PackingList() {
                           <h4 className="text-sm font-medium mb-2">Categories</h4>
                           <MultiSelectDropdown
                             title="Categories"
-                            items={[
-                              // Add unassigned option with special ID -1
-                              { id: -1, name: "(unassigned)", count: allItemsForFilter?.filter(item => !item.categoryId).length || 0 },
-                              // Regular categories
-                              ...(categories?.map(cat => ({ 
-                                id: cat.id, 
-                                name: cat.name, 
-                                count: cat.totalItems 
-                              })) || [])
-                            ]}
+                            items={categoryOptions}
                             selectedIds={selectedCategories}
                             onSelectionChange={setSelectedCategories}
                           />
@@ -904,16 +896,7 @@ export default function PackingList() {
                           <h4 className="text-sm font-medium mb-2">Bags</h4>
                           <MultiSelectDropdown
                             title="Bags"
-                            items={[
-                              // Add unassigned option with special ID -2
-                              { id: -2, name: "(unassigned)", count: allItemsForFilter?.filter(item => !item.bagId).length || 0 },
-                              // Regular bags
-                              ...(bags?.map(bag => ({ 
-                                id: bag.id, 
-                                name: bag.name, 
-                                count: bag.totalItems 
-                              })) || [])
-                            ]}
+                            items={bagOptions}
                             selectedIds={selectedBags}
                             onSelectionChange={setSelectedBags}
                           />
@@ -923,16 +906,7 @@ export default function PackingList() {
                           <h4 className="text-sm font-medium mb-2">Travelers</h4>
                           <MultiSelectDropdown
                             title="Travelers"
-                            items={[
-                              // Add unassigned option with special ID -3
-                              { id: -3, name: "(unassigned)", count: allItemsForFilter?.filter(item => !item.travelerId).length || 0 },
-                              // Regular travelers
-                              ...(travelers?.map(traveler => ({ 
-                                id: traveler.id, 
-                                name: traveler.name, 
-                                count: traveler.totalItems 
-                              })) || [])
-                            ]}
+                            items={travelerOptions}
                             selectedIds={selectedTravelers}
                             onSelectionChange={setSelectedTravelers}
                           />
@@ -1003,126 +977,45 @@ export default function PackingList() {
                         <p className="text-sm text-gray-500 mt-1">Showing items matching your selected filters</p>
                       </div>
                       <div className="divide-y divide-gray-100">
-                        {/* Filter and display items */}
-                        {(() => {
-                          // Use all items including unassigned ones for filtering
-                          const itemsToFilter = allItemsForFilter || [];
-                          
-                          // Apply filters
-                          const filteredItems = itemsToFilter.filter(item => {
-                            // Skip if packed status doesn't match filters
-                            if (item.packed && !showPacked) return false;
-                            if (!item.packed && !showUnpacked) return false;
-                            
-                            // Always show if no specific filters are selected
-                            if (selectedCategories.length === 0 && 
-                                selectedBags.length === 0 && 
-                                selectedTravelers.length === 0) {
-                              return true;
-                            }
-                            
-                            // Check category filter (handle unassigned with ID -1)
-                            const categoryMatch = selectedCategories.length === 0 || 
-                                                (item.categoryId && selectedCategories.includes(item.categoryId)) ||
-                                                (selectedCategories.includes(-1) && !item.categoryId);
-                            
-                            // Check bag filter (handle unassigned with ID -2)
-                            const bagMatch = selectedBags.length === 0 || 
-                                          (item.bagId && selectedBags.includes(item.bagId)) ||
-                                          (selectedBags.includes(-2) && !item.bagId);
-                            
-                            // Check traveler filter (handle unassigned with ID -3)
-                            const travelerMatch = selectedTravelers.length === 0 || 
-                                               (item.travelerId && selectedTravelers.includes(item.travelerId)) ||
-                                               (selectedTravelers.includes(-3) && !item.travelerId);
-                            
-                            return categoryMatch && bagMatch && travelerMatch;
-                          });
-                          
-                          // Group items if groupBy is set
-                          if (groupBy !== 'none') {
-                            // Create groups based on the selected grouping
-                            const groups = new Map<number | null, typeof filteredItems>();
-                            const groupNames = new Map<number | null, string>();
-                            
-                            filteredItems.forEach(item => {
-                              let groupKey: number | null = null;
-                              let groupName = 'Unassigned';
-                              
-                              if (groupBy === 'category') {
-                                groupKey = item.categoryId;
-                                if (groupKey) {
-                                  const category = categories?.find(c => c.id === groupKey);
-                                  groupName = category?.name || 'Unknown Category';
-                                }
-                              } else if (groupBy === 'bag') {
-                                groupKey = item.bagId;
-                                if (groupKey) {
-                                  const bag = bags?.find(b => b.id === groupKey);
-                                  groupName = bag?.name || 'Unknown Bag';
-                                }
-                              } else if (groupBy === 'traveler') {
-                                groupKey = item.travelerId;
-                                if (groupKey) {
-                                  const traveler = travelers?.find(t => t.id === groupKey);
-                                  groupName = traveler?.name || 'Unknown Traveler';
-                                }
-                              }
-                              
-                              if (!groups.has(groupKey)) {
-                                groups.set(groupKey, []);
-                                groupNames.set(groupKey, groupName);
-                              }
-                              groups.get(groupKey)!.push(item);
-                            });
-                            
-                            // Sort groups: unassigned (null) first, then by name
-                            const sortedGroups = Array.from(groups.entries()).sort(([keyA], [keyB]) => {
-                              if (keyA === null) return -1;
-                              if (keyB === null) return 1;
-                              const nameA = groupNames.get(keyA) || '';
-                              const nameB = groupNames.get(keyB) || '';
-                              return nameA.localeCompare(nameB);
-                            });
-                            
-                            // Render grouped items
-                            return sortedGroups.map(([groupKey, groupItems]) => (
-                              <div key={groupKey ?? 'unassigned'} className="mb-6">
-                                <h4 className="font-medium text-sm text-gray-700 px-4 py-2 bg-gray-50 border-b">
-                                  {groupNames.get(groupKey)} ({groupItems.length} items)
-                                </h4>
-                                <div className="divide-y divide-gray-100">
-                                  {groupItems.map(item => {
-                                    if (isMultiEditMode) {
-                                      return (
-                                        <SelectableItemRow
-                                          key={item.id}
-                                          item={item}
-                                          packingListId={packingListId}
-                                          isMultiEditMode={isMultiEditMode}
-                                          onEditItem={handleEditItem}
-                                          isSelected={selectedItemIds.includes(item.id)}
-                                          onSelectChange={(itemId, isSelected) => handleItemSelection(itemId, isSelected)}
-                                        />
-                                      );
-                                    } else {
-                                      return (
-                                        <ItemRow 
-                                          key={item.id} 
-                                          item={item} 
-                                          packingListId={packingListId} 
-                                          onEditItem={handleEditItem} 
-                                        />
-                                      );
-                                    }
-                                  })}
-                                </div>
+                        {/* Optimized filtered items rendering */}
+                        {groupBy !== 'none' && sortedGroups ? (
+                          // Render grouped items
+                          sortedGroups.map(([groupId, group]) => (
+                            <div key={groupId} className="mb-6">
+                              <h4 className="font-medium text-sm text-gray-700 px-4 py-2 bg-gray-50 border-b">
+                                {group.groupName} ({group.items.length} items)
+                              </h4>
+                              <div className="divide-y divide-gray-100">
+                                {group.items.map(item => {
+                                  if (isMultiEditMode) {
+                                    return (
+                                      <SelectableItemRow
+                                        key={item.id}
+                                        item={item}
+                                        packingListId={packingListId}
+                                        isMultiEditMode={isMultiEditMode}
+                                        onEditItem={handleEditItem}
+                                        isSelected={selectedItemIds.includes(item.id)}
+                                        onSelectChange={(itemId, isSelected) => handleItemSelection(itemId, isSelected)}
+                                      />
+                                    );
+                                  } else {
+                                    return (
+                                      <ItemRow 
+                                        key={item.id} 
+                                        item={item} 
+                                        packingListId={packingListId} 
+                                        onEditItem={handleEditItem} 
+                                      />
+                                    );
+                                  }
+                                })}
                               </div>
-                            ));
-                          }
-                          
-                          // No grouping - render flat list
-                          return filteredItems.map(item => {
+                            </div>
+                          ))
+                        ) : (
+                          // Render flat list
+                          filteredItems.map(item => {
                             if (isMultiEditMode) {
                               return (
                                 <SelectableItemRow
@@ -1145,8 +1038,8 @@ export default function PackingList() {
                                 />
                               );
                             }
-                          });
-                        })()}
+                          })
+                        )}
                       </div>
                     </div>
                   </div>

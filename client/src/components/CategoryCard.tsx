@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks, User } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -48,7 +48,7 @@ interface CategoryCardProps {
   onEditItem?: (itemId: number) => void;
 }
 
-export default function CategoryCard({ 
+const CategoryCard = memo(function CategoryCard({ 
   category, 
   onEditCategory,
   onDeleteCategory,
@@ -307,4 +307,6 @@ export default function CategoryCard({
       </AlertDialog>
     </>
   );
-}
+});
+
+export default CategoryCard;

@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { initializeBatchedInvalidation } from "./batchedInvalidation";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -95,3 +96,6 @@ export const queryClient = new QueryClient({
     },
   },
 });
+
+// Initialize batched invalidation system
+initializeBatchedInvalidation(queryClient);
