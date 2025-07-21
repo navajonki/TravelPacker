@@ -156,3 +156,18 @@
 [2025-07-21T18:32:52.230Z] [DEBUG-WEBSOCKET] Broadcasting to room 1: {"type":"item_updated","itemId":7,"item":{"id":7,"name":"lalalal","quantity":1,"packed":false,"isEssential":false,"dueDate":null,"packingListId":1,"categoryId":1,"bagId":null,"travelerId":null,"createdBy":1,"lastModifiedBy":1,"createdAt":"2025-07-21T18:32:52.225Z"},"updatedBy":1}
 [2025-07-21T18:32:54.900Z] [DEBUG-WEBSOCKET] Broadcasting to room 1: {"type":"item_updated","itemId":8,"item":{"id":8,"name":"lalalaa","quantity":1,"packed":false,"isEssential":false,"dueDate":null,"packingListId":1,"categoryId":2,"bagId":null,"travelerId":null,"createdBy":1,"lastModifiedBy":1,"createdAt":"2025-07-21T18:32:54.896Z"},"updatedBy":1}
 [2025-07-21T18:32:58.628Z] [DEBUG-WEBSOCKET] Broadcasting to room 1: {"type":"item_updated","itemId":9,"item":{"id":9,"name":"laklaa","quantity":1,"packed":false,"isEssential":false,"dueDate":null,"packingListId":1,"categoryId":null,"bagId":1,"travelerId":null,"createdBy":1,"lastModifiedBy":1,"createdAt":"2025-07-21T18:32:58.624Z"},"updatedBy":1}
+[2025-07-21T19:35:18.287Z] [DEBUG-WEBSOCKET] WebSocket connection established for user null
+[2025-07-21T19:35:18.314Z] [DEBUG-WEBSOCKET] Received raw message: {"type":"join","packingListId":2,"userId":2}
+[2025-07-21T19:35:18.315Z] [DEBUG-WEBSOCKET] Parsed message data: {"type":"join","packingListId":2,"userId":2}
+[2025-07-21T19:35:18.383Z] [DEBUG-WEBSOCKET] User 2 joined room 2
+[2025-07-21T19:35:22.422Z] [DEBUG-WEBSOCKET] User 2 disconnected from room 2
+[2025-07-21T19:35:22.422Z] [DEBUG-WEBSOCKET] Removed empty room 2
+[2025-07-21T19:35:25.421Z] [DEBUG-WEBSOCKET] WebSocket connection established for user null
+[2025-07-21T19:35:25.451Z] [DEBUG-WEBSOCKET] Received raw message: {"type":"join","packingListId":27,"userId":2}
+[2025-07-21T19:35:25.452Z] [DEBUG-WEBSOCKET] Parsed message data: {"type":"join","packingListId":27,"userId":2}
+[2025-07-21T19:35:25.521Z] [DEBUG-WEBSOCKET] User 2 joined room 27
+[2025-07-21T19:35:27.554Z] [DEBUG-WEBSOCKET] WebSocket connection established for user null
+[2025-07-21T19:35:27.582Z] [DEBUG-WEBSOCKET] Received raw message: {"type":"join","packingListId":2,"userId":2}
+[2025-07-21T19:35:27.584Z] [DEBUG-WEBSOCKET] Parsed message data: {"type":"join","packingListId":2,"userId":2}
+[2025-07-21T19:35:27.660Z] [DEBUG-WEBSOCKET] User 2 joined room 2
+[2025-07-21T19:35:28.991Z] [DEBUG-WEBSOCKET] Broadcasting to room 27: {"type":"item_updated","itemId":510,"item":{"id":510,"name":"newy","quantity":1,"packed":false,"isEssential":false,"dueDate":null,"packingListId":27,"categoryId":135,"bagId":null,"travelerId":null,"createdBy":2,"lastModifiedBy":2,"createdAt":"2025-07-21T19:35:28.905Z"},"updatedBy":2}
