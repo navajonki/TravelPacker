@@ -1,3 +1,7 @@
+// Load environment variables first
+import { config } from "dotenv";
+config();
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -115,12 +119,31 @@ async function runMigrations() {
   const wss = setupWebSocketServer(server);
   log("WebSocket server initialized", "websocket");
 
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  // Global error handler - don't throw to prevent server crashes
+  app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
 
-    res.status(status).json({ message });
-    throw err;
+    // Log the error for debugging
+    log(`Error ${status}: ${message} - ${req.method} ${req.path}`, "error");
+    console.error("Full error:", err);
+
+    // Send error response without crashing the server
+    if (!res.headersSent) {
+      res.status(status).json({ message });
+    }
+  });
+
+  // Handle unhandled promise rejections
+  process.on('unhandledRejection', (reason, promise) => {
+    log(`Unhandled Rejection at: ${promise}, reason: ${reason}`, "error");
+    console.error("Unhandled Rejection:", reason);
+  });
+
+  // Handle uncaught exceptions
+  process.on('uncaughtException', (error) => {
+    log(`Uncaught Exception: ${error.message}`, "error");
+    console.error("Uncaught Exception:", error);
   });
 
   // importantly only setup vite in development and after
@@ -136,11 +159,12 @@ async function runMigrations() {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
+  const host = process.env.NODE_ENV === 'production' ? "0.0.0.0" : "localhost";
   server.listen({
     port,
-    host: "0.0.0.0",
-    reusePort: true,
+    host,
+    reusePort: process.env.NODE_ENV === 'production',
   }, () => {
-    log(`serving on port ${port}`);
+    log(`serving on ${host}:${port}`);
   });
 })();

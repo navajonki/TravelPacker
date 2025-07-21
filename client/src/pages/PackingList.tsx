@@ -45,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { useBatchedInvalidation, getQueryKeysForOperation } from "@/lib/batchedInvalidation";
 import { useFilteredItems, useFilterOptions } from "@/hooks/useFilteredItems";
 import { useOptimizedData } from "@/hooks/useOptimizedData";
+import usePackingListData from "@/hooks/usePackingListData";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -189,26 +190,28 @@ export default function PackingList() {
     packedItems: number;
   }
   
-  const { data: packingList, isLoading: isLoadingList } = useQuery<PackingListData>({
-    queryKey: [`/api/packing-lists/${packingListId}`],
-  });
-  
-  const { data: categories, isLoading: isLoadingCategories } = useQuery<CategoryData[]>({
-    queryKey: [`/api/packing-lists/${packingListId}/categories`],
-  });
-  
-  const { data: bags, isLoading: isLoadingBags } = useQuery<BagData[]>({
-    queryKey: [`/api/packing-lists/${packingListId}/bags`],
-  });
-  
-  const { data: travelers, isLoading: isLoadingTravelers } = useQuery<TravelerData[]>({
-    queryKey: [`/api/packing-lists/${packingListId}/travelers`],
-  });
+  // Use comprehensive data hook optimized for poor connections
+  const {
+    packingList,
+    categories,
+    bags,
+    travelers,
+    items: allItemsForFilter,
+    collaborators,
+    stats,
+    isLoading: isLoadingList,
+    isOnline,
+    lastSuccessfulFetch,
+    dataAge,
+    isDataStale,
+    refetch: refetchPackingListData,
+    hasData
+  } = usePackingListData({ packingListId });
 
-  // Get all items for filter view (includes unassigned items)
-  const { data: allItemsForFilter } = useQuery<Item[]>({
-    queryKey: [`/api/packing-lists/${packingListId}/all-items`],
-  });
+  // Derive loading states for backwards compatibility
+  const isLoadingCategories = isLoadingList;
+  const isLoadingBags = isLoadingList;
+  const isLoadingTravelers = isLoadingList;
 
   // Use optimized filtering logic
   const { filteredItems, sortedGroups, totalFilteredItems } = useFilteredItems({
@@ -275,8 +278,19 @@ export default function PackingList() {
       return response;
     },
     onSuccess: (data, variables) => {
-      // Use batched invalidation for better performance
-      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
+      // Use connection-aware refetch optimized for poor connections
+      refetchPackingListData();
+      
+      // Also invalidate unassigned items cache for backwards compatibility
+      queryClient.invalidateQueries({
+        queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`]
+      });
+      queryClient.invalidateQueries({
+        queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`]
+      });
       
       // Send real-time update to other collaborators
       try {
@@ -639,6 +653,12 @@ export default function PackingList() {
                   onClose={() => setShowQuickAdd(false)}
                 />
               ) : null}
+              connectionStatus={{
+                isOnline,
+                lastSuccessfulFetch,
+                dataAge,
+                isDataStale
+              }}
             />
           ) : null}
           

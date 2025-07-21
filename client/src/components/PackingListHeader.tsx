@@ -3,6 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SearchBar from "@/components/SearchBar";
+import { ConnectionStatus } from "@/components/ConnectionStatus";
 
 interface PackingListHeaderProps {
   packingList: {
@@ -23,6 +24,12 @@ interface PackingListHeaderProps {
   onToggleMultiEditMode?: () => void;
   showQuickAdd?: boolean;
   quickAddForm?: React.ReactNode;
+  connectionStatus?: {
+    isOnline: boolean;
+    lastSuccessfulFetch?: Date | null;
+    dataAge?: number | null;
+    isDataStale?: boolean;
+  };
 }
 
 export default function PackingListHeader({ 
@@ -37,7 +44,8 @@ export default function PackingListHeader({
   onAddItem,
   onToggleMultiEditMode,
   showQuickAdd,
-  quickAddForm
+  quickAddForm,
+  connectionStatus
 }: PackingListHeaderProps) {
   return (
     <div className="bg-white p-4 border-b border-gray-200">
@@ -51,6 +59,16 @@ export default function PackingListHeader({
         </div>
         
         <div className="flex items-center space-x-6">
+          {/* Connection Status */}
+          {connectionStatus && (
+            <ConnectionStatus
+              isOnline={connectionStatus.isOnline}
+              lastSuccessfulFetch={connectionStatus.lastSuccessfulFetch}
+              dataAge={connectionStatus.dataAge}
+              isDataStale={connectionStatus.isDataStale}
+            />
+          )}
+          
           {/* Progress bar on the right side */}
           <div className="text-right">
             <Progress value={packingList.progress} className="h-2.5 w-48" />

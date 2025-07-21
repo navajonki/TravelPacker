@@ -34,6 +34,13 @@ declare global {
   }
 }
 
+// Utility to wrap async route handlers and catch errors
+const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
+};
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = app.route('/api');
   
@@ -602,6 +609,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(unassignedItems);
     } catch (error) {
       console.error(`Error fetching unassigned ${req.params.type} items:`, error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Get complete packing list data (optimized for poor connections)
+  app.get("/api/packing-lists/:id/complete", isAuthenticated, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const packingListId = Number(id);
+      
+      if (isNaN(packingListId)) {
+        return res.status(400).json({ message: "Invalid packing list ID" });
+      }
+      
+      // Check if the user can access this packing list
+      const hasAccess = await storage.canUserAccessPackingList(req.user!.id, packingListId);
+      if (!hasAccess) {
+        return res.status(403).json({ message: "You don't have permission to access this packing list" });
+      }
+      
+      // Fetch all data in parallel for better performance
+      const [
+        packingList,
+        categories,
+        bags,
+        travelers,
+        items,
+        collaborators
+      ] = await Promise.all([
+        storage.getPackingList(packingListId),
+        storage.getCategories(packingListId),
+        storage.getBags(packingListId),
+        storage.getTravelers(packingListId),
+        storage.getAllItemsByPackingList(packingListId),
+        storage.getCollaborators(packingListId)
+      ]);
+      
+      if (!packingList) {
+        return res.status(404).json({ message: "Packing list not found" });
+      }
+      
+      // Calculate stats for categories
+      const categoriesWithStats = categories.map(category => {
+        const categoryItems = items.filter(item => item.categoryId === category.id);
+        return {
+          ...category,
+          items: categoryItems,
+          totalItems: categoryItems.length,
+          packedItems: categoryItems.filter(item => item.packed).length
+        };
+      });
+      
+      // Calculate stats for bags
+      const bagsWithStats = bags.map(bag => {
+        const bagItems = items.filter(item => item.bagId === bag.id);
+        return {
+          ...bag,
+          items: bagItems,
+          totalItems: bagItems.length,
+          packedItems: bagItems.filter(item => item.packed).length
+        };
+      });
+      
+      // Calculate stats for travelers
+      const travelersWithStats = travelers.map(traveler => {
+        const travelerItems = items.filter(item => item.travelerId === traveler.id);
+        return {
+          ...traveler,
+          items: travelerItems,
+          totalItems: travelerItems.length,
+          packedItems: travelerItems.filter(item => item.packed).length
+        };
+      });
+      
+      // Calculate overall stats
+      const totalItems = items.length;
+      const packedItems = items.filter(item => item.packed).length;
+      const progress = totalItems > 0 ? Math.round((packedItems / totalItems) * 100) : 0;
+      
+      // Return comprehensive data
+      const completeData = {
+        packingList: {
+          ...packingList,
+          itemCount: totalItems,
+          packedItemCount: packedItems,
+          progress,
+          collaboratorCount: collaborators.length
+        },
+        categories: categoriesWithStats,
+        bags: bagsWithStats,
+        travelers: travelersWithStats,
+        items: items,
+        collaborators: collaborators,
+        stats: {
+          totalItems,
+          packedItems,
+          progress,
+          collaboratorCount: collaborators.length
+        }
+      };
+      
+      return res.json(completeData);
+    } catch (error) {
+      console.error("Error fetching complete packing list data:", error);
       res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -29,7 +29,7 @@ export function useUnassignedItems(
     queryKey,
     queryFn: () => ItemApi.getAllUnassigned(packingListId, viewContext),
     enabled: !!packingListId,
-    staleTime: 60000, // Consider data fresh for 60 seconds (up from 5 seconds)
+    staleTime: 0, // Always consider data stale to allow invalidation to work
     gcTime: 5 * 60 * 1000, // Cache for 5 minutes (gcTime in v5)
     refetchOnMount: false, // Don't refetch on mount
     refetchOnWindowFocus: false, // Don't refetch on window focus

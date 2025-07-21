@@ -702,6 +702,10 @@ export class MemStorage implements IStorage {
   }
 }
 
+// Load environment variables first
+import { config } from "dotenv";
+config();
+
 import { db } from "./db";
 import { eq, and, inArray, isNull, sql } from "drizzle-orm";
 import connectPgSimple from "connect-pg-simple";
