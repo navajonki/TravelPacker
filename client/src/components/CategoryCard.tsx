@@ -1,5 +1,5 @@
 import { useState, memo } from "react";
-import { Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks, User } from "lucide-react";
+import { Plus, MoreHorizontal, Pencil, Trash2, CheckSquare, Square, ListChecks, User, Check } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -250,6 +250,17 @@ const CategoryCard = memo(function CategoryCard({
                       onChange={(e) => setNewItemName(e.target.value)}
                       onKeyDown={handleAddItemKeyDown}
                     />
+                  </div>
+                  <div className="flex-shrink-0 ml-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      onClick={() => newItemName.trim() && addItemMutation.mutate()}
+                      disabled={!newItemName.trim() || addItemMutation.isPending}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
                 <div className="ml-7">

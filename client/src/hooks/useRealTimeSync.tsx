@@ -97,13 +97,6 @@ export function useRealTimeSync(packingListId: number, user: User | null) {
             default:
               console.log(`Unknown message type: ${message.type}`);
           }
-          
-          // Show a notification for remote changes
-          toast({
-            title: "Update from collaborator",
-            description: "Another user made changes to the packing list",
-            variant: "default"
-          });
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
         }

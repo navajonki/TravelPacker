@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks } from 'lucide-react';
+import { Edit, Trash2, Plus, MoreHorizontal, CheckSquare, Square, ListChecks, Check } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
@@ -264,6 +264,17 @@ export default function BagCard({
                     onChange={(e) => setNewItemName(e.target.value)}
                     onKeyDown={handleAddItemKeyDown}
                   />
+                </div>
+                <div className="flex-shrink-0 ml-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                    onClick={() => newItemName.trim() && addItemMutation.mutate()}
+                    disabled={!newItemName.trim() || addItemMutation.isPending}
+                  >
+                    <Check className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
