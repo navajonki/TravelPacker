@@ -171,3 +171,9 @@
 [2025-07-21T19:35:27.584Z] [DEBUG-WEBSOCKET] Parsed message data: {"type":"join","packingListId":2,"userId":2}
 [2025-07-21T19:35:27.660Z] [DEBUG-WEBSOCKET] User 2 joined room 2
 [2025-07-21T19:35:28.991Z] [DEBUG-WEBSOCKET] Broadcasting to room 27: {"type":"item_updated","itemId":510,"item":{"id":510,"name":"newy","quantity":1,"packed":false,"isEssential":false,"dueDate":null,"packingListId":27,"categoryId":135,"bagId":null,"travelerId":null,"createdBy":2,"lastModifiedBy":2,"createdAt":"2025-07-21T19:35:28.905Z"},"updatedBy":2}
+[2025-07-21T19:51:59.365Z] [DEBUG-WEBSOCKET] User 2 disconnected from room 27
+[2025-07-21T19:51:59.370Z] [DEBUG-WEBSOCKET] Removed empty room 27
+[2025-07-21T19:52:05.396Z] [DEBUG-WEBSOCKET] WebSocket connection established for user null
+[2025-07-21T19:52:05.427Z] [DEBUG-WEBSOCKET] Received raw message: {"type":"join","packingListId":27,"userId":2}
+[2025-07-21T19:52:05.427Z] [DEBUG-WEBSOCKET] Parsed message data: {"type":"join","packingListId":27,"userId":2}
+[2025-07-21T19:52:05.810Z] [DEBUG-WEBSOCKET] User 2 joined room 27
