@@ -87,12 +87,8 @@ export default function QuickAddForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log("QuickAddForm: handleSubmit called!");
-    console.log("QuickAddForm: Event:", e);
-    
     // Return if no item name
     if (!itemName.trim()) {
-      console.log("QuickAddForm: No item name, returning");
       return;
     }
     
@@ -105,27 +101,22 @@ export default function QuickAddForm({
     const itemData = {
       name: itemName.trim(),
       categoryId,
-      packingListId: packingListId, // Add this explicitly
+      packingListId: packingListId,
       bagId: selectedBagId && selectedBagId !== "none" ? parseInt(selectedBagId) : undefined,
       travelerId: selectedTravelerId && selectedTravelerId !== "none" ? parseInt(selectedTravelerId) : undefined,
     };
     
-    console.log("QuickAddForm: Creating item with data:", itemData);
-    console.log("QuickAddForm: packingListId value:", packingListId);
-    console.log("QuickAddForm: packingListId type:", typeof packingListId);
-    console.log("QuickAddForm: About to call onAddItem with:", itemData);
-    
-    await onAddItem(itemData);
-    
-    console.log("QuickAddForm: onAddItem completed");
+    try {
+      await onAddItem(itemData);
+    } catch (error) {
+      console.error("QuickAddForm: onAddItem failed:", error);
+    }
     setItemName("");
     // Don't collapse the form to allow multiple entries
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    console.log("QuickAddForm handleKeyDown called, key:", e.key);
     if (e.key === 'Enter') {
-      console.log("Enter pressed, calling handleSubmit");
       handleSubmit(e);
     }
   };
@@ -272,8 +263,7 @@ export default function QuickAddForm({
         <div className="mt-3 flex justify-end">
           <Button 
             type="submit" 
-            className="bg-primary hover:bg-primary/90" 
-            onClick={handleSubmit}
+            className="bg-primary hover:bg-primary/90"
           >
             Add Item
           </Button>

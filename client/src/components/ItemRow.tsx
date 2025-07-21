@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { useBatchedInvalidation, getQueryKeysForOperation } from "@/lib/batchedInvalidation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useSyncStatus } from "@/hooks/use-sync-status";
@@ -43,6 +44,7 @@ const ItemRow = memo(function ItemRow({
   const [optimisticPacked, setOptimisticPacked] = useState<boolean | null>(null);
   const queryClient = useQueryClient();
   const { incrementPending, decrementPending } = useSyncStatus();
+  const { batchInvalidate } = useBatchedInvalidation();
   
   const { data: bags = [] } = useQuery<any[]>({
     queryKey: [`/api/packing-lists/${packingListId}/bags`],
@@ -426,19 +428,8 @@ const ItemRow = memo(function ItemRow({
       // Close dialog
       setShowDeleteDialog(false);
       
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-
-      // Invalidate unassigned queries for all view types
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
-      
-      // Also invalidate the all-items query
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+      // Use consistent batched invalidation approach (now includes /complete endpoint)
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
     }
   });
 

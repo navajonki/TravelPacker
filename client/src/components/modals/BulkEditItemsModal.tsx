@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useBatchedInvalidation, getQueryKeysForOperation } from "@/lib/batchedInvalidation";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface BulkEditItemsModalProps {
@@ -31,6 +32,7 @@ export default function BulkEditItemsModal({
 }: BulkEditItemsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { batchInvalidate } = useBatchedInvalidation();
   const [action, setAction] = useState<'pack' | 'unpack' | 'move' | 'assign' | 'delete'>('pack');
   const [category, setCategory] = useState<string>('');
   const [bag, setBag] = useState<string>('');
@@ -98,14 +100,8 @@ export default function BulkEditItemsModal({
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      // Invalidate unassigned item queries
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
+      // Use consistent batched invalidation approach (now includes /complete endpoint)
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
       
       let successMessage = '';
       if (action === 'pack') {
@@ -155,19 +151,8 @@ export default function BulkEditItemsModal({
       await Promise.all(deletePromises);
     },
     onSuccess: () => {
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/categories`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/bags`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/travelers`] });
-      
-      // Invalidate unassigned queries for all view types
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`] });
-      
-      // Also invalidate the all-items query
-      queryClient.invalidateQueries({ queryKey: [`/api/packing-lists/${packingListId}/all-items`] });
+      // Use consistent batched invalidation approach (now includes /complete endpoint)
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
 
       toast({
         title: "Success",

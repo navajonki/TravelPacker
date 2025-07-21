@@ -85,11 +85,17 @@ class BatchedInvalidationManager {
   private invalidateQueriesForList(packingListId: number, queryKeys: string[]) {
     console.log(`Batch invalidating ${queryKeys.length} queries for list ${packingListId}`);
 
+    // CRITICAL: Always invalidate the /complete endpoint that holds the actual UI data
+    this.queryClient.invalidateQueries({
+      queryKey: [`/api/packing-lists/${packingListId}/complete`]
+    });
+
     // Group queries by type to use broader invalidation patterns
     const hasItems = queryKeys.some(key => 
       key.includes('/items') || 
       key.includes('/all-items') || 
-      key.includes('/unassigned')
+      key.includes('/unassigned') ||
+      key.includes('/complete')
     );
     
     const hasCategories = queryKeys.some(key => key.includes('/categories'));
@@ -106,6 +112,7 @@ class BatchedInvalidationManager {
           return key.includes('/items') || 
                  key.includes('/all-items') || 
                  key.includes('/unassigned') ||
+                 key.includes('/complete') ||
                  key === `/api/packing-lists/${packingListId}`;
         }
       });
@@ -197,7 +204,11 @@ export function useBatchedInvalidation() {
  * Utility to get standard query keys for different operations
  */
 export const getQueryKeysForOperation = (packingListId: number, operation: 'item' | 'category' | 'bag' | 'traveler') => {
-  const baseKeys = [`/api/packing-lists/${packingListId}`];
+  // CRITICAL: Always include the /complete endpoint that actually holds the UI data
+  const baseKeys = [
+    `/api/packing-lists/${packingListId}`,
+    `/api/packing-lists/${packingListId}/complete`  // ← THE KEY FIX
+  ];
   
   switch (operation) {
     case 'item':

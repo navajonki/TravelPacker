@@ -260,10 +260,6 @@ export default function PackingList() {
 
   const addItemMutation = useMutation({
     mutationFn: async (item: any) => {
-      console.log("DEBUG: Original item data:", item);
-      console.log("DEBUG: Current packingListId:", packingListId);
-      console.log("DEBUG: packingListId type:", typeof packingListId);
-      
       // Ensure all required fields are present and valid
       const itemToCreate = {
         ...item,
@@ -271,26 +267,12 @@ export default function PackingList() {
         quantity: item.quantity || 1,
         packed: item.packed || false
       };
-      
-      console.log("DEBUG: Final itemToCreate:", itemToCreate);
-      console.log("API Request: POST /api/items", itemToCreate);
       const response = await apiRequest('POST', '/api/items', itemToCreate);
       return response;
     },
     onSuccess: (data, variables) => {
-      // Use connection-aware refetch optimized for poor connections
-      refetchPackingListData();
-      
-      // Also invalidate unassigned items cache for backwards compatibility
-      queryClient.invalidateQueries({
-        queryKey: [`/api/packing-lists/${packingListId}/unassigned/bag`]
-      });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/packing-lists/${packingListId}/unassigned/category`]
-      });
-      queryClient.invalidateQueries({
-        queryKey: [`/api/packing-lists/${packingListId}/unassigned/traveler`]
-      });
+      // Use consistent batched invalidation approach (now includes /complete endpoint)
+      batchInvalidate(packingListId, getQueryKeysForOperation(packingListId, 'item'));
       
       // Send real-time update to other collaborators
       try {
@@ -364,8 +346,6 @@ export default function PackingList() {
   });
   
   const handleAddItem = async (item: any) => {
-    console.log("handleAddItem called with:", item);
-    console.log("handleAddItem packingListId:", packingListId);
     await addItemMutation.mutate(item);
   };
   
