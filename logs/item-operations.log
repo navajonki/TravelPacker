@@ -177,3 +177,7 @@
 [2025-07-21T19:52:05.427Z] [DEBUG-WEBSOCKET] Received raw message: {"type":"join","packingListId":27,"userId":2}
 [2025-07-21T19:52:05.427Z] [DEBUG-WEBSOCKET] Parsed message data: {"type":"join","packingListId":27,"userId":2}
 [2025-07-21T19:52:05.810Z] [DEBUG-WEBSOCKET] User 2 joined room 27
+[2025-07-21T20:27:28.425Z] [DEBUG-WEBSOCKET] User 2 disconnected from room 2
+[2025-07-21T20:27:28.425Z] [DEBUG-WEBSOCKET] Removed empty room 2
+[2025-07-21T20:27:28.426Z] [DEBUG-WEBSOCKET] User 2 disconnected from room 27
+[2025-07-21T20:27:28.426Z] [DEBUG-WEBSOCKET] Removed empty room 27
