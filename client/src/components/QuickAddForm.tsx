@@ -172,7 +172,7 @@ export default function QuickAddForm({
           </Button>
         </div>
         
-        <form className="flex items-center space-x-2" onSubmit={handleSubmit}>
+        <form id="quick-add-form" className="flex items-center space-x-2" onSubmit={handleSubmit}>
           <div className="relative flex-1">
             <Input 
               type="text" 
@@ -262,7 +262,8 @@ export default function QuickAddForm({
         
         <div className="mt-3 flex justify-end">
           <Button 
-            type="submit" 
+            type="submit"
+            form="quick-add-form"
             className="bg-primary hover:bg-primary/90"
           >
             Add Item
