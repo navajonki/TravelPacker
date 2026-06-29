@@ -11,7 +11,8 @@ const __dirname = dirname(__filename);
 export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorOverlay(),
+    // Replit dev-only overlay; skip in production builds (e.g. Railway).
+    ...(process.env.NODE_ENV !== "production" ? [runtimeErrorOverlay()] : []),
     themePlugin(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
