@@ -43,7 +43,12 @@ const asyncHandler = (fn: (req: Request, res: Response, next: NextFunction) => P
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const apiRouter = app.route('/api');
-  
+
+  // Health check endpoint (unauthenticated, no DB call) for Railway/uptime probes
+  app.get("/api/health", (_req: Request, res: Response) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   // Authentication routes
   app.post("/api/auth/register", async (req, res) => {
     try {

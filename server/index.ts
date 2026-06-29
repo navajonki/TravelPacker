@@ -8,6 +8,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
+import { getPostgresSsl } from "./db";
 import session from "express-session";
 import passport from "passport";
 import cors from "cors";
@@ -88,18 +89,21 @@ async function runMigrations() {
   try {
     log("Running database migrations...", "migrations");
     // Create postgres connection for migrations
-    const migrationClient = postgres(process.env.DATABASE_URL || "", { max: 1 });
+    const connectionString = process.env.DATABASE_URL || "";
+    const migrationClient = postgres(connectionString, { max: 1, ssl: getPostgresSsl(connectionString) });
     const db = drizzle(migrationClient);
-    
+
     await migrate(db, { migrationsFolder: "migrations" });
     log("Database migrations completed successfully", "migrations");
-    
+
     // Close the migration client
     await migrationClient.end();
   } catch (error) {
     log(`Error running migrations: ${error}`, "migrations");
     console.error("Error running migrations:", error);
-    // Continue execution even if migrations fail
+    // Fail the boot so a broken migration is caught by the deploy/health check
+    // instead of serving an app that 500s on every query.
+    throw error;
   }
 }
 
