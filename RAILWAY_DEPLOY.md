@@ -52,20 +52,37 @@ Mailjet is the production email provider (free tier, already coded in
 (e.g. `zjbodnar@gmail.com`) and set the three `MAILJET_*` variables above.
 Without them the app still boots; invitation/password-reset emails just no-op.
 
-## 3. Migrate users + data from Replit
+## 3. Migrate users + data from Replit/Neon
 
-Run **after** the first deploy (so startup migrations have created the schema):
+Run **after** the first deploy (so startup migrations have created the schema).
+
+**If you have direct TCP access to both databases** (psql/pg_dump can reach
+them), the simplest path is the dump/restore script:
 
 ```bash
-SOURCE_DATABASE_URL="<Replit Postgres URL>" \
-TARGET_DATABASE_URL="$(railway variables --kv | grep DATABASE_PUBLIC_URL | cut -d= -f2-)" \
+SOURCE_DATABASE_URL="<Neon/Replit Postgres URL>" \
+TARGET_DATABASE_URL="<Railway DATABASE_PUBLIC_URL>" \
 ./scripts/migrate-from-replit.sh
 ```
 
-This dumps **data only** (schema already exists), restores FK-safely with
-`--disable-triggers`, fixes serial sequences, and verifies per-table row counts.
-bcrypt password hashes are copied verbatim, so **users keep their passwords**.
-The `session` table is intentionally skipped (users just log in again once).
+**If you can't reach Postgres over raw TCP** (e.g. a sandbox that only allows
+HTTPS), run the copy *inside Railway* with `scripts/copy-db.mjs`. Create a
+throwaway one-off service from a minimal dir containing just `copy-db.mjs`, a
+`package.json` (`{"type":"module","dependencies":{"postgres":"^3.4.5"},"scripts":{"start":"node copy-db.mjs"}}`),
+and a `railway.json` with `startCommand: "node copy-db.mjs"` and
+`restartPolicyType: "NEVER"`. Set its variables
+`SOURCE_DATABASE_URL=<Neon URL>` and `TARGET_DATABASE_URL=${{Postgres.DATABASE_URL}}`,
+then `railway up --service <name>` and read its logs. Delete the service when done.
+
+Both methods copy **data only** (the schema already exists), preserve primary-key
+ids, fix serial sequences, and verify per-table row counts. `copy-db.mjs` copies
+by **column intersection**, so it tolerates schema drift between the two
+databases. bcrypt password hashes are copied verbatim, so **users keep their
+passwords**. The `session` table is intentionally skipped (users log in once).
+
+> For final cutover, stop using the Replit/Neon version and re-run the copy
+> immediately before switching so no last-minute changes are lost (the copy
+> TRUNCATEs + reloads the target, so it's safe to re-run).
 
 ## 4. Verify end-to-end
 
