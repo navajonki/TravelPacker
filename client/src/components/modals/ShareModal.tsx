@@ -169,7 +169,7 @@ export default function ShareModal({
   };
 
   const copyInvitationLink = async (token: string) => {
-    const inviteUrl = `${window.location.origin}/invite/${token}`;
+    const inviteUrl = `${window.location.origin}/invitation/${token}`;
     try {
       await navigator.clipboard.writeText(inviteUrl);
       toast({
