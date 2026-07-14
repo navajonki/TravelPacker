@@ -1,0 +1,412 @@
+[
+  {
+    "screenshot": "desktop/01-auth-login.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/auth",
+    "page": "AuthPage",
+    "state": "Login tab (default)",
+    "description": "Authentication page: Login form (email + password) with marketing hero.",
+    "url": "https://travelpacker-production.up.railway.app/auth"
+  },
+  {
+    "screenshot": "desktop/02-auth-register.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/auth",
+    "page": "AuthPage",
+    "state": "Register tab",
+    "description": "Registration form with email, password, confirm-password.",
+    "url": "https://travelpacker-production.up.railway.app/auth"
+  },
+  {
+    "screenshot": "desktop/03-forgot-password.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/forgot-password",
+    "page": "ForgotPasswordPage",
+    "state": "Default",
+    "description": "Forgot-password request form to send a reset email.",
+    "url": "https://travelpacker-production.up.railway.app/forgot-password"
+  },
+  {
+    "screenshot": "desktop/04-reset-password.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/reset-password",
+    "page": "ResetPasswordPage",
+    "state": "Default (no token)",
+    "description": "Password reset page rendered without a valid token query param.",
+    "url": "https://travelpacker-production.up.railway.app/reset-password"
+  },
+  {
+    "screenshot": "desktop/05-invitation.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/invitation/:token",
+    "page": "InvitationPage",
+    "state": "Sample token",
+    "description": "Collaboration invitation acceptance page for a sample/invalid token.",
+    "url": "https://travelpacker-production.up.railway.app/invitation/sample-invite-token"
+  },
+  {
+    "screenshot": "desktop/06-not-found.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "* (fallback)",
+    "page": "NotFound",
+    "state": "Default",
+    "description": "404 Not Found page shown for unmatched routes.",
+    "url": "https://travelpacker-production.up.railway.app/this-route-does-not-exist"
+  },
+  {
+    "screenshot": "desktop/07-dashboard.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/",
+    "page": "Dashboard",
+    "state": "Default (list of packing lists)",
+    "description": "Dashboard listing packing lists as cards with progress bars + Copy/Delete.",
+    "url": "https://travelpacker-production.up.railway.app/"
+  },
+  {
+    "screenshot": "desktop/08-dashboard-create-modal.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/",
+    "page": "Dashboard",
+    "state": "Create List modal open",
+    "description": "CreateListModal dialog for naming a new packing list.",
+    "url": "https://travelpacker-production.up.railway.app/"
+  },
+  {
+    "screenshot": "desktop/09-dashboard-delete-dialog.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/",
+    "page": "Dashboard",
+    "state": "Delete confirmation AlertDialog",
+    "description": "AlertDialog confirming deletion of a packing list.",
+    "url": "https://travelpacker-production.up.railway.app/"
+  },
+  {
+    "screenshot": "desktop/10-list-category.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "By Category view (default)",
+    "description": "Packing list detail, By Category tab: category cards, item rows, Add cards.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/11-list-bag.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "By Bag view",
+    "description": "Packing list grouped by physical bags.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/12-list-traveler.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "By Traveler view",
+    "description": "Packing list grouped by traveler.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/13-list-filters.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Filters view",
+    "description": "Filters: category/bag/traveler multi-selects, group-by, packed/unpacked switches.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/14-list-filters-groupby.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Filters — Group By select open",
+    "description": "Group By dropdown (None / Category / Bag / Traveler).",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/15-list-quick-add.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Quick Add item form open",
+    "description": "Inline Quick Add form with a link out to the Advanced Add modal.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/16-list-add-category-modal.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Add Category modal open",
+    "description": "AddCategoryModal dialog for creating a new category.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/17-list-share-modal.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Share / invite collaborators modal open",
+    "description": "ShareModal: invite collaborators by email, manage sharing.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/18-list-header-menu.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Header actions dropdown open",
+    "description": "Header ⋯ menu: Share, Export, Edit List, Delete List.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/19-list-edit-modal.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Edit List modal open",
+    "description": "EditListModal: rename list, update theme / date range.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/20-list-multi-edit.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Multi-select / bulk edit mode",
+    "description": "Bulk-edit mode: selectable rows with checkboxes and a bulk-action bar.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "desktop/21-list-unassigned.png",
+    "profile": "desktop",
+    "viewport": "1440x900",
+    "route": "/list/:id/unassigned",
+    "page": "UnassignedItemsTest",
+    "state": "Default",
+    "description": "Standalone view for unassigned items of a list.",
+    "url": "https://travelpacker-production.up.railway.app/list/3/unassigned"
+  },
+  {
+    "screenshot": "mobile/01-auth-login.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/auth",
+    "page": "AuthPage",
+    "state": "Login tab (default)",
+    "description": "Authentication page: Login form (email + password) with marketing hero.",
+    "url": "https://travelpacker-production.up.railway.app/auth"
+  },
+  {
+    "screenshot": "mobile/02-auth-register.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/auth",
+    "page": "AuthPage",
+    "state": "Register tab",
+    "description": "Registration form with email, password, confirm-password.",
+    "url": "https://travelpacker-production.up.railway.app/auth"
+  },
+  {
+    "screenshot": "mobile/03-forgot-password.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/forgot-password",
+    "page": "ForgotPasswordPage",
+    "state": "Default",
+    "description": "Forgot-password request form to send a reset email.",
+    "url": "https://travelpacker-production.up.railway.app/forgot-password"
+  },
+  {
+    "screenshot": "mobile/04-reset-password.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/reset-password",
+    "page": "ResetPasswordPage",
+    "state": "Default (no token)",
+    "description": "Password reset page rendered without a valid token query param.",
+    "url": "https://travelpacker-production.up.railway.app/reset-password"
+  },
+  {
+    "screenshot": "mobile/05-invitation.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/invitation/:token",
+    "page": "InvitationPage",
+    "state": "Sample token",
+    "description": "Collaboration invitation acceptance page for a sample/invalid token.",
+    "url": "https://travelpacker-production.up.railway.app/invitation/sample-invite-token"
+  },
+  {
+    "screenshot": "mobile/06-not-found.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "* (fallback)",
+    "page": "NotFound",
+    "state": "Default",
+    "description": "404 Not Found page shown for unmatched routes.",
+    "url": "https://travelpacker-production.up.railway.app/this-route-does-not-exist"
+  },
+  {
+    "screenshot": "mobile/07-dashboard.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/",
+    "page": "Dashboard",
+    "state": "Default (list of packing lists)",
+    "description": "Dashboard listing packing lists as cards with progress bars + Copy/Delete.",
+    "url": "https://travelpacker-production.up.railway.app/"
+  },
+  {
+    "screenshot": "mobile/08-dashboard-create-modal.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/",
+    "page": "Dashboard",
+    "state": "Create List modal open",
+    "description": "CreateListModal dialog for naming a new packing list.",
+    "url": "https://travelpacker-production.up.railway.app/"
+  },
+  {
+    "screenshot": "mobile/09-dashboard-delete-dialog.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/",
+    "page": "Dashboard",
+    "state": "Delete confirmation AlertDialog",
+    "description": "AlertDialog confirming deletion of a packing list.",
+    "url": "https://travelpacker-production.up.railway.app/"
+  },
+  {
+    "screenshot": "mobile/10-list-category.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "By Category view (default)",
+    "description": "Packing list detail, By Category tab: category cards, item rows, Add cards.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/11-list-bag.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "By Bag view",
+    "description": "Packing list grouped by physical bags.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/12-list-traveler.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "By Traveler view",
+    "description": "Packing list grouped by traveler.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/13-list-filters.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Filters view",
+    "description": "Filters: category/bag/traveler multi-selects, group-by, packed/unpacked switches.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/14-list-filters-groupby.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Filters — Group By select open",
+    "description": "Group By dropdown (None / Category / Bag / Traveler).",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/15-list-quick-add.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Quick Add item form open",
+    "description": "Inline Quick Add form with a link out to the Advanced Add modal.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/16-list-add-category-modal.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Add Category modal open",
+    "description": "AddCategoryModal dialog for creating a new category.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/17-list-header-menu.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Header actions dropdown open",
+    "description": "Header ⋯ menu: Share, Export, Edit List, Delete List.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/18-list-edit-modal.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Edit List modal open",
+    "description": "EditListModal: rename list, update theme / date range.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/19-list-multi-edit.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id",
+    "page": "PackingList",
+    "state": "Multi-select / bulk edit mode",
+    "description": "Bulk-edit mode: selectable rows with checkboxes and a bulk-action bar.",
+    "url": "https://travelpacker-production.up.railway.app/list/3"
+  },
+  {
+    "screenshot": "mobile/20-list-unassigned.png",
+    "profile": "mobile",
+    "viewport": "390x844",
+    "route": "/list/:id/unassigned",
+    "page": "UnassignedItemsTest",
+    "state": "Default",
+    "description": "Standalone view for unassigned items of a list.",
+    "url": "https://travelpacker-production.up.railway.app/list/3/unassigned"
+  }
+]
