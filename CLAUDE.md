@@ -2,6 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Deployment (Railway) — READ THIS FIRST for any deploy/DB work
+
+This app is **already deployed and live on Railway** at
+https://travelpacker-production.up.railway.app and **auto-deploys on every
+push/merge to `main`** via the connected GitHub repo. Do **not** re-provision —
+to ship a change, open a PR and merge to `main`.
+
+Before doing anything deploy-, infrastructure-, or database-related, read
+**`RAILWAY_OPS.md`** — it covers the live service IDs, the GraphQL-API workflow
+(the Railway CLI's account commands don't work with the available token), the
+fact that the sandbox can't reach Postgres over TCP (DB ops run as a one-off
+Railway service), key gotchas, and incident learnings (e.g. never delete Railway
+volumes). `RAILWAY_DEPLOY.md` covers first-time provisioning only.
+
 ## Commands
 
 ### Development
